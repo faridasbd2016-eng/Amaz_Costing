@@ -10671,12 +10671,21 @@ function collDel(k,id){
   if(i>=0) arr.splice(i,1);
 }
 
+/* v18.33 — বড় base64 ছবি (Letterhead/Logo/Seal) কখনো ক্লাউডে পাঠানো হয় না।
+   কারণ: Google Sheet এর প্রতি সেলে সর্বোচ্চ ৫০,০০০ অক্ষর; custom letterhead তার চেয়ে
+   অনেক বড় → settings sync ভেঙে যেত। তাই এগুলো প্রতি ডিভাইসে আলাদা (per-device) থাকে।
+   fingerprint ও push — দুই জায়গাতেই এই key গুলো বাদ, যাতে ping-pong sync না হয়। */
+const SYNC_SKIP_KEYS = {_ts:1,_dev:1,letterhead:1,logo:1,seal:1};
 /* ---------- আঙুলের ছাপ: রেকর্ড বদলেছে কিনা বোঝার সস্তা উপায় ---------- */
 function fpOf(o){
-  const s=JSON.stringify(o,function(k,v){ return (k==='_ts'||k==='_dev')?undefined:v; })||'';
+  const s=JSON.stringify(o,function(k,v){ return SYNC_SKIP_KEYS[k]?undefined:v; })||'';
   let h=0x811c9dc5;
   for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; }
   return h.toString(36)+'.'+s.length;
+}
+/* ক্লাউডে পাঠানোর json — ছবি-key বাদ (কিন্তু _ts/_dev থাকে, ওগুলো ছোট) */
+function syncJson(r){
+  return JSON.stringify(r,function(k,v){ return (k==='letterhead'||k==='logo'||k==='seal')?undefined:v; });
 }
 
 /* ---------- সিঙ্ক অবস্থা ---------- */
@@ -10847,6 +10856,12 @@ function applyRemote(rows){
 
     let rec; try{ rec=JSON.parse(row.json); }catch(e){ return; }
     rec.id=row.id; rec._ts=Number(row.ts)||0; rec._dev=row.dev||'';
+    /* v18.33 — ছবি sync হয় না; তাই settings টানার সময় লোকাল ছবিগুলো রেখে দিই
+       (নাহলে অন্য ডিভাইস থেকে আসা settings এই ডিভাইসের letterhead/logo/seal মুছে দিত) */
+    if(k==='singles' && rec.id==='settings'){
+      const loc=DB.settings||{};
+      ['letterhead','logo','seal'].forEach(function(f){ if(loc[f]!==undefined) rec[f]=loc[f]; });
+    }
     collPut(k,rec);
     S.fp[k][rec.id]=fpOf(rec);
     delete S.dirty[k][rec.id];
@@ -10866,7 +10881,7 @@ function buildPushRows(){
       const r=collFind(k,id);
       if(!r){ delete S.dirty[k][id]; return; }
       rows.push({c:k, id:id, ts:Number(r._ts)||Date.now(), dev:r._dev||S.dev, del:0,
-        json:JSON.stringify(r)});
+        json:syncJson(r), _fp:fpOf(r)});   /* _fp: এই মানটা পাঠানো হচ্ছে — accept এলে মিলিয়ে দেখব বদলেছে কিনা */
     });
   });
   S.tombs.filter(function(t){return !t.pushed;}).forEach(function(t){
@@ -10902,17 +10917,28 @@ async function cloudSync(silent){
 
     /* ধাপ ২ — শুধু এই ডিভাইসে যা বদলেছে সেটুকু পাঠাই */
     const rows=buildPushRows();
+    /* v18.33 — push এর সময় প্রতিটা রেকর্ডের যে fingerprint পাঠালাম তা মনে রাখি;
+       accept ফিরলে বর্তমান fingerprint এর সাথে মিলিয়ে দেখি — push চলাকালীন আবার
+       এডিট হয়ে থাকলে dirty মুছব না, নাহলে ওই এডিটটা হারিয়ে যেত */
+    const pushedFp={}; rows.forEach(function(r){ if(!r.del) pushedFp[r.c+'|'+r.id]=r._fp; });
     let pushed=0, rejected=0;
     if(rows.length){
       for(let i=0;i<rows.length;i+=150){            /* ছোট ছোট ভাগে */
-        const part=rows.slice(i,i+150);
+        /* _fp ভেতরের হিসাব — সার্ভারে পাঠাই না */
+        const part=rows.slice(i,i+150).map(function(r){
+          return {c:r.c,id:r.id,ts:r.ts,dev:r.dev,del:r.del,json:r.json}; });
         const pr=await syncCall('push',{rows:part});
         const back=[];
         (pr.results||[]).forEach(function(x){
           if(x.accepted){
             pushed++;
             if(x.del){ const t=S.tombs.find(function(t){return t.c===x.c&&t.id===x.id;}); if(t) t.pushed=1; }
-            else if(S.dirty[x.c]) delete S.dirty[x.c][x.id];
+            else if(S.dirty[x.c]){
+              const cur2=collFind(x.c,x.id), key=x.c+'|'+x.id;
+              /* বদলায়নি → dirty মুছি; push এর মাঝে আবার বদলে থাকলে রেখে দিই */
+              if(!(cur2 && pushedFp[key]!==undefined && fpOf(cur2)!==pushedFp[key]))
+                delete S.dirty[x.c][x.id];
+            }
             return;
           }
           /* সার্ভারেরটা বেশি নতুন — আমাদেরটা হেরে গেছে */
@@ -10941,7 +10967,10 @@ async function cloudSync(silent){
     if(rejected) parts.push(rejected+' টি ক্লাউডে বেশি নতুন ছিল');
     const msg=parts.length?parts.join(', '):'সব মিলে আছে, কিছু বদলায়নি';
     syncLog('ok',msg);
-    if(pushed||r1.added||r1.updated||r1.removed) audit('sync','data','Cloud Sync',msg);
+    /* v18.33 — sync নিজের কাজের জন্য আর audit রেকর্ড বানায় না।
+       আগে বানাত বলে সেই নতুন audit রেকর্ডটা পরের sync এ আবার push হতো, আর তাতে
+       আরেকটা audit তৈরি হতো — ফলে dirty কখনো 0 হতো না (অসীম churn)। sync এর
+       ইতিহাস S.log (Sync Log) এ আগের মতোই থাকে। আসল কাজের audit আগের মতোই হয়। */
     saveDB(); syncStatus('✅ '+msg,'ok'); updateSyncIndicator('idle');
     if(!silent) toast('Sync শেষ — '+msg);
     if(!anyModalOpen()){ buildNav(); render(); }
@@ -12042,6 +12071,12 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.33', d:'2026-09-29', t:'Cloud Sync আরও নিরাপদ — একাধিক ইউজারে data mismatch ঠেকানো (Apps Script)', li:[
+   '<b>বড় ছবি আর ক্লাউডে যায় না:</b> Letter Head/Logo/Seal ছবি Google Sheet এর ৫০,০০০ অক্ষরের সেল-সীমা ছাড়িয়ে যেত → settings sync ভেঙে যেত। এখন এই ছবিগুলো <b>প্রতি ডিভাইসে আলাদা</b> থাকে, বাকি সব ডাটা (costing, product, order, দরপত্র) ঠিকঠাক sync হয়',
+   'অন্য ডিভাইস থেকে settings টানলে <b>এই ডিভাইসের ছবি মুছে যায় না</b> (merge করে রাখা হয়)',
+   '<b>Sync চলাকালীন এডিট আর হারায় না:</b> push এর মাঝপথে কোনো রেকর্ড আবার বদলালে সেটা পরের sync এ ঠিকমতো চলে যায়',
+   '<b>Sync এখন পরিষ্কারভাবে থামে:</b> আগে প্রতিটা sync নিজের একটা audit রেকর্ড বানাত যা আবার পরের sync এ যেত (অসীম churn) — এটা বন্ধ; কাজ শেষে “পরিবর্তন বাকি” আর দেখায় না। Sync Log এ ইতিহাস আগের মতোই থাকে',
+   'দুইজন <b>আলাদা</b> রেকর্ডে কাজ করলে কিছু হারায় না; <b>একই</b> রেকর্ড একসাথে বদলালে শেষে যে sync করবে তারটা থাকে (নতুন ts জেতে) — টেস্ট করে যাচাই করা']},
  {v:'18.32', d:'2026-09-29', t:'PWA — ইনস্টলযোগ্য অ্যাপ ও অফলাইন (GitHub Pages এর জন্য)', li:[
    'এখন অ্যাপটা <b>PWA</b> — GitHub Pages (বা যেকোনো https হোস্টিং) এ রাখলে মোবাইল/ডেস্কটপে <b>Install</b> করে হোম স্ক্রিনে আইকন সহ আসল অ্যাপের মতো চলে',
    'একবার খুললে <b>offline</b>-eও চলে (service worker ক্যাশ করে রাখে)',
