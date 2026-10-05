@@ -9768,12 +9768,26 @@ function buildCostingWS(wb, p, sheetName, refs){
   else  { C(rRate,3).value={formula:'J'+rBe, result:(isFinite(r.sellBdt)?r.sellBdt:0)}; }
   const sGross=line('Gross profit','J'+rBe+'-J'+sMfg, r.grossCtn);
   const sInd=line('Indirect O/H','__IND__', r.indirectCtn);
+  /* v18.35 — বিক্রয়/বিতরণ খরচ (Selling O/H) এখন Excel এও আসে (Export ছাড়া বাকি section এ)।
+     আগে একদম বাদ পড়ত, তাই Total Cost/Net Profit ভুল আসত। pctSale হলে Break-even দামের উপর
+     live সূত্র বসে; perUnit/monthly/perTrip-ও সূত্রেই বসানো, তাই Excel এ দাম বদলালে নিজে ঠিক হয়। */
+  const sohFormula=function(priceRef){
+    return (r.soh||[]).map(function(x){
+      if(x.mode==='pctSale') return priceRef+'*'+n(x.rate)+'/100';
+      if(x.mode==='perUnit') return ''+n(x.rate);
+      if(x.mode==='monthly') return n(x.rate)+'/'+WD+'/'+SHIFT+'/'+BDAY+'/'+STD;
+      if(x.mode==='perTrip') return n(x.basis)>0 ? (n(x.rate)+'/'+n(x.basis)) : '0';
+      return '0';
+    }).join('+') || '0';
+  };
+  let sSoh=0;
+  if(!ex && r.sellOhCtn) sSoh=line('Selling / Distribution O/H', sohFormula('J'+rBe), r.sellOhCtn);
   let sFwd=0, sFrt=0;
   if(ex){ sFwd=line('Forwarding cost','__FWD__', r.fwdCtn); sFrt=line('Freight','__FRT__', r.freightCtn); }
   /* v10.2 — print sheet এ "TOTAL COST PER UNIT" সারিটা নেই, তাই Excel থেকেও বাদ।
-     Net Profit সরাসরি Gross থেকে Indirect/Forwarding/Freight বাদ দিয়ে — print এর সূত্রেই */
+     Net Profit সরাসরি Gross থেকে Indirect/Selling/Forwarding/Freight বাদ দিয়ে — print এর সূত্রেই */
   const sNet=line('Net Profit :',
-    'J'+sGross+'-J'+sInd+(ex?('-J'+sFwd+'-J'+sFrt):''), r.netCtn, true);
+    'J'+sGross+'-J'+sInd+(sSoh?('-J'+sSoh):'')+(ex?('-J'+sFwd+'-J'+sFrt):''), r.netCtn, true);
   if(r.hasAct){
     const rAct=++R;
     put(rAct,1,'ACTUAL SALES PRICE (without VAT) :',{f:bold});
@@ -9782,7 +9796,7 @@ function buildCostingWS(wb, p, sheetName, refs){
     box(rAct,1,11,{top:XT.med});
     line('Gross Profit (on actual price)','J'+rAct+'-J'+sMfg, r.actGrossCtn);
     line('NET PROFIT (on actual price) :',
-      'J'+rAct+'-J'+sMfg+'-J'+sInd+(ex?('-J'+sFwd+'-J'+sFrt):''), r.actNetCtn, true);
+      'J'+rAct+'-J'+sMfg+'-J'+sInd+((!ex && r.actSellOhCtn)?('-('+sohFormula('J'+rAct)+')'):'')+(ex?('-J'+sFwd+'-J'+sFrt):''), r.actNetCtn, true);
     line('Difference vs Break-even','J'+rAct+'-J'+rBe, r.actVsBe, false, false);
   }
   /* print sheet এ যে সারিগুলো সবুজ, Excel এও সেগুলোই */
@@ -10046,7 +10060,7 @@ function buildCostingWS(wb, p, sheetName, refs){
   /* v10.4 — INDEX sheet এই ঘরগুলোর দিকে সূত্র বসাবে, তাই সারি নম্বরগুলো ফেরত দিই */
   return { ws:ws, ref:{ std:'C'+rStd, material:'J'+sMat, mfg:'J'+sMfg,
     beUsd:(ex?('I'+rBe):null), beBdt:'J'+rBe, net:'J'+sNet,
-    totalCost:'J'+sMfg+'+J'+sInd+(ex?('+J'+sFwd+'+J'+sFrt):'') } };
+    totalCost:'J'+sMfg+'+J'+sInd+(sSoh?('+J'+sSoh):'')+(ex?('+J'+sFwd+'+J'+sFrt):'') } };
 }
 /* v10.3 — Sheet এর নাম এখন Product এর নাম (যেমন "Bay Leaf 50 gm"), কোড নয়।
    Excel এ sheet নামে এই অক্ষরগুলো চলে না: [ ] : * ? / \  — আর সর্বোচ্চ ৩১ অক্ষর। */
@@ -12079,6 +12093,12 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.35', d:'2026-10-05', t:'Excel এ বিক্রয়/বিতরণ খরচ (Selling O/H) আর বাদ পড়ে না (fix)', li:[
+   'সমস্যা: Morning/Local/Ghorer/Depo costing এ Selling O/H থাকলেও <b>Excel ডাউনলোডে আসত না</b> — শুধু সারিটাই নয়, <b>Net Profit ও Total Cost-এও ওটা বাদ পড়ত</b>, তাই Excel-এর লাভ বেশি দেখাত',
+   'এখন Excel-এ <b>“Selling / Distribution O/H”</b> সারি আসে, আর Net Profit থেকে ঠিকমতো বাদ যায় — অ্যাপের হিসাবের সাথে হুবহু মিলে',
+   'সূত্রসহ (live): বিক্রয়ের % হলে Break-even দামের উপর, আর প্রকৃত দামের Net-এ প্রকৃত দামের উপর — Excel-এ দাম বদলালে নিজে ঠিক হয়',
+   'INDEX (bulk export) এর Total Cost-ও এখন Selling O/H ধরে হিসাব করে',
+   'Export costing-এ কোনো পরিবর্তন নেই (সেখানে Selling O/H প্রযোজ্য নয়)']},
  {v:'18.34', d:'2026-10-05', t:'Power Cost এ নতুন Mode — “Litre per Hour” (তরল ফিলিং মেশিন)', li:[
    'তেল/জুসের ফিলিং মেশিনের ক্ষমতা সাধারণত <b>লিটার/ঘণ্টা</b> তে জানা থাকে — আগে হাতে কার্টন/ঘণ্টা বের করে বসাতে হতো',
    'এখন নতুন Mode <b>“Litre per Hour (auto Ctn)”</b> — শুধু ঘণ্টায় কত লিটার ভরে সেটা দিন, অ্যাপ <b>Pack Size × Pkt/Ctn</b> দিয়ে নিজেই Ctn/ঘণ্টা ও প্রতি কার্টন খরচ বের করবে',
