@@ -818,6 +818,7 @@ tr.sel{background:var(--ok-bg) !important;}
         <option value="minBatch">Minutes / Batch</option>
         <option value="hrDay">Hours / Day</option>
         <option value="ctnHr">Ctn per Hour</option>
+        <option value="litreHr">Litre per Hour (auto Ctn)</option>
         <option value="capacity">Capacity based</option>
         <option value="perKg">Rate per Kg product</option>
         <option value="perPkt">Amount / Capacity (pkt)</option></select>
@@ -2258,6 +2259,7 @@ function calc(p0){
     if(r.mode==='minBatch')      ctn = stdOut>0 ? (costHr/60*basis)/stdOut : 0;
     else if(r.mode==='hrDay')    ctn = (stdOut*batchDay)>0 ? (costHr*basis)/(stdOut*batchDay) : 0;
     else if(r.mode==='ctnHr')    ctn = basis>0 ? costHr/basis : 0;
+    else if(r.mode==='litreHr')  ctn = basis>0 ? costHr*(packKg*pktCtn)/basis : 0;   /* basis = ঘণ্টায় লিটার; Ctn/ঘণ্টা = লিটার ÷ (Pack×Pkt/Ctn) নিজে বের করে */
     else if(r.mode==='capacity') ctn = basis>0 ? (rate/basis)*(cons||1) : 0;
     else if(r.mode==='perKg')    ctn = rate*packKg*pktCtn/upc;
     else if(r.mode==='perPkt')   ctn = basis>0 ? (rate/basis)*pktCtn/upc : 0;
@@ -4272,6 +4274,11 @@ const POWER_MODES=[
   rate:'ইউনিট দর (৳/kWh)', cons:'ঘণ্টায় খরচ (kW)', basis:'ঘণ্টায় কত Ctn হয়',
   f:'Cost/H ÷ Ctn per Hour',
   eg:'প্যাকিং মেশিন: দর 16, খরচ 1.5 kW, ঘণ্টায় 25 Ctn · auto টিক দিলে নিজেই বেরোবে'},
+ {v:'litreHr', l:'Litre per Hour (auto Ctn)',
+  use:'তরল ফিলিং মেশিন — ঘণ্টায় কত লিটার ভরে জানা আছে; অ্যাপ Pack Size × Pkt/Ctn দিয়ে নিজেই Ctn/ঘণ্টা বের করে (হাতে Ctn বের করতে হয় না)',
+  rate:'ইউনিট দর (৳/kWh)', cons:'ঘণ্টায় খরচ (kW)', basis:'ঘণ্টায় কত লিটার ভরে',
+  f:'Cost/H ÷ ( Litre/H ÷ (Pack Size × Pkt/Ctn) )',
+  eg:'তেল ফিলিং: দর 16, খরচ 0.77 kW, ঘণ্টায় 3016 লিটার · Pack 0.2 × 24 = 4.8/Ctn → ≈ 0.0196৳/Ctn · (Pack Size ও লিটার একই এককে রাখুন)'},
  {v:'capacity', l:'Capacity based',
   use:'সিলিন্ডার / ড্রাম — এক দফায় কত Ctn চলে তা জানা আছে',
   rate:'এক দফার মোট দাম (৳)', cons:'গুণক — না লাগলে খালি রাখুন (তখন 1)', basis:'এক দফায় কত Ctn চলে',
@@ -9871,6 +9878,7 @@ function buildCostingWS(wb, p, sheetName, refs){
     if(x.mode==='minBatch')      f='IF('+STD+'>0,(F'+rr+'/60*'+G+')/'+STD+',0)';
     else if(x.mode==='hrDay')    f='IF('+STD+'*'+BDAY+'>0,(F'+rr+'*'+G+')/('+STD+'*'+BDAY+'),0)';
     else if(x.mode==='ctnHr')    f='IF('+G+'>0,F'+rr+'/'+G+',0)';
+    else if(x.mode==='litreHr')  f='IF('+G+'>0,F'+rr+'*'+PKG+'*'+PKT+'/'+G+',0)';
     else if(x.mode==='capacity') f='IF('+G+'>0,C'+rr+'/'+G+'*D'+rr+',0)';
     else if(x.mode==='perKg')    f='C'+rr+'*'+PKG+'*'+PKT+(r.upc!==1?('/'+r.upc):'');
     else if(x.mode==='perPkt')   f='IF('+G+'>0,C'+rr+'/'+G+'*'+PKT+(r.upc!==1?('/'+r.upc):'')+',0)';
@@ -12071,6 +12079,13 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.34', d:'2026-10-05', t:'Power Cost এ নতুন Mode — “Litre per Hour” (তরল ফিলিং মেশিন)', li:[
+   'তেল/জুসের ফিলিং মেশিনের ক্ষমতা সাধারণত <b>লিটার/ঘণ্টা</b> তে জানা থাকে — আগে হাতে কার্টন/ঘণ্টা বের করে বসাতে হতো',
+   'এখন নতুন Mode <b>“Litre per Hour (auto Ctn)”</b> — শুধু ঘণ্টায় কত লিটার ভরে সেটা দিন, অ্যাপ <b>Pack Size × Pkt/Ctn</b> দিয়ে নিজেই Ctn/ঘণ্টা ও প্রতি কার্টন খরচ বের করবে',
+   'সূত্র: প্রতি কার্টন Power = (দর × kW) ÷ ( লিটার/ঘণ্টা ÷ (Pack Size × Pkt/Ctn) )',
+   'উদাহরণ: দর 16, খরচ 0.77 kW, 3016 লিটার/ঘণ্টা, Pack 0.2 × 24 = 4.8L/Ctn → ≈ 0.0196 ৳/Ctn',
+   'Machine/Utility Master এও এই Default Mode বাছা যায়; Excel এক্সপোর্টেও সূত্র বসে',
+   'খেয়াল: Pack Size আর ঘণ্টার পরিমাণ একই এককে (দুটোই লিটার) রাখতে হবে']},
  {v:'18.33', d:'2026-09-29', t:'Cloud Sync আরও নিরাপদ — একাধিক ইউজারে data mismatch ঠেকানো (Apps Script)', li:[
    '<b>বড় ছবি আর ক্লাউডে যায় না:</b> Letter Head/Logo/Seal ছবি Google Sheet এর ৫০,০০০ অক্ষরের সেল-সীমা ছাড়িয়ে যেত → settings sync ভেঙে যেত। এখন এই ছবিগুলো <b>প্রতি ডিভাইসে আলাদা</b> থাকে, বাকি সব ডাটা (costing, product, order, দরপত্র) ঠিকঠাক sync হয়',
    'অন্য ডিভাইস থেকে settings টানলে <b>এই ডিভাইসের ছবি মুছে যায় না</b> (merge করে রাখা হয়)',
