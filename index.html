@@ -252,6 +252,14 @@ td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
 .hist-chip b{color:var(--text); font-weight:600;}
 .hist-up{color:var(--danger);} .hist-dn{color:var(--ok);}
 .hist-more{color:var(--primary-2); cursor:pointer; text-decoration:underline; font-size:11px;}
+/* v18.39 — Section এর ভিতরে Folder */
+.folder-chips{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 13px;}
+.fchip{display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:4px 11px; border-radius:20px; border:1px solid var(--border); background:var(--panel); cursor:pointer; color:var(--text-dim); transition:border-color .15s, color .15s, background .15s;}
+.fchip:hover{border-color:var(--primary-2); color:var(--text);}
+.fchip.on{background:var(--primary); color:#fff; border-color:var(--primary);}
+.fchip b{font-weight:700; opacity:.85;}
+.folder-badge{display:inline-block; font-size:10.5px; padding:1px 7px; border-radius:12px; background:var(--accent-2); color:#3a2a10; font-weight:700;}
+[data-theme="dark"] .folder-badge{background:#4A3D22; color:#E0A24B;}
 .sec-tabs{display:flex; gap:0; border-bottom:2px solid var(--border); padding:0 18px; background:var(--panel-2);
   overflow-x:auto; font-family:"Times New Roman","Noto Serif Bengali","Hind Siliguri",Georgia,serif;
   position:sticky; top:var(--topbar-h); z-index:13;}
@@ -537,9 +545,106 @@ td.mancell input{flex:1; min-width:0;}
 .sy-log div span{display:block; font-size:10.5px; color:var(--text-dim); margin-bottom:2px;}
 .sy-log div.e{color:var(--danger);}
 /* ---- Login (glass) ---- */
-#loginOverlay{position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center;
-  overflow:hidden; font-family:"Times New Roman","Noto Serif Bengali","Hind Siliguri",Georgia,serif;}
+/* v18.40 — Login (costing department view) — বইয়ের মতো খোলা অ্যানিমেশন বাদ, পরিষ্কার দুই-প্যানেল কার্ড */
+.lgc-wrap{position:relative; z-index:2; display:flex; width:min(840px,94vw); background:#fff; border-radius:18px; overflow:hidden;
+  box-shadow:0 30px 80px rgba(6,20,12,.55); animation:lgcRise .55s cubic-bezier(.2,.8,.25,1) both;}
+@keyframes lgcRise{from{opacity:0; transform:translateY(22px) scale(.985);} to{opacity:1; transform:none;}}
+.lgc-left{flex:0 0 42%; position:relative; padding:30px 26px; color:#EAF3EC;
+  background:radial-gradient(130% 100% at 20% 10%, #2E7D52 0%, rgba(22,51,31,0) 60%), linear-gradient(160deg,#1F6B47,#12281B 60%,#0A1510);
+  display:flex; flex-direction:column;}
+.lgc-badge{align-self:flex-start; font-size:10px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase;
+  color:#12281B; background:linear-gradient(135deg,#E8B85C,#C9963F); padding:5px 12px; border-radius:20px; margin-bottom:18px;}
+.lgc-sheet{background:rgba(255,255,255,.07); border:1px solid rgba(159,217,180,.26); border-radius:12px; padding:14px 15px;}
+.lgc-sheet-h{display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:800; letter-spacing:1.3px;
+  color:#CFE9D6; border-bottom:1px dashed rgba(159,217,180,.4); padding-bottom:8px; margin-bottom:8px;}
+.lgc-sheet-no{color:#E8B85C; font-weight:700; letter-spacing:.5px;}
+.lgc-row{display:flex; justify-content:space-between; font-size:12.5px; padding:5px 2px; color:#D7E8DB; border-bottom:1px solid rgba(159,217,180,.12);}
+.lgc-row b{font-variant-numeric:tabular-nums;}
+.lgc-row.lgc-prime{color:#fff; font-weight:800; border-bottom:1px solid rgba(159,217,180,.3);}
+.lgc-row.lgc-be{margin-top:5px; background:rgba(232,184,92,.16); border:1px solid rgba(232,184,92,.4); border-radius:8px; padding:7px 9px; color:#F2DBA6; font-weight:800;}
+.lgc-bars{display:flex; align-items:flex-end; gap:8px; height:56px; margin-top:14px; padding:0 2px;}
+.lgc-bars i{flex:1; background:rgba(159,217,180,.5); border-radius:4px 4px 0 0;}
+.lgc-bars i.g{background:linear-gradient(180deg,#E8B85C,#C9963F);}
+.lgc-left-foot{margin-top:auto; padding-top:16px; font-size:9.5px; letter-spacing:1.3px; text-transform:uppercase; color:#8FBDA0;}
+.lgc-right{flex:1; padding:34px 32px 24px; background:#fff; display:flex; flex-direction:column;}
+.lgc-head{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+.lgc-logo{width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:17px; color:#12281B; background:linear-gradient(135deg,#E8B85C,#C9963F); box-shadow:0 6px 16px rgba(201,150,63,.35);}
+.lgc-htext h1{font-size:16px; font-weight:800; color:#173d27; letter-spacing:-.2px;}
+.lgc-htext p{font-size:10.5px; color:#5a7a52; margin-top:2px;}
+.lgc-title{font-size:20px; font-weight:800; color:#173d27; margin:4px 0 2px;}
+.lgc-sub{font-size:11.5px; color:#5a7a52; margin-bottom:16px;}
+.lgc-right .lg-field{margin-bottom:12px;}
+.lgc-right .lg-field label{display:block; font-size:11px; font-weight:700; color:#3a5a40; margin-bottom:5px;}
+.lgc-right .lg-field input{width:100%; padding:11px 13px; border-radius:9px; font-size:13.5px; font-family:inherit; color:#15321f;
+  border:1.5px solid #cdddd0; background:#f6faf7; outline:none; transition:border-color .15s, box-shadow .15s, background .15s;}
+.lgc-right .lg-field input::placeholder{color:rgba(60,80,60,.42);}
+.lgc-right .lg-field input:focus{border-color:#2E7D52; background:#fff; box-shadow:0 0 0 3px rgba(46,125,82,.16);}
+.lgc-right .lg-pw{position:relative;}
+.lgc-right .lg-pw input{padding-right:42px;}
+.lgc-right .lg-pw button{position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:16px; color:#3a5a40; opacity:.6; padding:6px;}
+.lgc-right .lg-pw button:hover{opacity:1;}
+.lgc-right .lg-err{display:none; margin:-2px 0 10px; font-size:11.5px; padding:8px 11px; border-radius:8px; background:rgba(214,84,84,.12); border:1px solid rgba(214,84,84,.5); color:#b3261e;}
+.lgc-right .lg-btn{width:100%; padding:12px; border-radius:10px; font-size:14px; font-weight:800; cursor:pointer; margin-top:4px;
+  background:linear-gradient(135deg,#1F6B47,#12281B); color:#E8B85C; border:1px solid rgba(232,184,92,.45); transition:filter .15s, transform .15s, box-shadow .15s;}
+.lgc-right .lg-btn:hover{filter:brightness(1.12); transform:translateY(-1px); box-shadow:0 9px 22px rgba(18,40,27,.4);}
+.lgc-right .lg-foot{margin-top:12px; font-size:11px; color:#5a7a52; text-align:center;}
+.lgc-right .lg-foot b{color:#173d27;}
+.lgc-stamp{margin-top:13px; padding-top:10px; border-top:1px dashed #d5e2d8; font-family:'Courier New',monospace; font-size:9px; letter-spacing:1.3px; color:#8aa891; text-align:center;}
+@media (max-width:640px){ .lgc-left{display:none;} .lgc-wrap{width:min(420px,94vw);} }
+#loginOverlay{position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:space-between; gap:40px; padding:5vh 7vw;
+  overflow:hidden; font-family:"Times New Roman","Noto Serif Bengali","Hind Siliguri",Georgia,serif;
+  background:radial-gradient(900px 560px at 85% -10%, rgba(201,150,63,.22), transparent 60%), radial-gradient(800px 520px at -10% 0%, rgba(126,190,150,.16), transparent 55%), linear-gradient(160deg,#0c3d2e,#04140e 72%);}
 .lg-art{position:absolute; inset:0; width:100%; height:100%;}
+/* v18.42 — Login: Worker Supply এর মতো (হিরো + accounts-office সিন + frosted বক্স) */
+.lgScene{position:absolute; left:0; bottom:0; width:100%; height:60%; pointer-events:none;}
+.lgs-hero{position:relative; z-index:1; color:#fff; max-width:560px; align-self:flex-start; margin-top:5vh;}
+.lgHb{display:flex; align-items:center; gap:13px; margin-bottom:22px;}
+.lgHb .lg{width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg,#E8B85C,#C9963F); color:#2a1c06; display:grid; place-items:center; font-weight:800; font-size:18px; box-shadow:0 8px 22px rgba(201,150,63,.4);}
+.lgHb b{display:block; font-size:22px; letter-spacing:-.2px;}
+.lgHb span{font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:#8FD3AC; font-weight:600;}
+.lgs-hero h1{font-size:clamp(18px,2.1vw,27px); line-height:1.5; margin:0 0 18px; font-weight:700;}
+.lgFlow{display:flex; flex-wrap:wrap; gap:7px; align-items:center;}
+.lgFlow em{padding:5px 12px; border-radius:20px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); font-size:12px; font-weight:600; font-style:normal;}
+.lgFlow i{color:#E8B85C; font-style:normal; font-weight:700;}
+.lgWin{animation:lgWin 7s ease-in-out infinite;}
+@keyframes lgWin{0%,100%{opacity:.9;} 50%{opacity:.3;}}
+.lgBar{transform-box:fill-box; transform-origin:bottom; animation:lgBar 4.2s ease-in-out infinite alternate;}
+@keyframes lgBar{from{transform:scaleY(.4);} to{transform:scaleY(1);}}
+.lgCoin{animation:lgCoin 3.4s ease-in-out infinite;}
+@keyframes lgCoin{0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);}}
+.lgBeat{animation:lgBeat 1.7s steps(2,start) infinite;}
+@keyframes lgBeat{to{opacity:.2;}}
+.lgSpark{transform-box:fill-box; transform-origin:center; animation:lgSpark 2.8s ease-in-out infinite;}
+@keyframes lgSpark{0%,58%,100%{opacity:0; transform:scale(.4);} 62%,80%{opacity:1; transform:scale(1);}}
+@media (prefers-reduced-motion:reduce){ .lgWin,.lgBar,.lgCoin,.lgBeat,.lgSpark{animation:none;} }
+.lgs-box{position:relative; z-index:1; flex-shrink:0; width:384px; max-width:92vw; padding:30px 30px 22px; border-radius:20px;
+  background:linear-gradient(165deg, rgba(16,58,44,.93), rgba(5,20,14,.96)); color:#EAF3EC;
+  border:1px solid rgba(255,255,255,.13); border-top:4px solid #E8B85C;
+  box-shadow:0 30px 80px rgba(1,14,10,.55), inset 0 1px 0 rgba(255,255,255,.1);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); animation:lgsRise .55s cubic-bezier(.2,.8,.25,1) both;}
+@keyframes lgsRise{from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;}}
+.lgs-logo{text-align:center; margin-bottom:18px;}
+.lgs-badge{width:60px; height:60px; margin:0 auto 12px; border-radius:17px; display:flex; align-items:center; justify-content:center; font-size:27px;
+  background:linear-gradient(140deg, rgba(201,150,63,.4), rgba(232,184,92,.22)); border:1px solid rgba(255,255,255,.18); box-shadow:0 10px 28px rgba(201,150,63,.3);}
+.lgs-logo h1{font-size:21px; font-weight:800; color:#fff;}
+.lgs-logo p{font-size:12px; color:#9cc3b1; margin-top:4px;}
+.lgs-field{position:relative; margin-bottom:13px;}
+.lgs-field .fic{position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.85;}
+.lgs-field input{width:100%; box-sizing:border-box; padding:12px 40px; font-size:14px; border-radius:12px; font-family:inherit;
+  color:#EAF3EC; background:rgba(180,240,220,.07); border:1px solid #1f5a46; outline:none; transition:border-color .15s, box-shadow .15s;}
+.lgs-field input::placeholder{color:#7fae96;}
+.lgs-field input:focus{border-color:#E8B85C; box-shadow:0 0 0 3px rgba(232,184,92,.18);}
+.lgs-field .eye{position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; background:none; border:none; opacity:.7; font-size:15px; padding:4px;}
+.lgs-box .lg-btn{width:100%; padding:12.5px; border-radius:12px; font-size:14.5px; font-weight:800; cursor:pointer; margin-top:6px;
+  background:linear-gradient(135deg,#1F6B47,#0c2117); color:#E8B85C; border:1px solid rgba(232,184,92,.45); transition:filter .15s, transform .15s;}
+.lgs-box .lg-btn:hover{filter:brightness(1.14); transform:translateY(-1px);}
+.lgs-box .lg-err{display:none; color:#f87171; font-size:12.5px; min-height:16px; margin-top:9px; text-align:center;}
+.lgs-box .lg-foot{font-size:11px; color:#9cc3b1; text-align:center; margin-top:12px;}
+.lgs-box .lg-foot b{color:#E8B85C;}
+.lgs-stamp{font-size:9px; letter-spacing:1.2px; color:#6f9a84; text-align:center; margin-top:12px; padding-top:11px; border-top:1px solid rgba(160,235,210,.14);}
+@media (max-width:900px){ #loginOverlay{flex-direction:column; justify-content:center; gap:20px;} .lgs-hero{margin-top:0; text-align:center;} .lgHb{justify-content:center;} .lgFlow{justify-content:center;} .lgScene{opacity:.45;} }
+@media (max-width:620px){ .lgs-hero h1{display:none;} .lgFlow{display:none;} }
 .lg-card{position:relative; z-index:2; width:min(420px,92vw); padding:34px 32px 28px;
   border-radius:22px; background:rgba(255,255,255,.07);
   -webkit-backdrop-filter:blur(22px) saturate(150%); backdrop-filter:blur(22px) saturate(150%);
@@ -1389,127 +1494,141 @@ tr.sel{background:var(--ok-bg) !important;}
 </div></div>
 
 <div id="loginOverlay">
-  <svg class="lg-art" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <!-- accounts / costing office সিন (animated) -->
+  <svg class="lgScene" viewBox="0 0 900 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
-      <linearGradient id="lgBg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#0C1A12"/><stop offset="45%" stop-color="#12281B"/>
-        <stop offset="100%" stop-color="#0A1510"/>
+      <linearGradient id="lgsGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#F0CB7A"/><stop offset="1" stop-color="#C9963F"/>
       </linearGradient>
-      <linearGradient id="lgGold" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#E8B85C"/><stop offset="100%" stop-color="#B9822F"/>
+      <linearGradient id="lgsDesk" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#15402f"/><stop offset="1" stop-color="#0a2217"/>
       </linearGradient>
-      <pattern id="lgGrid" width="46" height="46" patternUnits="userSpaceOnUse">
-        <path d="M46 0H0V46" fill="none" stroke="#7FBE96" stroke-width="1" opacity=".10"/>
-      </pattern>
-      <filter id="lgSoft"><feGaussianBlur stdDeviation="55"/></filter>
+      <linearGradient id="lgsWall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0e3326" stop-opacity=".0"/><stop offset="1" stop-color="#0c2d21" stop-opacity=".55"/>
+      </linearGradient>
     </defs>
 
-    <rect width="1440" height="900" fill="url(#lgBg)"/>
-    <rect width="1440" height="900" fill="url(#lgGrid)"/>
-    <circle cx="215" cy="180" r="230" fill="#2E7D52" opacity=".38" filter="url(#lgSoft)"/>
-    <circle cx="1265" cy="760" r="255" fill="#1F6B47" opacity=".34" filter="url(#lgSoft)"/>
-    <circle cx="1180" cy="120" r="150" fill="#C9963F" opacity=".16" filter="url(#lgSoft)"/>
+    <!-- নরম পেছনের আভা -->
+    <rect x="0" y="120" width="900" height="480" fill="url(#lgsWall)"/>
 
-    <!-- ledger / costing sheet -->
-    <g opacity=".30" stroke="#9FD9B4" fill="none" stroke-width="2.4" transform="translate(112,250)">
-      <rect x="0" y="0" width="215" height="272" rx="12"/>
-      <path d="M0 52h215M0 100h215M0 148h215M0 196h215M0 244h215M132 0v272"/>
-      <path d="M22 76h78M22 124h86M22 172h64M22 220h92" stroke-width="7" stroke-linecap="round" opacity=".55"/>
-      <path d="M152 76h44M152 124h44M152 172h44M152 220h44" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+    <!-- দেয়ালের ফ্রেম: profit চার্ট -->
+    <g transform="translate(96,150)" opacity=".5">
+      <rect x="0" y="0" width="190" height="128" rx="8" fill="rgba(10,34,24,.55)" stroke="#2E7D52" stroke-width="2"/>
+      <path d="M16 104h158" stroke="#4f9a71" stroke-width="2"/>
+      <rect class="lgBar" x="30"  y="64" width="20" height="40" rx="3" fill="#4f9a71"/>
+      <rect class="lgBar" x="62"  y="48" width="20" height="56" rx="3" fill="#5fae82" style="animation-delay:.5s"/>
+      <rect class="lgBar" x="94"  y="36" width="20" height="68" rx="3" fill="#6fbf92" style="animation-delay:1s"/>
+      <rect class="lgBar" x="126" y="22" width="20" height="82" rx="3" fill="url(#lgsGold)" style="animation-delay:1.5s"/>
+      <path d="M40 72L72 56 104 44 136 30" fill="none" stroke="#E8B85C" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="136" cy="30" r="4.5" fill="#E8B85C"/>
     </g>
 
-    <!-- calculator -->
-    <g opacity=".34" transform="translate(1128,286)">
-      <rect x="0" y="0" width="176" height="240" rx="20" fill="none" stroke="#9FD9B4" stroke-width="2.4"/>
-      <rect x="22" y="24" width="132" height="50" rx="8" fill="#7FBE96" opacity=".28"/>
-      <path d="M64 40h72M92 58h44" stroke="#E8F3EA" stroke-width="5" stroke-linecap="round" opacity=".7"/>
-      <g fill="#9FD9B4" opacity=".62">
-        <rect x="22" y="94"  width="32" height="28" rx="7"/><rect x="72" y="94"  width="32" height="28" rx="7"/>
-        <rect x="122" y="94" width="32" height="28" rx="7"/>
-        <rect x="22" y="134" width="32" height="28" rx="7"/><rect x="72" y="134" width="32" height="28" rx="7"/>
-        <rect x="122" y="134" width="32" height="28" rx="7"/>
-        <rect x="22" y="174" width="32" height="28" rx="7"/><rect x="72" y="174" width="32" height="28" rx="7"/>
+    <!-- দেয়ালঘড়ি -->
+    <g transform="translate(726,150)" opacity=".42">
+      <circle cx="40" cy="40" r="40" fill="rgba(10,34,24,.55)" stroke="#2E7D52" stroke-width="2"/>
+      <circle cx="40" cy="40" r="3" fill="#E8B85C"/>
+      <path d="M40 40V18" stroke="#9FD9B4" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M40 40l16 9" stroke="#E8B85C" stroke-width="2.6" stroke-linecap="round"/>
+    </g>
+
+    <!-- ডেস্ক -->
+    <rect x="0" y="430" width="900" height="24" rx="6" fill="url(#lgsGold)" opacity=".85"/>
+    <rect x="0" y="454" width="900" height="146" fill="url(#lgsDesk)"/>
+
+    <!-- হিসাবরক্ষক (accountant) silhouette -->
+    <g transform="translate(372,286)" fill="#0c2a1e" stroke="#2E7D52" stroke-width="2.2">
+      <path d="M78 144c0-44 20-70 48-70s48 26 48 70z"/>  <!-- torso/desk-side -->
+      <circle cx="126" cy="44" r="30" fill="#103826"/>
+      <path d="M108 120c-26 4-50 16-64 34" fill="none" stroke-linecap="round"/>  <!-- arm to desk -->
+    </g>
+
+    <!-- মনিটর: লাইভ বার + rising লাইন -->
+    <g transform="translate(150,300)">
+      <rect x="0" y="0" width="188" height="120" rx="10" fill="#0a2016" stroke="#2E7D52" stroke-width="2.4"/>
+      <rect x="10" y="10" width="168" height="100" rx="6" fill="rgba(46,125,82,.16)"/>
+      <path d="M22 96h150" stroke="#4f9a71" stroke-width="2"/>
+      <rect class="lgBar" x="34"  y="60" width="18" height="36" rx="3" fill="#5fae82"/>
+      <rect class="lgBar" x="64"  y="48" width="18" height="48" rx="3" fill="#6fbf92" style="animation-delay:.6s"/>
+      <rect class="lgBar" x="94"  y="38" width="18" height="58" rx="3" fill="#7fd0a3" style="animation-delay:1.1s"/>
+      <rect class="lgBar" x="124" y="26" width="18" height="70" rx="3" fill="url(#lgsGold)" style="animation-delay:1.6s"/>
+      <path d="M43 70L73 58 103 46 133 32" fill="none" stroke="#E8B85C" stroke-width="2.6" stroke-linecap="round"/>
+      <circle class="lgCoin" cx="133" cy="32" r="4" fill="#E8B85C"/>
+      <rect x="84" y="120" width="20" height="18" fill="#0a2016" stroke="#2E7D52" stroke-width="2"/>
+      <rect x="64" y="138" width="60" height="7" rx="3" fill="#15402f" stroke="#2E7D52" stroke-width="2"/>
+    </g>
+
+    <!-- ক্যালকুলেটর: blinking স্ক্রিন -->
+    <g transform="translate(560,330)">
+      <rect x="0" y="0" width="110" height="150" rx="12" fill="#0d2a1e" stroke="#2E7D52" stroke-width="2.4"/>
+      <rect x="14" y="14" width="82" height="30" rx="5" fill="#123a29"/>
+      <rect class="lgBeat" x="60" y="22" width="28" height="14" rx="2" fill="#8FD3AC"/>
+      <g fill="#2E7D52">
+        <rect x="14" y="56"  width="22" height="18" rx="4"/><rect x="44" y="56"  width="22" height="18" rx="4"/><rect x="74" y="56"  width="22" height="18" rx="4"/>
+        <rect x="14" y="82"  width="22" height="18" rx="4"/><rect x="44" y="82"  width="22" height="18" rx="4"/><rect x="74" y="82"  width="22" height="18" rx="4"/>
+        <rect x="14" y="108" width="22" height="18" rx="4"/><rect x="44" y="108" width="22" height="18" rx="4"/>
       </g>
-      <rect x="122" y="174" width="32" height="28" rx="7" fill="url(#lgGold)" opacity=".85"/>
+      <rect x="74" y="108" width="22" height="18" rx="4" fill="url(#lgsGold)"/>
     </g>
 
-    <!-- profit bar chart -->
-    <g opacity=".34" transform="translate(226,600)">
-      <path d="M0 150h270" stroke="#9FD9B4" stroke-width="2.4"/>
-      <rect x="18"  y="96"  width="34" height="54"  rx="5" fill="#7FBE96" opacity=".55"/>
-      <rect x="70"  y="70"  width="34" height="80"  rx="5" fill="#7FBE96" opacity=".65"/>
-      <rect x="122" y="40"  width="34" height="110" rx="5" fill="#7FBE96" opacity=".78"/>
-      <rect x="174" y="16"  width="34" height="134" rx="5" fill="url(#lgGold)" opacity=".9"/>
-      <path d="M22 104L74 78 126 46 178 22" stroke="#E8B85C" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <circle cx="178" cy="22" r="6" fill="#E8B85C"/>
+    <!-- কয়েন স্ট্যাক (bobbing) -->
+    <g transform="translate(700,382)">
+      <g class="lgCoin">
+        <ellipse cx="34" cy="70" rx="34" ry="11" fill="#C9963F"/>
+        <ellipse cx="34" cy="56" rx="34" ry="11" fill="#E8B85C"/>
+        <ellipse cx="34" cy="42" rx="34" ry="11" fill="#C9963F"/>
+        <ellipse cx="34" cy="28" rx="34" ry="11" fill="#F0CB7A"/>
+        <text x="34" y="33" font-size="14" font-weight="700" fill="#7a5a16" text-anchor="middle">৳</text>
+      </g>
+      <g class="lgCoin" style="animation-delay:.8s" transform="translate(70,22)">
+        <circle cx="26" cy="26" r="26" fill="url(#lgsGold)"/>
+        <text x="26" y="33" font-size="22" font-weight="700" fill="#7a5a16" text-anchor="middle">৳</text>
+      </g>
     </g>
 
-    <!-- coins / currency -->
-    <g opacity=".30" transform="translate(1016,648)">
-      <ellipse cx="60" cy="112" rx="60" ry="19" fill="none" stroke="#E8B85C" stroke-width="2.4"/>
-      <ellipse cx="60" cy="90"  rx="60" ry="19" fill="none" stroke="#E8B85C" stroke-width="2.4"/>
-      <ellipse cx="60" cy="68"  rx="60" ry="19" fill="none" stroke="#E8B85C" stroke-width="2.4"/>
-      <circle cx="170" cy="52" r="42" fill="none" stroke="#E8B85C" stroke-width="2.4"/>
-      <path d="M170 30v44M160 40h20M158 62h24" stroke="#E8B85C" stroke-width="3.4" stroke-linecap="round"/>
+    <!-- খাতা / ledger -->
+    <g transform="translate(360,392)">
+      <rect x="0" y="0" width="128" height="40" rx="5" fill="#103826" stroke="#2E7D52" stroke-width="2"/>
+      <path d="M64 0v40" stroke="#2E7D52" stroke-width="2"/>
+      <path d="M14 14h36M14 24h30M78 14h36M78 24h30" stroke="#5fae82" stroke-width="2.4" stroke-linecap="round"/>
     </g>
 
-    <!-- carton / shipment -->
-    <g opacity=".26" stroke="#9FD9B4" fill="none" stroke-width="2.4" transform="translate(636,116)">
-      <path d="M84 0L168 42 84 84 0 42z"/><path d="M0 42v70l84 42 84-42V42"/><path d="M84 84v70"/>
-    </g>
-
-    <!-- pie -->
-    <g opacity=".26" transform="translate(474,700)">
-      <circle cx="56" cy="56" r="56" fill="none" stroke="#9FD9B4" stroke-width="2.4"/>
-      <path d="M56 56V0a56 56 0 0148 28z" fill="#E8B85C" opacity=".7"/>
-      <path d="M56 56l48-28a56 56 0 01-20 76z" fill="#7FBE96" opacity=".55"/>
-    </g>
+    <!-- ৳ স্পার্ক -->
+    <text class="lgSpark" x="300" y="250" font-size="30" font-weight="800" fill="#E8B85C" text-anchor="middle">৳</text>
+    <text class="lgSpark" x="640" y="280" font-size="22" font-weight="800" fill="#E8B85C" text-anchor="middle" style="animation-delay:1.3s">৳</text>
   </svg>
 
-  <div class="lg-stage">
-    <div class="lg-book">
-      <!-- ভেতরের পাতা — login form -->
-      <div class="lgb-inside">
-        <span class="lgb-spine"></span>
-        <span class="lgb-redline"></span>
-        <span class="lgb-shadow"></span>
-        <div class="lgb-head">
-          <div class="lgb-logo">AC</div>
-          <div class="lgb-htext"><h1>AMAZ COSTING</h1><p>Amin Square (BD) Ltd. · Login</p></div>
-        </div>
-        <div class="lgb-title">লগইন করুন</div>
-        <div class="lgb-sub">Product Costing &amp; Break-even ব্যবস্থাপনা</div>
-        <div class="lg-field">
-          <label>Username</label>
-          <input type="text" id="lgUser" autocomplete="username" placeholder="admin" onkeydown="lgKey(event)">
-        </div>
-        <div class="lg-field">
-          <label>Password</label>
-          <div class="lg-pw">
-            <input type="password" id="lgPass" autocomplete="current-password" placeholder="••••••••" onkeydown="lgKey(event)">
-            <button type="button" id="lgEye" onclick="toggleLgPass()" title="দেখুন">👁</button>
-          </div>
-        </div>
-        <div id="lgErr" class="lg-err"></div>
-        <button class="lg-btn" onclick="doLogin()">প্রবেশ করুন &nbsp;→</button>
-        <div class="lg-foot" id="lgFoot"></div>
-        <div class="lgb-stamp">GIFT TOUCH · AMAZ ERP SOLUTION · PRODUCT COSTING LEDGER</div>
-      </div>
-      <!-- উপরের কভার — বাঁ দিকে hinge, খুলে যায় -->
-      <div class="lgb-cover">
-        <div class="lgb-face lgb-front">
-          <div class="lgb-emblem">🧮</div>
-          <div class="lgb-t1">AMAZ</div>
-          <div class="lgb-t2">PRODUCT COSTING</div>
-          <div class="lgb-word">LEDGER</div>
-          <div class="lgb-tap">AMIN SQUARE (BD) LTD.</div>
-        </div>
-        <div class="lgb-face lgb-back">
-          <div class="lgb-crest">📊</div>
-          <div class="lgb-backnote">GIFT TOUCH<br>AMAZ ERP SOLUTION</div>
-        </div>
-      </div>
+  <!-- হিরো -->
+  <div class="lgs-hero">
+    <div class="lgHb">
+      <span class="lg">AC</span>
+      <div><b>AMAZ COSTING</b><span>Amin Square (BD) Ltd. · Gift Touch</span></div>
     </div>
+    <h1>কাঁচামাল থেকে মুনাফা পর্যন্ত —<br>প্রতিটি পণ্যের নিখুঁত হিসাব<br>একটি অ্যাকাউন্টস অফিসের মতো।</h1>
+    <div class="lgFlow">
+      <em>Material</em><i>→</i><em>Labour</em><i>→</i><em>Overhead</em><i>→</i><em>Costing</em><i>→</i><em>Break-even</em><i>→</i><em>Profit</em>
+    </div>
+  </div>
+
+  <!-- লগইন বক্স -->
+  <div class="lgs-box">
+    <div class="lgs-logo">
+      <div class="lgs-badge">🧮</div>
+      <h1>লগইন করুন</h1>
+      <p>Product Costing &amp; Break-even ব্যবস্থাপনা</p>
+    </div>
+    <div class="lgs-field">
+      <span class="fic">👤</span>
+      <input type="text" id="lgUser" autocomplete="username" placeholder="Username" onkeydown="lgKey(event)">
+    </div>
+    <div class="lgs-field">
+      <span class="fic">🔒</span>
+      <input type="password" id="lgPass" autocomplete="current-password" placeholder="Password" onkeydown="lgKey(event)">
+      <button type="button" class="eye" id="lgEye" onclick="toggleLgPass()" title="দেখুন">👁</button>
+    </div>
+    <button class="lg-btn" onclick="doLogin()">প্রবেশ করুন &nbsp;→</button>
+    <div id="lgErr" class="lg-err"></div>
+    <div class="lg-foot" id="lgFoot"></div>
+    <div class="lgs-stamp">GIFT TOUCH · AMAZ ERP SOLUTION</div>
   </div>
 </div>
 
@@ -1754,12 +1873,13 @@ function loadDB(){
       if(d.settings.printHl===undefined) d.settings.printHl=true;
       if(d.settings.netWarnPct===undefined) d.settings.netWarnPct=2;
       d.exportPresets = d.exportPresets||[];
+      d.sections = d.sections||[];          /* v18.41 — ব্যবহারকারীর বানানো কাস্টম Section */
       d.users = d.users||[]; d.roles = d.roles||[]; d.versions = d.versions||[]; d.audit = d.audit||[];
       return d;
     }
   }catch(e){ console.error(e); }
   return { rawMaterials:[], packaging:[], machines:[], products:[], fgProducts:[], conversions:[], production:[], budgets:[], quotations:[],
-    orderPlan:{ref:'',buyer:'',date:'',lines:[]}, orders:[], exportPresets:[], users:[], roles:[], versions:[], audit:[],
+    orderPlan:{ref:'',buyer:'',date:'',lines:[]}, orders:[], exportPresets:[], sections:[], users:[], roles:[], versions:[], audit:[],
     settings:{companyName:'Company Name', address:'', printDetail:true, printHl:true, netWarnPct:2} };
 }
 /* ============================================================
@@ -1950,7 +2070,7 @@ function toast(m,d){ const t=document.getElementById('toast'); t.textContent=m; 
 /* ================= EXPORT SETTING PAGE ================= */
 let PRE_CUR='';
 function preUsedBy(id){ return DB.products.filter(function(x){
-  return (x.ctype||'export')==='export' && x.presetId===id; }); }
+  return isExportCt(x.ctype) && x.presetId===id; }); }
 function addPreset(){
   if(!need('exportset','a','নতুন দেশ যোগ')) return;
   const nm=prompt('দেশ / গন্তব্যের নাম দিন (যেমন: Malaysia)','');
@@ -2100,7 +2220,7 @@ function blankPreset(name){ return {id:uid('pre'), name:name||'নতুন দ�
 function presetById(id){ return (DB.exportPresets||[]).find(function(x){return x.id===id;}) || null; }
 /* কোন preset এই costing এ কার্যকর — Export হতে হবে, লক করা থাকলে না */
 function activePreset(p){
-  if((p.ctype||'export')!=='export') return null;
+  if(!isExportCt(p.ctype)) return null;
   if(p.presetLock) return null;
   return presetById(p.presetId);
 }
@@ -2115,7 +2235,7 @@ function fgLinked(p){
 function applyFgLink(c){
   const m=fgLinked(c); if(!m) return c;
   const ct=c.ctype||'export';
-  c.sellNoVat = ((ct==='export') ? m.sellUsd : m.sellBdt);
+  c.sellNoVat = ((isExportCt(ct)) ? m.sellUsd : m.sellBdt);
   if(fgUnit(m)) c.unitLabel = fgUnit(m);
   if(fgHasDims(ct)){ c.ctnL=m.ctnL; c.ctnW=m.ctnW; c.ctnH=m.ctnH; }
   return c;
@@ -2138,7 +2258,7 @@ function calc(p0){
   const ctype = p.ctype || 'export';
   /* DEMO তে একক ও Export খরচ — দুটোই ব্যবহারকারী নিজে ঠিক করেন */
   const isDemo = (ctype==='demo');
-  const isExport = (ctype==='export') || (isDemo && !!p.demoExport);
+  const isExport = isExportCt(ctype) || (isDemo && !!p.demoExport);
   const pktCtn=n(p.pktCtn)||1, packKg=n(p.packKg)||1, loss=n(p.loss);
   const batchDay=n(p.batchDay)||1, workDays=n(p.workDays)||26, shift=n(p.shift)||1;
   const usd = isExport ? (n(p.usd)||1) : 1;
@@ -2516,16 +2636,31 @@ function goTo(page){
   document.getElementById('sidebar').classList.remove('open'); render();
   window.scrollTo(0,0); document.getElementById('main').scrollTop=0; }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
-function toggleSidebarCollapse(){
-  const sb=document.getElementById('sidebar'); const btn=document.getElementById('sidebarCollapseBtn');
-  const collapsed=sb.classList.toggle('collapsed');
-  if(btn) btn.classList.toggle('flipped', collapsed);
-  localStorage.setItem('amaz_costing_sidebar_collapsed', collapsed?'1':'0');
+/* v18.37 — মেনুবার ছোট (collapsed) থাকলে মাউস ওপরে নিলে সাময়িকভাবে বড় হয় (hover-expand),
+   সরালে আবার ছোট। Settings থেকে চালু/বন্ধ করা যায় (এই ডিভাইসে)। collapse-preference আলাদা থাকে,
+   hover শুধু দেখার জন্য সাময়িক — তাই সংরক্ষিত ছোট/বড় অবস্থা বদলায় না। */
+function sbPref(){ return localStorage.getItem('amaz_costing_sidebar_collapsed')==='1'; }
+function sbHoverOn(){ return localStorage.getItem('amaz_costing_sidebar_hover')!=='0'; }   /* ডিফল্ট চালু */
+let SB_HOVERING=false;
+function sbApply(){
+  const sb=document.getElementById('sidebar'); if(!sb) return;
+  const collapsed = sbPref() && !(sbHoverOn() && SB_HOVERING);
+  sb.classList.toggle('collapsed', collapsed);
+  const btn=document.getElementById('sidebarCollapseBtn'); if(btn) btn.classList.toggle('flipped', sbPref());
 }
-(function(){ if(localStorage.getItem('amaz_costing_sidebar_collapsed')==='1'){
+function toggleSidebarCollapse(){
+  localStorage.setItem('amaz_costing_sidebar_collapsed', sbPref()?'0':'1');
+  SB_HOVERING=false; sbApply();
+}
+function setSidebarHover(on){ localStorage.setItem('amaz_costing_sidebar_hover', on?'1':'0'); SB_HOVERING=false; sbApply(); }
+(function(){
   document.addEventListener('DOMContentLoaded', function(){
-    const sb=document.getElementById('sidebar'); const btn=document.getElementById('sidebarCollapseBtn');
-    if(sb) sb.classList.add('collapsed'); if(btn) btn.classList.add('flipped'); }); } })();
+    const sb=document.getElementById('sidebar'); if(!sb) return;
+    sbApply();
+    sb.addEventListener('mouseenter', function(){ if(sbPref() && sbHoverOn()){ SB_HOVERING=true; sbApply(); } });
+    sb.addEventListener('mouseleave', function(){ if(SB_HOVERING){ SB_HOVERING=false; sbApply(); } });
+  });
+})();
 function toggleTheme(){ const h=document.documentElement;
   const nx=h.getAttribute('data-theme')==='dark'?'light':'dark';
   h.setAttribute('data-theme',nx); localStorage.setItem('amaz_costing_theme',nx); }
@@ -2566,7 +2701,7 @@ function renderDashboard(){
    '<div class="kpi"><div class="label">Packing Items</div><div class="value">'+DB.packaging.length+'</div></div>'+
    '<div class="kpi"><div class="label">Profitable Products</div><div class="value">'+profitable+' / '+tp+'</div><div class="sub">Avg. Mfg. Exp ৳'+money(avgMfg)+' / unit</div></div></div>'+
    (tp?('<div class="panel" style="margin-bottom:20px;"><div class="panel-head"><h3>Section অনুযায়ী</h3></div><div class="panel-body" style="display:flex;gap:12px;flex-wrap:wrap;">'+
-   CTYPES.map(function(t){ const c=DB.products.filter(function(x){return (x.ctype||'export')===t.v;}).length;
+   allCTYPES().map(function(t){ const c=DB.products.filter(function(x){return (x.ctype||'export')===t.v;}).length;
      return '<div style="flex:1;min-width:150px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;">'+
        '<span class="ctype-badge '+t.v+'">'+t.l+'</span><div style="font-size:21px;font-weight:800;margin-top:7px;">'+c+'</div>'+
        '<div class="muted" style="font-size:11.5px;">costing · per '+UNITS[t.u].l+'</div></div>'; }).join('')+'</div></div>'):'')+
@@ -2591,7 +2726,7 @@ function dashBar(label,pct,valTxt,color){
 }
 function dashCharts(rows){
   /* ১) Section অনুযায়ী margin % */
-  const secStats=CTYPES.filter(function(t){return t.v!=='demo';}).map(function(t){
+  const secStats=allCTYPES().filter(function(t){return t.v!=='demo';}).map(function(t){
     const list=rows.filter(function(x){return (x.p.ctype||'export')===t.v && x.r.sellBdt>0;});
     const avgM = list.length ? list.reduce(function(s,x){return s+(x.r.netCtn/x.r.sellBdt);},0)/list.length : null;
     return {label:t.l, v:t.v, pct:avgM, n:list.length};
@@ -3129,12 +3264,12 @@ function delFgHist(id, field, idx){
 function fgRate(){ const p=(DB.exportPresets||[])[0]; return p?n(p.usd):0; }
 function fgSyncUsd(m){ const r=fgRate(); if(r>0) m.sellBdt=Number((n(m.sellUsd)*r).toFixed(2)); }
 function fgSyncBdt(m){ const r=fgRate(); if(r>0) m.sellUsd=Number((n(m.sellBdt)/r).toFixed(2)); }
-function fgHasDims(ct){ return ct==='export'||ct==='depot'; }   /* L/W/H/CBM লাগে শুধু Export ও Depot এ */
-function fgHasUsd(ct){ return ct==='export'; }                  /* USD দাম লাগে শুধু Export এ */
+function fgHasDims(ct){ return baseOf(ct)==='export'||baseOf(ct)==='depot'; }   /* L/W/H/CBM লাগে শুধু Export ও Depot এ */
+function fgHasUsd(ct){ return isExportCt(ct); }                  /* USD দাম লাগে শুধু Export এ */
 let FG_ADDING=false, FG_TAB='export';
 function setFgTab(v){ FG_TAB=v; FG_ADDING=false; render(); }
 function fgTabsHTML(){
-  return '<div class="sec-tabs">'+CTYPES.filter(function(t){return t.v!=='demo';}).map(function(t){
+  return '<div class="sec-tabs">'+allCTYPES().filter(function(t){return t.v!=='demo';}).map(function(t){
     const c=(DB.fgProducts||[]).filter(function(m){return (m.ctype||'export')===t.v;}).length;
     return '<button class="sec-tab'+(FG_TAB===t.v?' on':'')+'" onclick="setFgTab(\''+t.v+'\')">'+
       t.l+' <span class="cnt">'+c+'</span></button>'; }).join('')+'</div>';
@@ -3482,7 +3617,7 @@ function migrateFgUnitV3(){
   if(DB.fgMigratedV3) return;
   let ch=0;
   (DB.fgProducts||[]).forEach(function(m){
-    if(!m.unit){ m.unit = (m.ctype||'export')==='export' ? 'Ctn' : ((m.ctype==='depot')?'Ctn':'Pkt'); ch++; }
+    if(!m.unit){ m.unit = isExportCt(m.ctype) ? 'Ctn' : ((baseOf(m.ctype)==='depot')?'Ctn':'Pkt'); ch++; }
     m.usdHistory=m.usdHistory||[]; m.bdtHistory=m.bdtHistory||[];
   });
   DB.fgMigratedV3=true;
@@ -3521,7 +3656,7 @@ function migrateFgActualPriceV2(){
   let changed=0;
   (DB.fgProducts||[]).forEach(function(m){
     const d=map[String(m.name).trim().toLowerCase()]; if(!d) return;
-    const isExp=(m.ctype||'export')==='export';
+    const isExp=isExportCt(m.ctype);
     if(isExp){ m.sellUsd=d.actIn; fgSyncUsd(m); } else { m.sellBdt=d.actIn; m.sellUsd=0; }
     m.updatedAt=nowISO(); changed++;
   });
@@ -4091,7 +4226,22 @@ const SEC_UNITS={
   demo:  {big:'Ctn', small:'Pkt', def:'big',
           nLbl:'Pkt / Ctn',  wLbl:'Pack size (kg)',       wHint:'একটা Pkt এর ওজন'}
 };
-function secUnits(ct){ return SEC_UNITS[ct||'export'] || SEC_UNITS.export; }
+/* v18.41 — কাস্টম Section: ব্যবহারকারী নতুন Section যোগ করতে পারে, যা একটা built-in
+   base (Export/Local/ঘরের/Depot) এর মতো আচরণ করে। base-ই সব হিসাব/একক/CBM/Forwarding
+   ঠিক করে — তাই costing engine অপরিবর্তিত ও নিরাপদ (built-in গুলো নিজেকেই ফেরত পায়)। */
+function customSections(){ return (DB.sections||[]).filter(function(s){ return s&&s.v; }); }
+function baseOf(ct){ const s=customSections().find(function(x){return x.v===ct;}); return s?(s.base||'export'):(ct||'export'); }
+function isExportCt(ct){ return baseOf(ct)==='export'; }
+function allCTYPES(){
+  const main=CTYPES.filter(function(t){return t.v!=='demo';});
+  const demo=CTYPES.filter(function(t){return t.v==='demo';});
+  const cust=customSections().map(function(s){
+    const bt=CTYPES.find(function(t){return t.v===(s.base||'export');})||CTYPES[0];
+    return {v:s.v, l:s.l, u:bt.u, s:'কাস্টম Section — '+bt.l+' এর মতো', custom:true, base:s.base||'export'};
+  });
+  return main.concat(cust).concat(demo);
+}
+function secUnits(ct){ return SEC_UNITS[baseOf(ct)] || SEC_UNITS.export; }
 /* ভেতরের কোড 'ctn'/'pkt'/'kg' ই ব্যবহার করে — ctn=big, pkt=small */
 function levelKey(lv){ return lv==='small' ? 'pkt' : lv==='kg' ? 'kg' : 'ctn'; }
 function keyLevel(k){ return k==='pkt' ? 'small' : k==='kg' ? 'kg' : 'big'; }
@@ -4102,14 +4252,18 @@ function levelName(ct, lv){
        : lv==='small' ? ((CUR&&CUR.smallLabel&&String(CUR.smallLabel).trim())||u.small)
        : ((CUR&&CUR.unitLabel&&String(CUR.unitLabel).trim())||u.big);
 }
-function ctypeOf(v){ return CTYPES.find(function(x){return x.v===(v||'export');}) || CTYPES[0]; }
+function ctypeOf(v){ return allCTYPES().find(function(x){return x.v===(v||'export');}) || CTYPES[0]; }
 function ctypeLabel(v){ return ctypeOf(v).l; }
 function ctypeUnit(v){ return ctypeOf(v).u; }
 function unitL(v){ return UNITS[ctypeUnit(v)].l; }
 
 /* ---------- AUTO PRODUCT CODE (section-wise, gap-free) ---------- */
 const CODE_PREFIX={export:'EXP', local:'LOC', ghorer:'GHO', depot:'DEP', demo:'DMO'};
-function codePrefix(ct){ return CODE_PREFIX[ct||'export']||'EXP'; }
+function codePrefix(ct){
+  const s=customSections().find(function(x){return x.v===ct;});
+  if(s) return s.prefix || 'SEC';
+  return CODE_PREFIX[ct||'export']||'EXP';
+}
 function pad3(x){ x=String(x); while(x.length<3) x='0'+x; return x; }
 function makeCode(ct,i){ return codePrefix(ct)+'-'+pad3(i); }
 /* কোনো product এর বর্তমান code থেকে serial বের করে — কিন্তু শুধু তখনই, যখন
@@ -4144,7 +4298,7 @@ function byProductCode(a,b){
    ============================================================ */
 function planResequenceAZ(){
   const out=[];
-  CTYPES.forEach(function(t){
+  allCTYPES().forEach(function(t){
     const list=sortedByName(DB.products.filter(function(p){ return (p.ctype||'export')===t.v; }));
     list.forEach(function(p,i){
       const nc=makeCode(t.v,i+1);
@@ -4215,7 +4369,7 @@ function applyResequenceAZ(){
 }
 function resequenceCodes(){
   let changed=false;
-  CTYPES.forEach(function(t){
+  allCTYPES().forEach(function(t){
     const list=DB.products.filter(function(p){ return (p.ctype||'export')===t.v; });
     list.sort(function(a,b){
       const sa=codeSeqOf(a), sb=codeSeqOf(b);
@@ -4728,7 +4882,7 @@ function gv(id){ const e=document.getElementById(id); return e?e.value:''; }
 function newCosting(){
   if(!need('products','a','নতুন Costing তৈরি')) return;
   const pre=(currentPage==='products' && PROD_TAB)?PROD_TAB:'';
-  document.getElementById('npList').innerHTML=CTYPES.map(function(t){
+  document.getElementById('npList').innerHTML=allCTYPES().map(function(t){
     const c=DB.products.filter(function(x){return (x.ctype||'export')===t.v;}).length;
     return '<div class="ctype-opt'+(t.v===pre?' on':'')+'" onclick="startCosting(\''+t.v+'\')">'+
       '<b>'+t.l+' <span class="tag">'+makeCode(t.v,c+1)+'</span></b><span>'+t.s+'</span></div>'; }).join('');
@@ -5874,7 +6028,7 @@ function beToggleAuto(on){
   CUR.beAuto=!!on;
   if(!on){                      /* বন্ধ করলে এখনকার দামটাই ঘরে বসিয়ে রাখি */
     const r=calc(CUR);
-    if(CUR.ctype==='export'||!CUR.ctype) CUR.sellUsd=Number(r.suggestUsd.toFixed(4));
+    if(isExportCt(CUR.ctype)) CUR.sellUsd=Number(r.suggestUsd.toFixed(4));
     else CUR.sellBdt=Number(r.suggestBdt.toFixed(2));
     beStamp(CUR,r);
     setV('p_sellUsd', CUR.sellUsd); setV('p_sellBdt', CUR.sellBdt);  /* pushForm() ছিল অসংজ্ঞায়িত — এখন সরাসরি ঘরে বসাই */
@@ -5882,7 +6036,7 @@ function beToggleAuto(on){
   recalc();
   if(!on){
     /* বন্ধ করার পরপরই ঘরটা টাইপযোগ্য করে কার্সর দিই — save/reopen ছাড়াই সাথে সাথে লেখা যাবে */
-    const ex2=(CUR.ctype==='export'||!CUR.ctype);
+    const ex2=(isExportCt(CUR.ctype));
     const el=document.getElementById(ex2?'be_usd':'be_bdt');
     if(el){ el.readOnly=false; el.style.opacity=''; try{ el.focus(); if(el.select) el.select(); }catch(e){} }
   }
@@ -5905,7 +6059,7 @@ function renderBeFix(){
   const box=document.getElementById('beFixBody'); if(!box) return;
   const list=beStaleList(BE_FIX_TAB);
   const tabs='<div class="sec-tabs" style="margin-bottom:12px;">'+
-    CTYPES.map(function(t){
+    allCTYPES().map(function(t){
       return '<button class="sec-tab'+(BE_FIX_TAB===t.v?' on':'')+'" onclick="beFixTab(\''+t.v+'\')">'+
         t.l+' <span class="cnt">'+beStaleCount(t.v)+'</span></button>'; }).join('')+
     '<button class="sec-tab'+(BE_FIX_TAB===''?' on':'')+'" onclick="beFixTab(\'\')">সব <span class="cnt">'+
@@ -6172,7 +6326,7 @@ function renderTopSheet(r){
       '</tbody></table></div>';
   }
 }
-function isExportCur(){ return ((CUR&&CUR.ctype)||'export')==='export'; }
+function isExportCur(){ return isExportCt(CUR&&CUR.ctype); }
 function setBeUsd(v){ if(!CUR) return; setV('p_sellUsd', v); recalc(); }
 function setBeBdt(v){
   if(!CUR) return;
@@ -6278,10 +6432,165 @@ function duplicateProduct(id){
   saveDB(); render();
   toast(ctypeLabel(p.ctype)+' এ Copy তৈরি হয়েছে — Code: '+(p.code||'-')); }
 
+/* ===== v18.39 — Folder (Section এর ভিতরে) + Costing অন্য Section/Folder এ Copy/Move ===== */
+let PROD_FOLDER='';
+function setProdFolder(v){ PROD_FOLDER=v; renderProductsGrid(); }
+function folderOf(p){ return String((p&&p.folder)||'').trim(); }
+function prodFoldersOf(ct){
+  const set={};
+  DB.products.forEach(function(p){
+    if(ct && (p.ctype||'export')!==ct) return;
+    const f=folderOf(p); if(f) set[f]=(set[f]||0)+1;
+  });
+  return Object.keys(set).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});})
+    .map(function(k){return {name:k,count:set[k]};});
+}
+function folderChipsHTML(ct){
+  const fs=prodFoldersOf(ct);
+  if(!fs.length) return '';
+  const noneCount=DB.products.filter(function(p){ return (!ct||(p.ctype||'export')===ct) && !folderOf(p); }).length;
+  let h='<div class="folder-chips">';
+  h+='<span class="fchip'+(PROD_FOLDER===''?' on':'')+'" data-f="" onclick="setProdFolder(this.dataset.f)">\u{1F4C2} সব</span>';
+  fs.forEach(function(f){ h+='<span class="fchip'+(PROD_FOLDER===f.name?' on':'')+'" data-f="'+esc(f.name)+'" onclick="setProdFolder(this.dataset.f)">\u{1F4C1} '+esc(f.name)+' <b>'+f.count+'</b></span>'; });
+  if(noneCount) h+='<span class="fchip'+(PROD_FOLDER==='__none__'?' on':'')+'" data-f="__none__" onclick="setProdFolder(this.dataset.f)">— ফোল্ডারহীন <b>'+noneCount+'</b></span>';
+  h+='</div>';
+  return h;
+}
+function allFolderNames(){
+  const set={}; DB.products.forEach(function(p){ const f=folderOf(p); if(f) set[f]=1; });
+  return Object.keys(set).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});});
+}
+function openCostOrg(id, mode){
+  const p=DB.products.find(function(x){return x.id===id;}); if(!p) return;
+  const isCopy=(mode==='copy');
+  if(isCopy && !need('products','a','Costing কপি')) return;
+  if(!isCopy && !need('products','e','Costing সরানো')) return;
+  const dl=allFolderNames().map(function(f){return '<option value="'+esc(f)+'"></option>';}).join('');
+  const secOpts=allCTYPES().filter(function(t){return t.v!=='demo';}).map(function(t){
+    return '<option value="'+t.v+'"'+(((p.ctype||'export')===t.v)?' selected':'')+'>'+esc(t.l)+'</option>'; }).join('');
+  const old=document.getElementById('costOrgModal'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='costOrgModal';
+  ov.innerHTML='<div class="modal" style="max-width:460px;"><div class="modal-head"><h3>'+(isCopy?'\u{1F4CB} Costing Copy করুন':'\u{1F4C1} Folder / Section এ সরান')+'</h3>'+
+    '<button class="close-x" onclick="closeCostOrg()">✕</button></div>'+
+    '<div class="modal-body">'+
+    '<p class="hint" style="margin:-4px 0 13px;">'+(isCopy?('“'+esc(p.name)+'” এর একটা নতুন কপি তৈরি হবে।'):('“'+esc(p.name)+'” কে এই Section/Folder এ সরানো হবে।'))+'</p>'+
+    (isCopy?('<div class="field" style="margin-bottom:13px;"><label>নতুন নাম</label><input type="text" id="co_name" value="'+esc(p.name+' (Copy)')+'"></div>'):'')+
+    '<div class="field" style="margin-bottom:13px;"><label>Section</label><select id="co_sec">'+secOpts+'</select></div>'+
+    '<div class="field" style="margin-bottom:17px;"><label>Folder <small style="color:var(--text-dim);">(খালি রাখলে ফোল্ডারহীন)</small></label>'+
+      '<input type="text" id="co_folder" list="co_folderDL" value="'+esc(folderOf(p))+'" placeholder="যেমন: Malaysia"><datalist id="co_folderDL">'+dl+'</datalist></div>'+
+    '<div style="display:flex;gap:9px;justify-content:flex-end;">'+
+      '<button class="btn btn-ghost btn-sm" onclick="closeCostOrg()">বাতিল</button>'+
+      '<button class="btn btn-primary btn-sm" onclick="doCostOrg(\''+id+'\','+(isCopy?'true':'false')+')">'+(isCopy?'Copy করুন':'সরান')+'</button></div>'+
+    '</div></div>';
+  document.body.appendChild(ov);
+  openModal('costOrgModal');
+  setTimeout(function(){ const e=document.getElementById(isCopy?'co_name':'co_folder'); if(e){ e.focus(); if(e.select) e.select(); } },60);
+}
+function closeCostOrg(){ const m=document.getElementById('costOrgModal'); if(m){ m.classList.remove('open'); setTimeout(function(){ if(m&&m.parentNode) m.remove(); },200); } }
+function doCostOrg(id, isCopy){
+  const p=DB.products.find(function(x){return x.id===id;}); if(!p) return;
+  const sec=((document.getElementById('co_sec')||{}).value)||(p.ctype||'export');
+  const folder=(((document.getElementById('co_folder')||{}).value)||'').trim();
+  if(isCopy){
+    const np=JSON.parse(JSON.stringify(p));
+    np.id=uid('prod');
+    np.name=(((document.getElementById('co_name')||{}).value)||p.name).trim()||p.name;
+    np.code=''; np.ctype=sec; np.folder=folder; np.createdAt=nowISO(); np.updatedAt=nowISO();
+    np.status='draft'; np.submitBy=''; np.submitAt=''; np.approveBy=''; np.approveAt=''; np.approveNote='';
+    DB.products.push(np); resequenceCodes();
+    audit('create','product',np.name,'Copy → '+ctypeLabel(sec)+(folder?(' / '+folder):''));
+    saveDB(); closeCostOrg(); PROD_TAB=sec; PROD_FOLDER=folder||''; render();
+    toast('Copy তৈরি হয়েছে: '+ctypeLabel(sec)+(folder?(' / '+folder):'')+' — Code: '+(np.code||'-'));
+  } else {
+    const oldSec=p.ctype||'export';
+    p.ctype=sec; p.folder=folder; p.updatedAt=nowISO();
+    if(oldSec!==sec) resequenceCodes();
+    audit('update','product',p.name,'সরানো → '+ctypeLabel(sec)+(folder?(' / '+folder):''));
+    saveDB(); closeCostOrg(); PROD_TAB=sec; PROD_FOLDER=folder||''; render();
+    toast('সরানো হয়েছে: '+ctypeLabel(sec)+(folder?(' / '+folder):''));
+  }
+}
+
+/* ===== v18.41 — কাস্টম Section ম্যানেজার (যোগ / মুছুন) ===== */
+function openSectionMgr(){
+  if(!need('products','a','Section যোগ/মুছুন')) return;
+  const old=document.getElementById('secMgrModal'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='secMgrModal';
+  ov.innerHTML='<div class="modal" style="max-width:520px;"><div class="modal-head"><h3>⊞ Section ব্যবস্থাপনা</h3>'+
+    '<button class="close-x" onclick="closeSectionMgr()">✕</button></div><div class="modal-body" id="secMgrBody"></div></div>';
+  document.body.appendChild(ov);
+  renderSectionMgr();
+  openModal('secMgrModal');
+  setTimeout(function(){ const e=document.getElementById('cs_name'); if(e) e.focus(); },60);
+}
+function closeSectionMgr(){ const m=document.getElementById('secMgrModal'); if(m){ m.classList.remove('open'); setTimeout(function(){ if(m&&m.parentNode) m.remove(); },200); } }
+function renderSectionMgr(){
+  const b=document.getElementById('secMgrBody'); if(!b) return;
+  const cs=customSections();
+  const listH = cs.length ? cs.map(function(s){
+    const cnt=DB.products.filter(function(p){return (p.ctype||'export')===s.v;}).length;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:9px;margin-bottom:7px;">'+
+      '<div style="flex:1;min-width:0;"><b>'+esc(s.l)+'</b><div class="hint" style="margin:2px 0 0;">'+esc(ctypeLabel(s.base))+' এর মতো · কোড '+esc(s.prefix||'SEC')+' · '+cnt+' টি costing</div></div>'+
+      '<button class="btn btn-sm btn-danger" data-v="'+esc(s.v)+'" onclick="delCustomSection(this.dataset.v)">মুছুন</button></div>';
+  }).join('') : '<p class="hint" style="margin:0 0 12px;">এখনো কোনো কাস্টম Section নেই।</p>';
+  const baseOpts=CTYPES.filter(function(t){return t.v!=='demo';}).map(function(t){
+    return '<option value="'+t.v+'">'+esc(t.l)+'</option>'; }).join('');
+  b.innerHTML=
+    '<div style="margin-bottom:14px;">'+listH+'</div>'+
+    '<div style="border-top:1px dashed var(--border);padding-top:13px;">'+
+      '<div style="font-weight:700;font-size:13px;margin-bottom:9px;">নতুন Section যোগ করুন</div>'+
+      '<div class="field" style="margin-bottom:11px;"><label>Section এর নাম</label><input type="text" id="cs_name" placeholder="যেমন: Malaysia Export" oninput="csPrefixAuto()"></div>'+
+      '<div class="field-row cols-2" style="margin-bottom:13px;">'+
+        '<div class="field"><label>কেমন আচরণ করবে (base)</label><select id="cs_base">'+baseOpts+'</select>'+
+          '<div class="hint">Export হলে USD/Forwarding/CBM আসবে; Local/ঘরের হলে ৳ ও সেগুলো বাদ</div></div>'+
+        '<div class="field"><label>কোড Prefix</label><input type="text" id="cs_prefix" maxlength="4" placeholder="MAL" style="text-transform:uppercase;"><div class="hint">কোড এভাবে হবে: MAL-001</div></div>'+
+      '</div>'+
+      '<div style="text-align:right;"><button class="btn btn-primary btn-sm" onclick="addCustomSection()">+ Section যোগ করুন</button></div>'+
+    '</div>';
+}
+function csPrefixAuto(){
+  const nm=(document.getElementById('cs_name')||{}).value||'';
+  const pf=document.getElementById('cs_prefix'); if(!pf) return;
+  if(pf.dataset.touched) return;
+  pf.value=nm.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);
+}
+function addCustomSection(){
+  const name=((document.getElementById('cs_name')||{}).value||'').trim();
+  const base=((document.getElementById('cs_base')||{}).value||'export');
+  let prefix=((document.getElementById('cs_prefix')||{}).value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+  if(!name){ toast('Section এর নাম দিন',true); return; }
+  if(!prefix) prefix=(name.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3))||'SEC';
+  /* unique slug (v) ও prefix */
+  let base2=name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,18);
+  let v='sec_'+(base2||Math.random().toString(36).slice(2,8));
+  while(allCTYPES().some(function(t){return t.v===v;})) v=v+Math.floor(Math.random()*10);
+  const usedPre={EXP:1,LOC:1,GHO:1,DEP:1,DMO:1};
+  customSections().forEach(function(s){ if(s.prefix) usedPre[s.prefix]=1; });
+  let pf=prefix, k=1; while(usedPre[pf]){ pf=prefix.slice(0,3)+k; k++; }
+  DB.sections=DB.sections||[];
+  DB.sections.push({id:uid('sec'), v:v, l:name, base:base, prefix:pf});
+  audit('create','sections',name,'নতুন Section · '+ctypeLabel(base)+' · '+pf);
+  saveDB(); closeSectionMgr(); PROD_TAB=v; PROD_FOLDER=''; render();
+  toast('Section যোগ হয়েছে: '+name+' (কোড '+pf+')');
+}
+function delCustomSection(v){
+  if(!need('products','a','Section মুছুন')) return;
+  const cnt=DB.products.filter(function(p){return (p.ctype||'export')===v;}).length;
+  if(cnt>0){ toast('এই Section এ '+cnt+' টি costing আছে — আগে সেগুলো অন্য Section এ সরান বা মুছুন',true); return; }
+  const s=customSections().find(function(x){return x.v===v;});
+  if(!confirm('"'+((s&&s.l)||'এই')+'" Section মুছে ফেলবেন?')) return;
+  DB.sections=(DB.sections||[]).filter(function(x){return x.v!==v;});
+  audit('delete','sections',(s&&s.l)||v,'Section মুছে ফেলা');
+  saveDB(); if(PROD_TAB===v){ PROD_TAB='export'; PROD_FOLDER=''; }
+  closeSectionMgr(); render();
+  toast('Section মুছে ফেলা হয়েছে');
+}
+
+
 let PROD_TAB = 'export';
-function setProdTab(v){ PROD_TAB=v; render(); }
+function setProdTab(v){ PROD_TAB=v; PROD_FOLDER=''; render(); }
 function prodTabsHTML(){
-  return '<div class="sec-tabs">'+CTYPES.map(function(t){
+  return '<div class="sec-tabs">'+allCTYPES().map(function(t){
     const c=DB.products.filter(function(p){return (p.ctype||'export')===t.v;}).length;
     return '<button class="sec-tab'+(PROD_TAB===t.v?' on':'')+'" onclick="setProdTab(\''+t.v+'\')">'+
       t.l+' <span class="cnt">'+c+'</span></button>'; }).join('')+
@@ -6299,6 +6608,7 @@ function renderProductsPage(){ return '<div class="page-toolbar">'+prodTabsHTML(
  '<button class="btn btn-ghost btn-sm" onclick="exportProducts()">&#8681; Summary</button>'+
  '<button class="btn btn-ghost btn-sm" onclick="printAllCostSheets(PROD_TAB)" title="এই ট্যাবের সব Costing Sheet একসাথে Print/PDF">&#128424; সব Print</button>'+
  '<button class="btn btn-accent btn-sm" onclick="exportCostingBulk(PROD_TAB)">&#8681; Costing Excel</button>'+
+ '<button class="btn btn-ghost btn-sm" onclick="openSectionMgr()" title="নতুন Section যোগ / মুছুন">&#8862; Section</button>'+
  '<button class="btn btn-primary btn-sm" onclick="newCosting()">+ নতুন Costing</button></div></div>'+
  '<div class="panel"><div class="panel-body" id="productsGridWrap"></div></div>'; }
 function renderProductsGrid(){
@@ -6309,20 +6619,25 @@ function renderProductsGrid(){
   }
   const el=document.getElementById('prodSearch'); const q=(el?el.value:'').toLowerCase();
   const tv=PROD_TAB;
+  const chips = tv ? folderChipsHTML(tv) : '';
   const list=DB.products.filter(function(p){
     if(tv && (p.ctype||'export')!==tv) return false;
+    if(PROD_FOLDER==='__none__'){ if(folderOf(p)) return false; }
+    else if(PROD_FOLDER){ if(folderOf(p)!==PROD_FOLDER) return false; }
     return !q||p.name.toLowerCase().indexOf(q)>-1||(p.code||'').toLowerCase().indexOf(q)>-1;});
   const w=document.getElementById('productsGridWrap'); if(!w) return;
   if(!list.length){
     const q2=(el?el.value:'').trim();
-    w.innerHTML=emptyState(q2 ? ('"'+esc(q2)+'" নামে কিছু পাওয়া যায়নি।')
+    w.innerHTML=chips+emptyState(q2 ? ('"'+esc(q2)+'" নামে কিছু পাওয়া যায়নি।')
+      : (PROD_FOLDER ? ('এই Folder এ কোনো Costing নেই।')
       : (PROD_TAB ? (ctypeLabel(PROD_TAB)+' section এ এখনো কোনো Costing নেই — "+ নতুন Costing" চাপুন।')
-                  : 'এখনো কোনো Costing Sheet নেই।'));
+                  : 'এখনো কোনো Costing Sheet নেই।')));
     return; }
-  w.innerHTML='<div class="grid-products">'+list.sort(byProductCode).map(function(p){
+  w.innerHTML=chips+'<div class="grid-products">'+list.sort(byProductCode).map(function(p){
     const r=calc(p);
     return '<div class="product-card" onclick="editProduct(\''+p.id+'\')"><div class="pc-top"><div><div class="pc-name">'+esc(p.name)+'</div>'+
       '<div class="pc-code">'+esc(p.code||'No Code')+
+      (folderOf(p)?(' &nbsp;<span class="folder-badge">\u{1F4C1} '+esc(folderOf(p))+'</span>'):'')+
       (PROD_TAB?'':' &nbsp;<span class="ctype-badge '+r.ctype+'">'+ctypeLabel(r.ctype)+'</span>')+'</div></div>'+
       '<div class="pc-cost" title="Manufacturing Cost = Material + Labour + Factory Overhead (H/O, Bank, Risk, Forwarding, Freight ছাড়া)">৳'+money(r.mfgCtn)+
         '<div style="font-size:10px;font-weight:500;opacity:.72;text-align:right;margin-top:1px;">Mfg Cost / '+esc(r.uLab)+'</div></div></div>'+
@@ -6347,7 +6662,8 @@ function renderProductsGrid(){
           ? '<button class="btn btn-sm btn-ghost" title="অনুমোদন দিন" onclick="stApprove(\''+p.id+'\')">&#9989;</button>' : ''))+
       '<button class="btn btn-sm btn-ghost" title="Excel (formula সহ)" onclick="exportCostingExcel(\''+p.id+'\')">XL</button>'+
       '<button class="btn btn-sm btn-ghost" title="Order Requirement এ যোগ করুন" onclick="addToOrderReq(\''+p.id+'\')">&#128722;</button>'+
-      '<button class="btn btn-sm btn-ghost" title="Duplicate" onclick="duplicateProduct(\''+p.id+'\')">&#9707;</button>'+
+      '<button class="btn btn-sm btn-ghost" title="অন্য Section/Folder এ Copy" onclick="openCostOrg(\''+p.id+'\',\'copy\')">&#128203;</button>'+
+      '<button class="btn btn-sm btn-ghost" title="Folder/Section বদলান (সরান)" onclick="openCostOrg(\''+p.id+'\',\'move\')">&#128193;</button>'+
       '<button class="btn btn-sm btn-danger" onclick="deleteProduct(\''+p.id+'\')">Del</button></div></div>'; }).join('')+'</div>';
 }
 let REP_TAB = 'export';
@@ -6445,7 +6761,7 @@ function repList(){
   }).sort(function(a,b){ return String(a.code||'').localeCompare(String(b.code||''),undefined,{numeric:true}); });
 }
 function repTabsHTML(){
-  return '<div class="sec-tabs">'+CTYPES.map(function(t){
+  return '<div class="sec-tabs">'+allCTYPES().map(function(t){
     const c=DB.products.filter(function(p){return (p.ctype||'export')===t.v;}).length;
     return '<button class="sec-tab'+(REP_TAB===t.v?' on':'')+'" onclick="setRepTab(\''+t.v+'\')">'+
       t.l+' <span class="cnt">'+c+'</span></button>'; }).join('')+
@@ -6533,8 +6849,8 @@ function ordersOf(ct){ return ordersAll().filter(function(o){ return (o.ctype||'
   .sort(function(a,b){ return new Date(b.updatedAt||0)-new Date(a.updatedAt||0); }); }
 function ordById(id){ return ordersAll().find(function(o){ return o.id===id; })||null; }
 function ordIsLocked(o){ return !!(o && o.status==='locked' && o.snap); }
-function ordHasCbm(ct){ return ct==='export'||ct==='depot'; }
-function ordIsExport(ct){ return ct==='export'; }
+function ordHasCbm(ct){ return baseOf(ct)==='export'||baseOf(ct)==='depot'; }
+function ordIsExport(ct){ return isExportCt(ct); }
 /* খোলা order — পুরনো ফাংশনগুলো এটাই ব্যবহার করে */
 function orderPlan(){
   const o=ordById(OR_CUR);
@@ -6696,7 +7012,7 @@ function orderCalc(){
 /* ---- Order তৈরি / খোলা / লক ---- */
 function setOrTab(v){ OR_TAB=v; OR_CUR=null; render(); }
 function orTabsHTML(){
-  return '<div class="sec-tabs">'+CTYPES.filter(function(t){return t.v!=='demo';}).map(function(t){
+  return '<div class="sec-tabs">'+allCTYPES().filter(function(t){return t.v!=='demo';}).map(function(t){
     const c=ordersOf(t.v).length;
     return '<button class="sec-tab'+(OR_TAB===t.v?' on':'')+'" onclick="setOrTab(\''+t.v+'\')">'+
       t.l+' <span class="cnt">'+c+'</span></button>'; }).join('')+'</div>';
@@ -6932,6 +7248,7 @@ function renderOrderForm(o){
    (lk?'':'<button class="btn btn-primary btn-sm" onclick="orAdd()">+ Product যোগ করুন</button>')+
    '<button class="btn btn-ghost btn-sm" onclick="exportOrderReq()" title="Excel">&#8681;</button>'+
    '<button class="btn btn-primary btn-sm" onclick="printOrderFull()" title="Costing, লাভ-ক্ষতি ও সমন্বিত Material একসাথে (পণ্যভিত্তিক শিট ছাড়া)">🖨 সম্পূর্ণ Print</button>'+
+   '<button class="btn btn-ghost btn-sm" onclick="printOrderStatement()" title="পণ্যভিত্তিক Statement — Code · Name · Selling Price · Qty · CBM · Value (buyer কে দেওয়ার মতো)">📄 Statement</button>'+
    '</div>'+
    '<div class="panel" style="margin-bottom:16px;"><div class="panel-body">'+
    (lk?('<p class="hint" style="margin:-2px 0 12px;background:var(--ok-bg);color:var(--ok);padding:8px 12px;border-radius:8px;">'+
@@ -7561,6 +7878,111 @@ function printOrderFull(){
   setPrintOrientation('portrait');
   window.print();
 }
+/* v18.38 — অঙ্ক কথায় (currency-aware, QUOTE এর উপর নির্ভর করে না) */
+function amountWords(v, isUsd){
+  const cur = isUsd ? {main:'US Dollar',frac:'Cent'} : {main:'Taka',frac:'Poisha'};
+  const whole=Math.floor(n(v)), frac=Math.round((n(v)-whole)*100);
+  let s=qNumWords(whole)+' '+cur.main+(whole===1?'':'s');
+  if(frac>0) s+=' and '+qNumWords(frac)+' '+cur.frac+(frac===1?'':'s');
+  return s+' Only';
+}
+/* v18.38 — Order Statement: পণ্যভিত্তিক সারসংক্ষেপ (Code · Name · Selling Price · Qty · CBM · Value) */
+function orderStatementHTML(d){
+  const pl=d.plan, isExp=d.isExport, sym=isExp?'$':'৳';
+  const GREEN='#1f4d3a', GOLD='#b9822f', LINE='#c9c3b4', INK='#14332a';
+  const KNOCK="font-family:Arial,Helvetica,'Noto Sans Bengali',sans-serif !important;";
+  const PCA='-webkit-print-color-adjust:exact;print-color-adjust:exact;';
+  const hasCbm=ordHasCbm(d.ctype);
+  const rows=d.rows.filter(function(x){return !x.missing;});
+  /* v18.42 — compact: header wrap, Product Name চওড়া, সারি চিকন, বাকি cell value অনুযায়ী (nowrap) */
+  const th='padding:3px 6px;border:0.5px solid rgba(255,255,255,.3);background:'+GREEN+';color:#fff;font-size:9px;font-weight:700;letter-spacing:.2px;text-transform:uppercase;line-height:1.16;white-space:normal;'+KNOCK+PCA;
+  const td='padding:1.5px 6px;border:0.4px solid '+LINE+';font-size:10px;vertical-align:middle;white-space:nowrap;';
+  const tdN='padding:1.5px 7px;border:0.4px solid '+LINE+';font-size:10px;vertical-align:middle;line-height:1.2;';  /* Name — wrap হয় */
+  const totG='background:'+GREEN+';color:#fff;font-weight:800;'+KNOCK+PCA;
+  const totQty=d.totCtn, totCbm=d.totCbm, totVal = isExp ? d.invUsd : d.totSale;
+  let body='';
+  rows.forEach(function(x,i){
+    const price = isExp ? n(x.b.sellUsd) : n(x.b.sellBdt);
+    const val = x.ctn*price;
+    const bg=(i%2)?'background:#f7f6f1;':'';
+    body+='<tr style="'+bg+'">'+
+      '<td style="'+td+'text-align:center;">'+(i+1)+'</td>'+
+      '<td style="'+td+'text-align:center;">'+esc(x.b.code||'—')+'</td>'+
+      '<td style="'+tdN+'"><b>'+esc(x.b.name||'')+'</b></td>'+
+      '<td style="'+td+'text-align:right;">'+sym+money(price,2)+'</td>'+
+      '<td style="'+td+'text-align:right;">'+money(x.ctn,0)+' '+esc(x.b.uLab||'')+'</td>'+
+      (hasCbm?('<td style="'+td+'text-align:right;">'+money(x.cbm,3)+'</td>'):'')+
+      '<td style="'+td+'text-align:right;font-weight:600;">'+sym+money(val,2)+'</td>'+
+      '</tr>';
+  });
+  const totRow='<tr>'+
+    '<td colspan="4" style="'+td+totG+'text-align:right;">TOTAL</td>'+
+    '<td style="'+td+totG+'text-align:right;">'+money(totQty,0)+'</td>'+
+    (hasCbm?('<td style="'+td+totG+'text-align:right;">'+money(totCbm,3)+'</td>'):'')+
+    '<td style="'+td+totG+'text-align:right;font-size:11px;">'+sym+money(totVal,2)+'</td></tr>';
+  const S="font-family:'Times New Roman',Georgia,serif;";
+  let h='<div style="'+S+'max-width:900px;margin:0 auto;color:'+INK+';'+PCA+'">';
+  /* header */
+  h+='<div style="text-align:center;padding-bottom:5px;border-bottom:3px double '+GREEN+';margin-bottom:2px;">'+
+       printLogoHTML()+
+       '<div style="font-size:20px;font-weight:800;letter-spacing:.5px;color:'+GREEN+';">'+esc(DB.settings.companyName||'')+'</div>'+
+       (DB.settings.address?('<div style="font-size:11px;color:#555;margin-top:3px;">'+esc(DB.settings.address)+'</div>'):'')+
+     '</div>'+
+     '<div style="height:2px;background:'+GOLD+';margin-bottom:9px;"></div>';
+  /* title */
+  h+='<div style="text-align:center;margin-bottom:9px;"><span style="display:inline-block;font-size:13.5px;font-weight:800;letter-spacing:3px;color:#fff;background:'+GREEN+';padding:5px 24px;border-radius:3px;'+KNOCK+PCA+'">ORDER STATEMENT</span></div>';
+  /* meta */
+  h+='<table style="width:100%;font-size:11px;margin-bottom:9px;border-collapse:collapse;"><tr>'+
+       '<td style="width:60%;vertical-align:top;padding:7px 11px;border:0.5px solid '+LINE+';background:#f7f6f1;">'+
+         '<div style="font-size:9.5px;letter-spacing:1px;color:'+GOLD+';font-weight:700;text-transform:uppercase;margin-bottom:4px;">Buyer / Party</div>'+
+         '<div style="font-size:13px;font-weight:800;">'+esc(pl.buyer||'—')+'</div></td>'+
+       '<td style="width:40%;vertical-align:top;padding:7px 11px;border:0.5px solid '+LINE+';">'+
+         qmRow('Order Ref.', esc(pl.ref||'—'), LINE)+
+         qmRow('Date', esc(pl.date||fmtDate(nowISO())), LINE)+
+         qmRow('Section', esc(ctypeLabel(d.ctype)), LINE)+
+       '</td></tr></table>';
+  /* table */
+  h+='<table style="width:100%;border-collapse:collapse;margin-bottom:4px;table-layout:auto;"><thead><tr style="background:'+GREEN+';">'+
+       '<th style="'+th+'width:24px;text-align:center;">SL</th>'+
+       '<th style="'+th+'text-align:center;">Product<br>Code</th>'+
+       '<th style="'+th+'width:40%;text-align:left;">Product Name</th>'+
+       '<th style="'+th+'text-align:right;">Selling<br>Price ('+sym+')</th>'+
+       '<th style="'+th+'text-align:right;">Total<br>Qty</th>'+
+       (hasCbm?'<th style="'+th+'text-align:right;">Total<br>CBM</th>':'')+
+       '<th style="'+th+'text-align:right;">Total<br>Value ('+sym+')</th></tr></thead><tbody>'+
+     body + totRow + '</tbody></table>';
+  /* amount in words */
+  h+='<div style="font-size:10.5px;border:0.5px solid '+LINE+';border-top:0;padding:4px 9px;background:#f7f6f1;margin-bottom:12px;">'+
+       '<b style="color:'+GOLD+';">Amount in words:</b> <i>'+amountWords(totVal, isExp)+'</i></div>';
+  /* signatures */
+  h+='<table style="width:100%;font-size:10.5px;margin-top:30px;page-break-inside:avoid;"><tr>'+
+       '<td style="width:50%;text-align:center;vertical-align:bottom;">'+
+         '<div style="border-top:1px solid #000;width:75%;margin:0 auto;padding-top:4px;">'+
+           '<div style="font-weight:800;">Prepared By</div>'+
+           '<div style="font-size:10px;color:#555;margin-top:2px;">'+esc(meName())+'</div></div></td>'+
+       '<td style="width:50%;text-align:center;vertical-align:bottom;">'+
+         (DB.settings&&DB.settings.seal?('<img src="'+DB.settings.seal+'" alt="" style="max-height:52px;max-width:150px;object-fit:contain;margin-bottom:2px;"><br>'):'<div style="height:22px;"></div>')+
+         '<div style="border-top:1px solid #000;width:75%;margin:0 auto;padding-top:4px;">'+
+           '<div style="font-weight:800;">Approved By</div>'+
+           '<div style="font-size:10px;color:#555;margin-top:2px;">For '+esc(DB.settings.companyName||'')+'</div></div></td></tr></table>';
+  /* footer */
+  h+='<div style="margin-top:14px;border-top:2px solid '+GREEN+';padding-top:5px;text-align:center;font-size:9px;color:#777;">'+
+       'Printed By: '+esc(meName())+' · '+fmtDate(nowISO())+' · Powered By AMAZ ERP Solution</div>';
+  h+='</div>';
+  return h;
+}
+function qmRow(lab,val,LINE){
+  return '<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:0.5px dotted #ccc;">'+
+    '<span style="color:#666;font-size:10.5px;">'+lab+'</span><b style="font-size:11px;">'+val+'</b></div>';
+}
+function printOrderStatement(){
+  if(!needTool('print','Print')) return;
+  const d=orderCalc();
+  if(!d.totCtn){ toast('আগে Order Qty দিন',true); return; }
+  document.getElementById('printArea').innerHTML='<div style="padding:6px 10px;'+'-webkit-print-color-adjust:exact;print-color-adjust:exact;">'+orderStatementHTML(d)+'</div>';
+  setPrintOrientation('portrait','9mm 9mm');
+  window.print();
+}
 function exportOrderReq(){
   if(!needTool('excel','Excel Export')) return;
   if(!needXLSX()) return;
@@ -8079,7 +8501,7 @@ function cmpSet(i,v){ CMP[i]=v; renderCompare(); }
 function renderCompare(){
   const opts=function(sel){
     return '<option value="">— বাছুন —</option>'+
-      CTYPES.map(function(t){
+      allCTYPES().map(function(t){
         const g=DB.products.filter(function(p){return (p.ctype||'export')===t.v;});
         if(!g.length) return '';
         return '<optgroup label="'+esc(t.l)+'">'+g.map(function(p){
@@ -9561,6 +9983,14 @@ function buildCostingWS(wb, p, sheetName, refs){
     return c;
   };
   const F=function(formula,result,z){ return {formula:formula, result:(isFinite(result)?result:0)}; };
+  /* v18.36 — তালিকা খালি হলে (যেমন কোনো Packing Material নেই) টোটাল সারির
+     SUM এর range টোটাল সারিটাকেই ধরত — SUM(J18:J18) যেখানে J18 নিজেই টোটাল।
+     এটা Excel এ circular reference → double-click করে recalc দিলেই 0/#VALUE!,
+     আর নিচের সব টোটাল (Prime, Mfg, Net) নষ্ট হয়ে যেত। তাই খালি হলে SUM না বসিয়ে
+     সরাসরি মান (0) বসাই — কোনো self-reference থাকে না। */
+  const sumCol=function(len, col, s, e, val){
+    return (len>0 && e>=s) ? F('SUM('+col+s+':'+col+e+')', val) : (isFinite(val)?val:0);
+  };
   /* ব্যবহারকারী যদি ঘরে হিসাব লিখে থাকেন — যেমন (12000+24000)/2 —
      তাহলে Excel এও সেই হিসাবটাই বসে, শুধু ফলাফল নয়। */
   const RAW=function(raw, val){
@@ -9695,10 +10125,10 @@ function buildCostingWS(wb, p, sheetName, refs){
   const rmE=Math.max(R,rmS);
   const rRmT=++R;
   put(rRmT,1,'TOTAL RAW MATERIALS:',{f:bold}); put(rRmT,2,':',{a:ctrA});
-  put(rRmT,6,F('SUM(F'+rmS+':F'+rmE+')', r.rmQtyTotal),{z:Q,f:bold});
-  put(rRmT,7,F('SUM(G'+rmS+':G'+rmE+')', r.rmAmtTotal),{z:M,f:bold});
-  put(rRmT,9,F('SUM(I'+rmS+':I'+rmE+')', r.rmQtyCtn),{z:QN6,f:bold});
-  put(rRmT,10,F('SUM(J'+rmS+':J'+rmE+')', r.rmAmtCtn),{z:M,f:bold});
+  put(rRmT,6,sumCol(r.rm.length,'F',rmS,rmE,r.rmQtyTotal),{z:Q,f:bold});
+  put(rRmT,7,sumCol(r.rm.length,'G',rmS,rmE,r.rmAmtTotal),{z:M,f:bold});
+  put(rRmT,9,sumCol(r.rm.length,'I',rmS,rmE,r.rmQtyCtn),{z:QN6,f:bold});
+  put(rRmT,10,sumCol(r.rm.length,'J',rmS,rmE,r.rmAmtCtn),{z:M,f:bold});
   put(rRmT,11,F('J'+rRmT+'/'+SALE, r.share(r.rmAmtCtn)),{z:P,f:bold});
   box(rRmT,1,11,{top:XT.med,bottom:XT.med});
 
@@ -9730,9 +10160,9 @@ function buildCostingWS(wb, p, sheetName, refs){
   const pkE=Math.max(R,pkS);
   const rPkT=++R;
   put(rPkT,1,'Packing Material Per Unit',{f:bold}); put(rPkT,2,':',{a:ctrA});
-  put(rPkT,7,F('SUM(G'+pkS+':G'+pkE+')', r.pkAmtTotal),{z:M,f:bold});
+  put(rPkT,7,sumCol(r.pk.length,'G',pkS,pkE,r.pkAmtTotal),{z:M,f:bold});
   if(ex) put(rPkT,9,F(USDR, r.usd),{z:N});
-  put(rPkT,10,F('SUM(J'+pkS+':J'+pkE+')', r.pkAmtCtn),{z:M,f:bold});
+  put(rPkT,10,sumCol(r.pk.length,'J',pkS,pkE,r.pkAmtCtn),{z:M,f:bold});
   put(rPkT,11,F('J'+rPkT+'/'+SALE, r.share(r.pkAmtCtn)),{z:P,f:bold});
   box(rPkT,1,11,{top:XT.med,bottom:XT.med});
   if(ex){ const rU=++R; put(rU,9,'$ / '+r.uLab,{f:bold,a:rightA}); put(rU,10,'\u09f3 / '+r.uLab,{f:bold,a:rightA}); }
@@ -9822,12 +10252,12 @@ function buildCostingWS(wb, p, sheetName, refs){
   const mpE=Math.max(R,mpS);
   const rMpT=++R;
   put(rMpT,1,'Total Manpower',{f:bold});
-  put(rMpT,3,F('SUM(C'+mpS+':C'+mpE+')', r.mpTot.count),{z:N,f:bold});
-  put(rMpT,4,F('SUM(D'+mpS+':D'+mpE+')', r.mpTot.wage),{z:M,f:bold});
-  put(rMpT,6,F('SUM(F'+mpS+':F'+mpE+')', r.mpTot.month),{z:M,f:bold});
-  put(rMpT,7,F('SUM(G'+mpS+':G'+mpE+')', r.mpTot.day),{z:M,f:bold});
-  put(rMpT,9,F('SUM(I'+mpS+':I'+mpE+')', r.mpTot.batch),{z:M,f:bold});
-  put(rMpT,10,F('SUM(J'+mpS+':J'+mpE+')', r.mpTot.ctn),{z:Q6,f:bold});
+  put(rMpT,3,sumCol(r.mp.length,'C',mpS,mpE,r.mpTot.count),{z:N,f:bold});
+  put(rMpT,4,sumCol(r.mp.length,'D',mpS,mpE,r.mpTot.wage),{z:M,f:bold});
+  put(rMpT,6,sumCol(r.mp.length,'F',mpS,mpE,r.mpTot.month),{z:M,f:bold});
+  put(rMpT,7,sumCol(r.mp.length,'G',mpS,mpE,r.mpTot.day),{z:M,f:bold});
+  put(rMpT,9,sumCol(r.mp.length,'I',mpS,mpE,r.mpTot.batch),{z:M,f:bold});
+  put(rMpT,10,sumCol(r.mp.length,'J',mpS,mpE,r.mpTot.ctn),{z:Q6,f:bold});
   fillRow(rMpT);
   box(rMpT,1,11,{top:XT.med,bottom:XT.med});
   const rOthLab=++R;
@@ -10254,9 +10684,9 @@ function downloadImportTemplate(){
   const isFg = String(t).indexOf('fg_')===0;
   if(isFg){
     const ct=t.slice(3), dims=fgHasDims(ct), usd=fgHasUsd(ct);
-    const sampleName = ct==='export'?'Coconut Cookies (500 gm X 6 Boyom)': ct==='depot'?'Depot Pack Item':'Hot Chanachur (350 gm X 24 Jar)';
-    const row1={Name:sampleName, Unit:(ct==='export'||ct==='depot')?'Ctn':'Pkt'};
-    if(dims){ row1.Length= ct==='export'?30:25; row1.Width= ct==='export'?20:18; row1.Height= ct==='export'?22:15; }
+    const sampleName = baseOf(ct)==='export'?'Coconut Cookies (500 gm X 6 Boyom)': baseOf(ct)==='depot'?'Depot Pack Item':'Hot Chanachur (350 gm X 24 Jar)';
+    const row1={Name:sampleName, Unit:(baseOf(ct)==='export'||baseOf(ct)==='depot')?'Ctn':'Pkt'};
+    if(dims){ row1.Length= baseOf(ct)==='export'?30:25; row1.Width= baseOf(ct)==='export'?20:18; row1.Height= baseOf(ct)==='export'?22:15; }
     if(usd) row1['Sales USD']=8; else row1['Sales BDT']= ct==='local'?45: ct==='ghorer'?120:560;
     const s=[row1];
     const ws=XLSX.utils.json_to_sheet(s), wb=XLSX.utils.book_new();
@@ -10356,7 +10786,7 @@ function processFgImportRows(rows, ctype){
   rows.forEach(function(row){
     const name=String(getField(row,['name','productname','particulars'])||'').trim().replace(/\s+/g,' ');
     if(!name){ sk++; return; }
-    const unit=String(getField(row,['unit','uom'])||'').trim()||((ctype==='export'||ctype==='depot')?'Ctn':'Pkt');
+    const unit=String(getField(row,['unit','uom'])||'').trim()||((baseOf(ctype)==='export'||baseOf(ctype)==='depot')?'Ctn':'Pkt');
     const sellUsd= usd?n(getField(row,['salesusd','usd','pricesusd','salesus$'])):0;
     const sellBdt=n(getField(row,['salesbdt','bdt','pricesbdt','salestk','salestaka']));
     const ctnL= dims?n(getField(row,['length','l'])):0;
@@ -10658,9 +11088,14 @@ const SYNC_COLLS = [
   {k:'packaging',    l:'Packing Material'},
   {k:'conversions',  l:'Conversion'},
   {k:'exportPresets',l:'Export Setting'},
+  {k:'sections',     l:'কাস্টম Section'},
+  {k:'machines',     l:'Machine / Utility'},
   {k:'products',     l:'Costing Sheet'},
   {k:'fgProducts',   l:'FG Product Master'},
   {k:'orders',       l:'সংরক্ষিত Order'},
+  {k:'budgets',      l:'Budget / Projection'},
+  {k:'production',   l:'Production এন্ট্রি'},
+  {k:'versions',     l:'Costing ইতিহাস'},
   {k:'audit',        l:'Audit Log'},
   {k:'quotations',   l:'দরপত্র'},
   {k:'singles',      l:'Company Settings / Order Plan'}
@@ -11514,6 +11949,11 @@ function renderSettings(){
    '<input type="checkbox" id="stHl"'+(st.printHl!==false?' checked':'')+(ed?'':' disabled')+' style="width:16px;height:16px;">'+
    '<span>Costing Print এ <b>মূল সারিগুলো হালকা সবুজে</b> হাইলাইট হবে'+
    '<br><small style="color:var(--text-dim);">Total Manpower / Factory O/H / Indirect O/H এবং Prime Cost, Break-even, Gross ও Net Profit। সাদা-কালো প্রিন্টারে ধূসর দেখালে বন্ধ করে দিন</small></span></label>'+
+   /* v18.37 — মেনুবার hover-expand (এই ডিভাইসে, localStorage — save বোতাম লাগে না) */
+   '<label style="display:flex;align-items:center;gap:9px;margin:6px 0 14px;font-size:13px;cursor:pointer;">'+
+   '<input type="checkbox" id="stSbHover"'+(localStorage.getItem('amaz_costing_sidebar_hover')!=='0'?' checked':'')+' onchange="setSidebarHover(this.checked)" style="width:16px;height:16px;">'+
+   '<span>মেনুবার ছোট থাকলে <b>মাউস ওপরে নিলে বড় হবে</b> (hover-expand)'+
+   '<br><small style="color:var(--text-dim);">মেনুবার minimize করা থাকলে কার্সর ওপরে নিলে নিজে থেকে বড় হবে, সরালে আবার ছোট। এই ডিভাইসে প্রযোজ্য, সাথে সাথেই কাজ করে।</small></span></label>'+
    '<div class="field" style="max-width:260px;margin-bottom:14px;"><label>Net Profit সতর্কবার্তার সীমা (%)</label>'+
    '<input type="text" id="stNetWarn" value="'+esc(st.netWarnPct===undefined?2:st.netWarnPct)+'"'+ro+'>'+
    '<div class="hint">Top Sheet এ Net Profit এর নিচে নামলে হলুদ সতর্কবার্তা দেখাবে। লোকসান হলে সবসময় লাল দেখাবে।</div></div>'+
@@ -12093,6 +12533,46 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.42', d:'2026-10-11', t:'Login নতুন রূপ · Order Statement আরও গোছানো · পুরো সফটওয়্যার Cloud Sync', li:[
+   '<b>Login page নতুন করে সাজানো</b> — AMAZ Worker Supply অ্যাপের মতো: বাঁ দিকে brand + কাজের ধাপ (Material → Labour → Overhead → Costing → Break-even → Profit), নিচে একটা animated <b>accounts/costing office</b> দৃশ্য (মনিটরে live চার্ট, ক্যালকুলেটর, কয়েন, খাতা, হিসাবরক্ষক), ডান দিকে frosted সবুজ-সোনালি login বক্স',
+   'মোবাইলে সুন্দরভাবে বসে — হিরো লেখা/ধাপ লুকিয়ে বক্সটাই মাঝখানে আসে; reduced-motion হলে animation বন্ধ',
+   '<b>Order Statement টেবিল আরও compact</b> — header এখন <b>দুই লাইনে wrap</b> হয়, <b>Product Name কলাম চওড়া</b>, বাকি কলাম (দাম/Qty/CBM/Value) মানের মাপে সরু, <b>সারি চিকন</b> → এক পেজে অনেক বেশি পণ্য আঁটে (৮+ পণ্যেও অনেক জায়গা বাকি থাকে)',
+   '<b>পুরো সফটওয়্যার এখন Cloud Sync হয়</b> — আগে <b>Budget/Projection</b>, Production এন্ট্রি, Machine/Utility, Costing ইতিহাস (versions) ক্লাউডে যেত না; এখন এগুলোসহ সব কিছু সব ডিভাইসে মিলে যায়',
+   'Apps Script/Supabase কোড বদলানোর দরকার নেই — ব্যাকএন্ড আগে থেকেই যেকোনো collection নেয় (এক শিট, coll কলাম)',
+   'Final professional scan: crawl (০ error), ৫০০ র‍্যান্ডম costing এর math invariant (০ fail), LibreOffice recalc (Excel সব cell সঠিক), Statement render (কোনো NaN/undefined নেই) — সব পাশ']},
+ {v:'18.41', d:'2026-10-11', t:'নতুন Section যোগ করা যায় (Export/Morning এর মতো)', li:[
+   'FG Product Costing এ এখন <b>⊞ Section</b> বোতাম — নিজের নতুন Section বানানো যায় (যেমন “Malaysia Export”, “Dhaka Local”)',
+   'নতুন Section একটা <b>base</b> বেছে নেয় (Export/Local/ঘরের/Depot) — সেই অনুযায়ী হিসাব, একক, CBM, Forwarding ঠিক হয়। অর্থাৎ Malaysia Export = Export এর মতোই (USD/CBM/Forwarding)',
+   'প্রতিটা নতুন Section এর নিজের <b>কোড prefix</b> (যেমন MYE-001), নিজের tab ও গণনা',
+   'নতুন Section cloud sync-এও যায়, তাই সব ডিভাইসে এক থাকে',
+   'Folder (v18.39) এর সাথে মিলিয়ে: Section → Folder → Costing — পুরো গোছানো যায়',
+   'পুরনো costing engine অপরিবর্তিত — ৫০০টি র‍্যান্ডম costing এর math invariant ও recalc টেস্টে কোনো পরিবর্তন নেই']},
+ {v:'18.40', d:'2026-10-11', t:'Login page নতুন ডিজাইন — Costing Department view', li:[
+   'আগের বইয়ের মতো খুলে যাওয়া (passport-এর মতো) লগইন বাদ — এখন পরিষ্কার দুই-প্যানেল কার্ড',
+   'বাঁ দিকে একটা <b>Costing Sheet</b> দেখায় (Raw/Packing/Labour/Factory O/H → Prime Cost → Break-even) — অফিসের costing department এর ভাব',
+   'ডান দিকে গোছানো login form; মোবাইলে বাঁ প্যানেল লুকিয়ে ফর্মটাই দেখায়',
+   'সবুজ brand থিম ও পেছনের costing-themed নকশা (ledger, calculator, chart) আগের মতোই']},
+ {v:'18.39', d:'2026-10-11', t:'Costing এ Folder + অন্য Section/Folder এ Copy/Move', li:[
+   '<b>Folder:</b> FG Product Costing এ প্রতিটা Section এর ভিতরে এখন Folder বানানো যায় — যেমন Malaysia-র costing গুলো <b>Malaysia</b> folder এ, অন্য দেশেরগুলো তাদের নামে',
+   'উপরে Folder chips দিয়ে ছাঁকা যায় (সব / Malaysia / Singapore / ফোল্ডারহীন), প্রতিটা card এ folder badge দেখায়',
+   '<b>Copy (📋):</b> যেকোনো costing অন্য Section বা Folder এ কপি করা যায় — নতুন নাম দিয়ে',
+   '<b>Move (📁):</b> একটা costing কে অন্য Folder/Section এ সরানো যায়',
+   'নতুন Section যোগ করার সুবিধা পরের আপডেটে আসছে']},
+ {v:'18.38', d:'2026-10-11', t:'Order এ নতুন “Statement” Print (পণ্যভিত্তিক সারসংক্ষেপ)', li:[
+   'Order Requirement এ এখন <b>📄 Statement</b> বোতাম — buyer কে দেওয়ার মতো একটা পরিষ্কার standard প্রিন্ট',
+   'টেবিলে: <b>Product Code · Product Name · Selling Price ($) · Total Qty · Total CBM · Total Value ($)</b>, নিচে <b>TOTAL</b> সারি',
+   'সাথে Amount in words, Prepared By / Approved By সই, আর Powered By ফুটার',
+   'Export order হলে দাম/মূল্য <b>$</b> এ, Local/অন্য হলে <b>৳</b> এ দেখায়; CBM শুধু Export/Depot এ',
+   'কোম্পানির logo/নাম/ঠিকানা উপরে বসে — সবুজ থিমে দরপত্রের মতোই গোছানো']},
+ {v:'18.37', d:'2026-10-11', t:'মেনুবার ছোট থাকলে মাউস ওপরে নিলে বড় হয় (hover-expand)', li:[
+   'মেনুবার minimize (ছোট) করা থাকলে এখন কার্সর ওপরে নিলে নিজে থেকে বড় হয়, সরালে আবার ছোট হয়ে যায়',
+   '<b>Settings</b> এ চালু/বন্ধ করার অপশন আছে (এই ডিভাইসে প্রযোজ্য) — কেউ না চাইলে বন্ধ করে দিতে পারবেন',
+   'ছোট/বড় করার নিজের পছন্দ আগের মতোই থাকে; hover শুধু সাময়িকভাবে বড় দেখায়']},
+ {v:'18.36', d:'2026-10-11', t:'Excel এ calculation 0 হয়ে যাওয়ার বড় bug ঠিক (fix)', li:[
+   'সমস্যা: costing এর Excel ডাউনলোড করে কোনো cell এ ডাবল-ক্লিক করলে (recalc হলে) <b>value 0 হয়ে যেত</b> — function থাকত কিন্তু মান 0, আর নিচের সব total (Prime, Mfg, Net) নষ্ট হয়ে যেত',
+   'কারণ: কোনো তালিকা <b>খালি</b> থাকলে (যেমন কোনো Packing Material নেই) ওই total সারির SUM নিজেকেই যোগ করত — <code>SUM(J18:J18)</code> যেখানে J18 নিজেই total। এটা Excel-এ circular reference → recalc করলেই 0/#VALUE!',
+   'ঠিক করা: তালিকা খালি হলে এখন SUM না বসিয়ে সরাসরি 0 বসে — কোনো self-reference নেই, double-click করলেও মান ঠিক থাকে',
+   'Raw Material, Packing Material, Manpower — তিন জায়গাতেই ঠিক করা; LibreOffice দিয়ে recalc করে যাচাই করা (আগে #VALUE!, এখন সঠিক)']},
  {v:'18.35', d:'2026-10-05', t:'Excel এ বিক্রয়/বিতরণ খরচ (Selling O/H) আর বাদ পড়ে না (fix)', li:[
    'সমস্যা: Morning/Local/Ghorer/Depo costing এ Selling O/H থাকলেও <b>Excel ডাউনলোডে আসত না</b> — শুধু সারিটাই নয়, <b>Net Profit ও Total Cost-এও ওটা বাদ পড়ত</b>, তাই Excel-এর লাভ বেশি দেখাত',
    'এখন Excel-এ <b>“Selling / Distribution O/H”</b> সারি আসে, আর Net Profit থেকে ঠিকমতো বাদ যায় — অ্যাপের হিসাবের সাথে হুবহু মিলে',
@@ -14413,7 +14893,7 @@ const DRIFT_FIELDS=[
 ];
 function driftScan(){
   const out=[];
-  CTYPES.forEach(function(t){
+  allCTYPES().forEach(function(t){
     const list=anaList().filter(function(p){ return (p.ctype||'export')===t.v; });
     if(list.length<2) return;                 /* তুলনা করার মতো যথেষ্ট পণ্য নেই */
     DRIFT_FIELDS.forEach(function(f){
@@ -15938,9 +16418,9 @@ function renderBudget(){
    '<div class="field"><label>Budget এর নাম</label><input type="text" value="'+esc(b.name||'')+'" oninput="budSet(\'name\',this.value)" onchange="render()"></div>'+
    '<div class="field"><label>লক্ষ্য (৳)</label><input type="text" id="budTarget" value="'+esc(b.target||'')+'" placeholder="যেমন: 3500000" oninput="budSet(\'target\',this.value)"></div>'+
    '<div class="field"><label>Section</label><select onchange="budSet(\'ctype\',this.value)">'+
-     CTYPES.map(function(t){ return '<option value="'+t.v+'"'+((b.ctype||'export')===t.v?' selected':'')+'>'+esc(t.l)+'</option>'; }).join('')+
+     allCTYPES().map(function(t){ return '<option value="'+t.v+'"'+((b.ctype||'export')===t.v?' selected':'')+'>'+esc(t.l)+'</option>'; }).join('')+
    '</select></div>'+
-   ((b.ctype||'export')==='export'
+   (isExportCt(b.ctype)
      ? ('<div class="field"><label>গন্তব্য</label><select onchange="budSet(\'presetId\',this.value)">'+
         '<option value="">— বাছুন —</option>'+presets.map(function(pr){
           return '<option value="'+pr.id+'"'+(b.presetId===pr.id?' selected':'')+'>'+esc(pr.name||'')+'</option>'; }).join('')+
