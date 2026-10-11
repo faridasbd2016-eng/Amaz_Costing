@@ -1601,7 +1601,7 @@ tr.sel{background:var(--ok-bg) !important;}
   <div class="lgs-hero">
     <div class="lgHb">
       <span class="lg">AC</span>
-      <div><b>AMAZ COSTING</b><span>Amin Square (BD) Ltd. · Gift Touch</span></div>
+      <div><b>AMAZ COSTING</b><span id="lgCo">Product Costing System</span></div>
     </div>
     <h1>কাঁচামাল থেকে মুনাফা পর্যন্ত —<br>প্রতিটি পণ্যের নিখুঁত হিসাব<br>একটি অ্যাকাউন্টস অফিসের মতো।</h1>
     <div class="lgFlow">
@@ -1628,7 +1628,7 @@ tr.sel{background:var(--ok-bg) !important;}
     <button class="lg-btn" onclick="doLogin()">প্রবেশ করুন &nbsp;→</button>
     <div id="lgErr" class="lg-err"></div>
     <div class="lg-foot" id="lgFoot"></div>
-    <div class="lgs-stamp">GIFT TOUCH · AMAZ ERP SOLUTION</div>
+    <div class="lgs-stamp" id="lgStamp">AMAZ ERP SOLUTION</div>
   </div>
 </div>
 
@@ -12536,6 +12536,7 @@ const CHANGELOG=[
  {v:'18.42', d:'2026-10-11', t:'Login নতুন রূপ · Order Statement আরও গোছানো · পুরো সফটওয়্যার Cloud Sync', li:[
    '<b>Login page নতুন করে সাজানো</b> — AMAZ Worker Supply অ্যাপের মতো: বাঁ দিকে brand + কাজের ধাপ (Material → Labour → Overhead → Costing → Break-even → Profit), নিচে একটা animated <b>accounts/costing office</b> দৃশ্য (মনিটরে live চার্ট, ক্যালকুলেটর, কয়েন, খাতা, হিসাবরক্ষক), ডান দিকে frosted সবুজ-সোনালি login বক্স',
    'মোবাইলে সুন্দরভাবে বসে — হিরো লেখা/ধাপ লুকিয়ে বক্সটাই মাঝখানে আসে; reduced-motion হলে animation বন্ধ',
+   'Login এ কোম্পানির নাম এখন <b>Settings থেকেই</b> আসে (hardcode করা নাম নয়) — তাই সব print এর মতো এখানেও আপনার নিজের কোম্পানির নাম দেখায়',
    '<b>Order Statement টেবিল আরও compact</b> — header এখন <b>দুই লাইনে wrap</b> হয়, <b>Product Name কলাম চওড়া</b>, বাকি কলাম (দাম/Qty/CBM/Value) মানের মাপে সরু, <b>সারি চিকন</b> → এক পেজে অনেক বেশি পণ্য আঁটে (৮+ পণ্যেও অনেক জায়গা বাকি থাকে)',
    '<b>পুরো সফটওয়্যার এখন Cloud Sync হয়</b> — আগে <b>Budget/Projection</b>, Production এন্ট্রি, Machine/Utility, Costing ইতিহাস (versions) ক্লাউডে যেত না; এখন এগুলোসহ সব কিছু সব ডিভাইসে মিলে যায়',
    'Apps Script/Supabase কোড বদলানোর দরকার নেই — ব্যাকএন্ড আগে থেকেই যেকোনো collection নেয় (এক শিট, coll কলাম)',
@@ -17145,6 +17146,12 @@ function startApp(){
   migrateFgActualPriceV2();
   migrateFgUnitV3();
   ordMigrate();
+  /* v18.42 — Login এ কোম্পানির নাম Settings থেকেই আসে (hardcode নয়) */
+  (function(){
+    var co = (DB.settings && DB.settings.companyName && DB.settings.companyName!=='Company Name') ? String(DB.settings.companyName).trim() : '';
+    var e1=document.getElementById('lgCo'); if(e1 && co) e1.textContent = co;
+    var e2=document.getElementById('lgStamp'); if(e2) e2.textContent = (co ? co.toUpperCase()+' · ' : '')+'AMAZ ERP SOLUTION';
+  })();
   const onlyAdmin = DB.users.length===1 && DB.users[0].username==='admin' && DB.users[0].mustChange;
   document.getElementById('lgFoot').innerHTML = onlyAdmin
     ? 'প্রথমবার চালু করছেন? &nbsp;<b>admin</b> / <b>admin123</b><br>ঢোকার পরেই পাসওয়ার্ড বদলে নিতে বলা হবে।'
