@@ -4241,6 +4241,42 @@ function allCTYPES(){
   });
   return main.concat(cust).concat(demo);
 }
+/* v18.42 — অনাথ Section উদ্ধার (self-heal):
+   কোনো Costing এর ctype যদি built-in-ও নয় এবং DB.sections-এও না থাকে (যেমন অন্য ডিভাইসে
+   Section বানিয়ে পণ্য সরানোর পর শুধু পণ্যগুলো sync হলো কিন্তু Section রেকর্ডটা এলো না —
+   পুরনো version থেকে push হলে এমন হয়), তখন সেই পণ্যগুলো কোনো tab এ দেখাত না, শুধু "সব"
+   তে গোনা হতো। এখানে প্রতিটি অনাথ ctype এর জন্য একটা recovery Section বানাই — base টা
+   পণ্য দেখে অনুমান করি (USD থাকলে Export; কেজি/লিটার হলে ঘরের; নইলে Local)। আসল Section
+   রেকর্ড পরে sync হয়ে এলে (একই v) recovery টা নিজে থেকেই বাদ যায় (dedupe)। */
+function sectionBaseFromProducts(ps){
+  for(var i=0;i<ps.length;i++){ if(n(ps[i].sellUsd)>0) return 'export'; }
+  var kg=0,other=0;
+  ps.forEach(function(p){ var m=p.measure||'kg'; if(m==='kg'||m==='ltr') kg++; else other++; });
+  return kg>=other ? 'ghorer' : 'local';
+}
+function healSections(){
+  DB.sections=DB.sections||[];
+  var changed=false;
+  /* ১) dedupe — একই v তে আসল ও recovered দুটোই থাকলে recovered বাদ */
+  var realV={}; DB.sections.forEach(function(s){ if(s&&s.v&&!s._recovered) realV[s.v]=1; });
+  var before=DB.sections.length;
+  DB.sections=DB.sections.filter(function(s){ return !(s&&s._recovered&&realV[s.v]); });
+  if(DB.sections.length!==before) changed=true;
+  /* ২) জানা v (built-in + বর্তমান Section) */
+  var known={}; CTYPES.forEach(function(t){ known[t.v]=1; });
+  DB.sections.forEach(function(s){ if(s&&s.v) known[s.v]=1; });
+  /* ৩) পণ্যের মধ্যে অনাথ ctype */
+  var orphans={};
+  (DB.products||[]).forEach(function(p){ var ct=p.ctype||'export'; if(!known[ct]){ (orphans[ct]=orphans[ct]||[]).push(p); } });
+  Object.keys(orphans).forEach(function(ct){
+    var ps=orphans[ct], pre='';
+    for(var i=0;i<ps.length;i++){ var mm=String(ps[i].code||'').match(/^([A-Za-z]{1,5})[-_ ]?\d/); if(mm){ pre=mm[1].toUpperCase(); break; } }
+    if(!pre) pre='SEC';
+    DB.sections.push({id:'secrec_'+ct, v:ct, l:pre, base:sectionBaseFromProducts(ps), prefix:pre.slice(0,4), _recovered:true});
+    known[ct]=1; changed=true;
+  });
+  return changed;
+}
 function secUnits(ct){ return SEC_UNITS[baseOf(ct)] || SEC_UNITS.export; }
 /* ভেতরের কোড 'ctn'/'pkt'/'kg' ই ব্যবহার করে — ctn=big, pkt=small */
 function levelKey(lv){ return lv==='small' ? 'pkt' : lv==='kg' ? 'kg' : 'ctn'; }
@@ -11415,6 +11451,7 @@ async function cloudSync(silent){
       S.lastSeq=res2.seq||S.lastSeq;
     }
 
+    healSections();                 /* v18.42 — sync এর পর অনাথ Section (অন্য ডিভাইসের পণ্য) উদ্ধার */
     S.lastAt=new Date().toISOString();
     const parts=[];
     if(r1.added) parts.push(r1.added+' নতুন এসেছে');
@@ -12540,6 +12577,8 @@ const CHANGELOG=[
    '<b>Order Statement টেবিল আরও compact</b> — header এখন <b>দুই লাইনে wrap</b> হয়, <b>Product Name কলাম চওড়া</b>, বাকি কলাম (দাম/Qty/CBM/Value) মানের মাপে সরু, <b>সারি চিকন</b> → এক পেজে অনেক বেশি পণ্য আঁটে (৮+ পণ্যেও অনেক জায়গা বাকি থাকে)',
    '<b>পুরো সফটওয়্যার এখন Cloud Sync হয়</b> — আগে <b>Budget/Projection</b>, Production এন্ট্রি, Machine/Utility, Costing ইতিহাস (versions) ক্লাউডে যেত না; এখন এগুলোসহ সব কিছু সব ডিভাইসে মিলে যায়',
    'Apps Script/Supabase কোড বদলানোর দরকার নেই — ব্যাকএন্ড আগে থেকেই যেকোনো collection নেয় (এক শিট, coll কলাম)',
+   '<b>অনাথ Section উদ্ধার (self-heal):</b> অন্য ডিভাইসে নতুন Section বানিয়ে পণ্য সরানোর পর যদি পণ্যগুলো এলেও Section-টা না আসে (পুরনো version থেকে push হলে হতো), তখন সেই পণ্য কোনো tab এ দেখাত না — শুধু "সব" তে গোনা হতো। এখন অ্যাপ নিজে থেকেই ওই Section পুনরুদ্ধার করে tab দেখায় (base পণ্য দেখে অনুমান করে: কেজি হলে ঘরের, USD থাকলে Export); আসল Section পরে sync হলে সেটাই বসে',
+   '<b>খেয়াল:</b> দুই ডিভাইসেই v18.42 চালালে Section নিজে থেকেই ঠিকঠাক sync হবে — পুরনো ফাইল থেকে push করলে Section যেত না',
    'Final professional scan: crawl (০ error), ৫০০ র‍্যান্ডম costing এর math invariant (০ fail), LibreOffice recalc (Excel সব cell সঠিক), Statement render (কোনো NaN/undefined নেই) — সব পাশ']},
  {v:'18.41', d:'2026-10-11', t:'নতুন Section যোগ করা যায় (Export/Morning এর মতো)', li:[
    'FG Product Costing এ এখন <b>⊞ Section</b> বোতাম — নিজের নতুন Section বানানো যায় (যেমন “Malaysia Export”, “Dhaka Local”)',
@@ -17146,6 +17185,7 @@ function startApp(){
   migrateFgActualPriceV2();
   migrateFgUnitV3();
   ordMigrate();
+  if(healSections()) saveDB();     /* v18.42 — অনাথ Section থাকলে উদ্ধার করে tab দেখাই */
   /* v18.42 — Login এ কোম্পানির নাম Settings থেকেই আসে (hardcode নয়) */
   (function(){
     var co = (DB.settings && DB.settings.companyName && DB.settings.companyName!=='Company Name') ? String(DB.settings.companyName).trim() : '';
