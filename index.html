@@ -4249,9 +4249,16 @@ function allCTYPES(){
    পণ্য দেখে অনুমান করি (USD থাকলে Export; কেজি/লিটার হলে ঘরের; নইলে Local)। আসল Section
    রেকর্ড পরে sync হয়ে এলে (একই v) recovery টা নিজে থেকেই বাদ যায় (dedupe)। */
 function sectionBaseFromProducts(ps){
-  for(var i=0;i<ps.length;i++){ if(n(ps[i].sellUsd)>0) return 'export'; }
-  var kg=0,other=0;
-  ps.forEach(function(p){ var m=p.measure||'kg'; if(m==='kg'||m==='ltr') kg++; else other++; });
+  /* base অনুমান — USD থাকা মানেই Export নয় (অনেক BDT costing এও USD রেফারেন্স থাকে)।
+     Export তখনই, যখন পণ্যে আসল Export-ডাটা আছে: কার্টন মাপ / Container CBM / Freight /
+     Forwarding (Common cost)। নইলে একক দেখে: কেজি/লিটার → ঘরের (per-Kg), নইলে Local। */
+  var exportish=0, kg=0, other=0;
+  ps.forEach(function(p){
+    if(n(p.ctnL)>0||n(p.ctnW)>0||n(p.ctnH)>0||n(p.containerCbm)>0||n(p.totalCbm)>0||
+       n(p.freightTotal)>0||n(p.freight)>0||(p.commonCosts&&p.commonCosts.length>0)) exportish++;
+    var m=p.measure||'kg'; if(m==='kg'||m==='ltr') kg++; else other++;
+  });
+  if(exportish > ps.length/2) return 'export';
   return kg>=other ? 'ghorer' : 'local';
 }
 function healSections(){
@@ -12577,7 +12584,7 @@ const CHANGELOG=[
    '<b>Order Statement টেবিল আরও compact</b> — header এখন <b>দুই লাইনে wrap</b> হয়, <b>Product Name কলাম চওড়া</b>, বাকি কলাম (দাম/Qty/CBM/Value) মানের মাপে সরু, <b>সারি চিকন</b> → এক পেজে অনেক বেশি পণ্য আঁটে (৮+ পণ্যেও অনেক জায়গা বাকি থাকে)',
    '<b>পুরো সফটওয়্যার এখন Cloud Sync হয়</b> — আগে <b>Budget/Projection</b>, Production এন্ট্রি, Machine/Utility, Costing ইতিহাস (versions) ক্লাউডে যেত না; এখন এগুলোসহ সব কিছু সব ডিভাইসে মিলে যায়',
    'Apps Script/Supabase কোড বদলানোর দরকার নেই — ব্যাকএন্ড আগে থেকেই যেকোনো collection নেয় (এক শিট, coll কলাম)',
-   '<b>অনাথ Section উদ্ধার (self-heal):</b> অন্য ডিভাইসে নতুন Section বানিয়ে পণ্য সরানোর পর যদি পণ্যগুলো এলেও Section-টা না আসে (পুরনো version থেকে push হলে হতো), তখন সেই পণ্য কোনো tab এ দেখাত না — শুধু "সব" তে গোনা হতো। এখন অ্যাপ নিজে থেকেই ওই Section পুনরুদ্ধার করে tab দেখায় (base পণ্য দেখে অনুমান করে: কেজি হলে ঘরের, USD থাকলে Export); আসল Section পরে sync হলে সেটাই বসে',
+   '<b>অনাথ Section উদ্ধার (self-heal):</b> অন্য ডিভাইসে নতুন Section বানিয়ে পণ্য সরানোর পর যদি পণ্যগুলো এলেও Section-টা না আসে (পুরনো version থেকে push হলে হতো), তখন সেই পণ্য কোনো tab এ দেখাত না — শুধু "সব" তে গোনা হতো। এখন অ্যাপ নিজে থেকেই ওই Section পুনরুদ্ধার করে tab দেখায়। base পণ্যের আসল ডাটা দেখে ঠিক করা হয় — কার্টন মাপ / CBM / Freight থাকলে Export, নইলে কেজি/লিটার হলে ঘরের (per-Kg, ৳), নইলে Local। (শুধু USD থাকলেই Export ধরা হয় না — অনেক ৳ costing এও USD রেফারেন্স থাকে)। আসল Section পরে sync হলে সেটাই বসে',
    '<b>খেয়াল:</b> দুই ডিভাইসেই v18.42 চালালে Section নিজে থেকেই ঠিকঠাক sync হবে — পুরনো ফাইল থেকে push করলে Section যেত না',
    'Final professional scan: crawl (০ error), ৫০০ র‍্যান্ডম costing এর math invariant (০ fail), LibreOffice recalc (Excel সব cell সঠিক), Statement render (কোনো NaN/undefined নেই) — সব পাশ']},
  {v:'18.41', d:'2026-10-11', t:'নতুন Section যোগ করা যায় (Export/Morning এর মতো)', li:[
