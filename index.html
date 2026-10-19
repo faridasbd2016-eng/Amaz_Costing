@@ -6649,8 +6649,8 @@ function renderProductsPage(){ return '<div class="page-toolbar">'+prodTabsHTML(
    'onclick="openBeFix()" title="দর বদলানোয় যেসব Costing এর Break-even পুরোনো হয়ে গেছে">&#9888; Break-even পুরোনো ('+
    beStaleCount('')+')</button>') : '')+
  '<button class="btn btn-ghost btn-sm" onclick="exportProducts()">&#8681; Summary</button>'+
- '<button class="btn btn-ghost btn-sm" onclick="printAllCostSheets(PROD_TAB)" title="এই ট্যাবের সব Costing Sheet একসাথে Print/PDF">&#128424; সব Print</button>'+
- '<button class="btn btn-accent btn-sm" onclick="exportCostingBulk(PROD_TAB)">&#8681; Costing Excel</button>'+
+ '<button class="btn btn-ghost btn-sm" onclick="printAllCostSheets(PROD_TAB, PROD_FOLDER)" title="এই ট্যাবের (বাছা Folder থাকলে শুধু সেই Folder এর) সব Costing Sheet একসাথে Print/PDF">&#128424; সব Print</button>'+
+ '<button class="btn btn-accent btn-sm" onclick="openCostXlChooser(PROD_TAB)" title="সব একসাথে, অথবা Folder ধরে Costing Excel">&#8681; Costing Excel</button>'+
  '<button class="btn btn-ghost btn-sm" onclick="openSectionMgr()" title="নতুন Section যোগ / মুছুন">&#8862; Section</button>'+
  '<button class="btn btn-primary btn-sm" onclick="newCosting()">+ নতুন Costing</button></div></div>'+
  '<div class="panel"><div class="panel-body" id="productsGridWrap"></div></div>'; }
@@ -6892,6 +6892,7 @@ function ordersOf(ct){ return ordersAll().filter(function(o){ return (o.ctype||'
   .sort(function(a,b){ return new Date(b.updatedAt||0)-new Date(a.updatedAt||0); }); }
 function ordById(id){ return ordersAll().find(function(o){ return o.id===id; })||null; }
 function ordIsLocked(o){ return !!(o && o.status==='locked' && o.snap); }
+function ordIsDelivered(o){ return !!(o && o.delivered); }     /* v18.43 */
 function ordHasCbm(ct){ return baseOf(ct)==='export'||baseOf(ct)==='depot'; }
 function ordIsExport(ct){ return isExportCt(ct); }
 /* খোলা order — পুরনো ফাংশনগুলো এটাই ব্যবহার করে */
@@ -7089,6 +7090,7 @@ function ordDuplicate(id){
   const c=JSON.parse(JSON.stringify(o));
   c.id=uid('ord'); c.ref=(o.ref||'')+' (কপি)'; c.status='draft'; c.snap=null;
   c.createdAt=nowISO(); c.updatedAt=nowISO(); delete c.lockedAt; delete c.lockedBy;
+  delete c.delivered; delete c.deliveredAt; delete c.deliveredBy; delete c.deliveryDate; delete c.challanNo; delete c.vehicle; delete c.deliveryNote;
   ordersAll().push(c); OR_CUR=c.id;
   saveDB(); render(); toast('কপি হয়েছে');
 }
@@ -7115,27 +7117,104 @@ function ordLock(id){
 function ordUnlock(id){
   if(!need('orderreq','e','Order আবার খোলা')) return;
   const o=ordById(id); if(!o) return;
+  if(ordIsDelivered(o)){ toast('Delivered Order খোলা যায় না — আগে "Delivery বাতিল" করুন',true); return; }
   if(!confirm('আবার খুলবেন?\n\nএতে হিমায়িত দরগুলো মুছে যাবে, হিসাব আজকের Costing Sheet অনুযায়ী নতুন করে হবে।')) return;
   o.status='draft'; o.snap=null; delete o.lockedAt; delete o.lockedBy; o.updatedAt=nowISO();
   audit('edit','order',o.ref||o.buyer||'Order','আবার খোলা হয়েছে');
   saveDB(); render(); toast('আবার খোলা হয়েছে');
 }
+/* ===== v18.43 — Order Delivered ===== */
+function ordNextChallan(){
+  const yr=new Date().getFullYear(); let mx=0;
+  ordersAll().forEach(function(o){
+    const m=String(o.challanNo||'').match(/(\d+)\s*$/);
+    if(m && String(o.challanNo).indexOf(String(yr))>-1) mx=Math.max(mx, parseInt(m[1],10)||0);
+  });
+  return 'DC-'+yr+'-'+String(mx+1).padStart(4,'0');
+}
+function ordDeliverOpen(id){
+  if(!need('orderreq','e','Order Delivered করা')) return;
+  const o=ordById(id); if(!o) return;
+  if(!(o.lines||[]).length){ toast('আগে Product ও Qty বসান',true); return; }
+  const old=document.getElementById('ordDlvModal'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='ordDlvModal';
+  ov.innerHTML='<div class="modal" style="max-width:450px;"><div class="modal-head"><h3>🚚 Order Delivered</h3>'+
+    '<button class="close-x" onclick="closeOrdDlv()">✕</button></div><div class="modal-body">'+
+    '<p class="hint" style="margin:-4px 0 13px;">“'+esc(o.ref||o.buyer||'Order')+'” Delivered হিসেবে চিহ্নিত হবে। '+
+      (ordIsLocked(o)?'':'<b>এটা এখনো খসড়া — Delivered করলে এখনকার দর দিয়ে নিজে থেকেই চূড়ান্ত (লক) হয়ে যাবে।</b> ')+
+      'তারপর <b>Factory Delivery Challan</b> Print করা যাবে।</p>'+
+    '<div class="field-row cols-2" style="margin-bottom:11px;">'+
+      '<div class="field"><label>Delivery তারিখ</label><input type="text" id="dl_date" value="'+esc(fmtDate(nowISO()))+'"></div>'+
+      '<div class="field"><label>Challan No.</label><input type="text" id="dl_no" value="'+esc(ordNextChallan())+'"></div></div>'+
+    '<div class="field" style="margin-bottom:11px;"><label>গাড়ি / Vehicle No. <small style="color:var(--text-dim);">(ঐচ্ছিক)</small></label><input type="text" id="dl_veh" placeholder="যেমন: Dhaka Metro-Ta 11-2345"></div>'+
+    '<div class="field" style="margin-bottom:16px;"><label>নোট <small style="color:var(--text-dim);">(ঐচ্ছিক)</small></label><input type="text" id="dl_note" placeholder="যেমন: Container No / Driver"></div>'+
+    '<div style="display:flex;gap:9px;justify-content:flex-end;">'+
+      '<button class="btn btn-ghost btn-sm" onclick="closeOrdDlv()">বাতিল</button>'+
+      '<button class="btn btn-primary btn-sm" onclick="ordDeliver(\''+o.id+'\')">🚚 Delivered করুন</button></div>'+
+    '</div></div>';
+  document.body.appendChild(ov);
+  openModal('ordDlvModal');
+}
+function closeOrdDlv(){ const m=document.getElementById('ordDlvModal'); if(m){ m.classList.remove('open'); setTimeout(function(){ if(m&&m.parentNode) m.remove(); },200); } }
+function ordDeliver(id){
+  if(!need('orderreq','e','Order Delivered করা')) return;
+  const o=ordById(id); if(!o) return;
+  const g=function(k){ return (((document.getElementById(k)||{}).value)||'').trim(); };
+  const dt=g('dl_date')||fmtDate(nowISO()), no=g('dl_no')||ordNextChallan();
+  /* খসড়া হলে আগে চূড়ান্ত (দর হিমায়িত) — Delivered মাল এর হিসাব পরে দর বদলালেও বদলাবে না */
+  if(!ordIsLocked(o)){
+    const prev=OR_CUR; OR_CUR=o.id;
+    const d=orderCalc();
+    if(!d.totCtn){ OR_CUR=prev; toast('আগে Order Qty দিন',true); return; }
+    const pr=d.preset;
+    o.snap={ lockedRate:d.usdRate, preset: pr?JSON.parse(JSON.stringify(pr)):null,
+      lines:(o.lines||[]).map(function(l,i){ return ordLineData(o,l,i); }).filter(Boolean) };
+    o.status='locked'; o.lockedAt=nowISO(); o.lockedBy=(ME&&(ME.name||ME.username))||'';
+    OR_CUR=prev;
+  }
+  o.delivered=true; o.deliveryDate=dt; o.challanNo=no; o.vehicle=g('dl_veh'); o.deliveryNote=g('dl_note');
+  o.deliveredAt=nowISO(); o.deliveredBy=(ME&&(ME.name||ME.username))||'';
+  o.updatedAt=nowISO();
+  audit('edit','order',o.ref||o.buyer||'Order','Delivered — Challan '+no+' · '+dt);
+  saveDB(); closeOrdDlv(); render(); toast('Delivered হয়েছে — এখন "Delivery Challan" Print করতে পারবেন');
+}
+function ordUndeliver(id){
+  if(!need('orderreq','e','Delivery বাতিল')) return;
+  const o=ordById(id); if(!o) return;
+  if(!confirm('Delivery বাতিল করবেন?\n\nOrder আবার "চূড়ান্ত (লক)" অবস্থায় ফিরে যাবে। Challan No. '+(o.challanNo||'')+' মুছে যাবে।')) return;
+  const no=o.challanNo;
+  delete o.delivered; delete o.deliveredAt; delete o.deliveredBy; delete o.deliveryDate; delete o.challanNo; delete o.vehicle; delete o.deliveryNote;
+  o.updatedAt=nowISO();
+  audit('edit','order',o.ref||o.buyer||'Order','Delivery বাতিল (Challan '+(no||'-')+')');
+  saveDB(); render(); toast('Delivery বাতিল হয়েছে');
+}
+let OR_DFILT='';      /* '' সব · 'open' চলমান · 'done' Delivered */
+function setOrDFilt(v){ OR_DFILT=v; render(); }
 function ordBadge(o){
+  if(ordIsDelivered(o)) return '<span class="tag" style="background:#DCE8F7;color:#1D4E89;">🚚 Delivered</span>';
   return ordIsLocked(o)
     ? '<span class="tag" style="background:var(--ok-bg);color:var(--ok);">🔒 চূড়ান্ত</span>'
     : '<span class="tag warn">খসড়া</span>';
 }
 function renderOrdersList(){
-  const list=ordersOf(OR_TAB);
-  if(!list.length) return '<div class="panel"><div class="panel-body">'+
+  const all=ordersOf(OR_TAB);
+  if(!all.length) return '<div class="panel"><div class="panel-body">'+
     emptyState(ctypeLabel(OR_TAB)+' section এ এখনো কোনো Order নেই — "+ নতুন Order" চাপুন।')+'</div></div>';
+  /* v18.43 — চলমান / Delivered ছাঁকনি */
+  const nDone=all.filter(ordIsDelivered).length, nOpen=all.length-nDone;
+  const chip=function(v,l,c){ return '<span class="fchip'+(OR_DFILT===v?' on':'')+'" onclick="setOrDFilt(\''+v+'\')">'+l+' <b>'+c+'</b></span>'; };
+  const chips='<div class="folder-chips">'+chip('','সব',all.length)+chip('open','⏳ চলমান',nOpen)+chip('done','🚚 Delivered',nDone)+'</div>';
+  const list=all.filter(function(o){ return !OR_DFILT || (OR_DFILT==='done'?ordIsDelivered(o):!ordIsDelivered(o)); });
+  if(!list.length) return chips+'<div class="panel"><div class="panel-body">'+
+    emptyState(OR_DFILT==='done'?'এখনো কোনো Order Delivered হয়নি।':'কোনো চলমান Order নেই — সব Delivered।')+'</div></div>';
   const prev=OR_CUR;
   const rows=list.map(function(o){
     OR_CUR=o.id; const d=orderCalc();
-    return '<tr style="cursor:pointer" onclick="ordOpen(\''+o.id+'\')">'+
+    const dl=ordIsDelivered(o);
+    return '<tr style="cursor:pointer;'+(dl?'opacity:.88;':'')+'" onclick="ordOpen(\''+o.id+'\')">'+
       '<td><b>'+esc(o.ref||'(Ref নেই)')+'</b><div class="muted" style="font-size:11px;">'+esc(o.buyer||'-')+'</div></td>'+
       '<td class="muted">'+esc(o.date||fmtDate(o.createdAt))+'</td>'+
-      '<td>'+ordBadge(o)+'</td>'+
+      '<td>'+ordBadge(o)+(dl?('<div class="muted" style="font-size:10.5px;margin-top:3px;white-space:nowrap;">'+esc(o.deliveryDate||fmtDate(o.deliveredAt))+(o.challanNo?(' · '+esc(o.challanNo)):'')+'</div>'):'')+'</td>'+
       '<td class="num">'+money(d.totCtn,0)+'</td>'+
       '<td class="num">'+(ordHasCbm(OR_TAB)?money(d.totCbm,2):'-')+'</td>'+
       '<td class="num">'+money(d.totCost)+'</td>'+
@@ -7147,7 +7226,7 @@ function renderOrdersList(){
       '<button class="btn btn-sm btn-danger" onclick="ordDelete(\''+o.id+'\')">Del</button></td></tr>';
   }).join('');
   OR_CUR=prev;
-  return '<div class="panel"><div class="table-wrap"><table>'+
+  return chips+'<div class="panel"><div class="table-wrap"><table>'+
     '<thead><tr><th>Order Ref / Buyer</th><th>তারিখ</th><th>অবস্থা</th>'+
     '<th class="num">Qty</th><th class="num">CBM</th><th class="num">মোট খরচ ৳</th>'+
     '<th class="num">মোট বিক্রয় ৳</th><th class="num">লাভ/লোকসান ৳</th><th class="num">Margin</th><th></th>'+
@@ -7278,21 +7357,27 @@ function renderOrderReqPage(){
   return renderOrderForm(o);
 }
 function renderOrderForm(o){
-  const ct=o.ctype||'export', isExp=ordIsExport(ct), hasCbm=ordHasCbm(ct), lk=ordIsLocked(o);
+  const ct=o.ctype||'export', isExp=ordIsExport(ct), hasCbm=ordHasCbm(ct), lk=ordIsLocked(o), dlv=ordIsDelivered(o);
   const dis = lk ? ' disabled' : '';
   const presets=(DB.exportPresets||[]);
   return '<div class="page-actions">'+
    '<button class="btn btn-ghost btn-sm" onclick="ordBack()">&#8592; তালিকায় ফিরুন</button>'+
    '<h3><span class="ctype-badge '+ct+'">'+ctypeLabel(ct)+'</span> &nbsp;'+esc(o.ref||'নতুন Order')+' &nbsp;'+ordBadge(o)+'</h3>'+
    '<div class="spacer"></div>'+
-   (lk ? '<button class="btn btn-ghost btn-sm" onclick="ordUnlock(\''+o.id+'\')">🔓 আবার খুলুন</button>'
-       : '<button class="btn btn-accent btn-sm" onclick="ordLock(\''+o.id+'\')">🔒 চূড়ান্ত করুন</button>')+
+   (dlv ? '<button class="btn btn-ghost btn-sm" onclick="ordUndeliver(\''+o.id+'\')" title="ভুলে Delivered হলে ফিরিয়ে নিন">↩ Delivery বাতিল</button>'
+    : (lk ? '<button class="btn btn-ghost btn-sm" onclick="ordUnlock(\''+o.id+'\')">🔓 আবার খুলুন</button>'
+          : '<button class="btn btn-accent btn-sm" onclick="ordLock(\''+o.id+'\')">🔒 চূড়ান্ত করুন</button>')+
+      '<button class="btn btn-sm" style="background:#1D4E89;color:#fff;border-color:#1D4E89;" onclick="ordDeliverOpen(\''+o.id+'\')" title="মাল Delivery হয়ে গেলে চাপুন">🚚 Delivered</button>')+
    (lk?'':'<button class="btn btn-ghost btn-sm" onclick="orAddAll()">সব Product যোগ</button>')+
    (lk?'':'<button class="btn btn-primary btn-sm" onclick="orAdd()">+ Product যোগ করুন</button>')+
    '<button class="btn btn-ghost btn-sm" onclick="exportOrderReq()" title="Excel">&#8681;</button>'+
    '<button class="btn btn-primary btn-sm" onclick="printOrderFull()" title="Costing, লাভ-ক্ষতি ও সমন্বিত Material একসাথে (পণ্যভিত্তিক শিট ছাড়া)">🖨 সম্পূর্ণ Print</button>'+
    '<button class="btn btn-ghost btn-sm" onclick="printOrderStatement()" title="পণ্যভিত্তিক Statement — Code · Name · Selling Price · Qty · CBM · Value (buyer কে দেওয়ার মতো)">📄 Statement</button>'+
+   (dlv?'<button class="btn btn-primary btn-sm" onclick="printOrderStatement(true)" title="Heading: FACTORY DELIVERY CHALLAN — Challan No, Delivery তারিখ সহ">🚚 Delivery Challan</button>':'')+
    '</div>'+
+   (dlv?('<p class="hint" style="margin:0 0 12px;background:#DCE8F7;color:#1D4E89;padding:8px 12px;border-radius:8px;">'+
+     '🚚 এই Order <b>Delivered</b> — তারিখ '+esc(o.deliveryDate||fmtDate(o.deliveredAt))+' · Challan No. <b>'+esc(o.challanNo||'-')+'</b>'+
+     (o.vehicle?(' · গাড়ি '+esc(o.vehicle)):'')+(o.deliveredBy?(' — '+esc(o.deliveredBy)):'')+'</p>'):'')+
    '<div class="panel" style="margin-bottom:16px;"><div class="panel-body">'+
    (lk?('<p class="hint" style="margin:-2px 0 12px;background:var(--ok-bg);color:var(--ok);padding:8px 12px;border-radius:8px;">'+
      '🔒 এই Order চূড়ান্ত করা হয়েছে '+fmtDate(o.lockedAt)+(o.lockedBy?(' — '+esc(o.lockedBy)):'')+'। '+
@@ -7930,8 +8015,9 @@ function amountWords(v, isUsd){
   return s+' Only';
 }
 /* v18.38 — Order Statement: পণ্যভিত্তিক সারসংক্ষেপ (Code · Name · Selling Price · Qty · CBM · Value) */
-function orderStatementHTML(d){
+function orderStatementHTML(d, challan){
   const pl=d.plan, isExp=d.isExport, sym=isExp?'$':'৳';
+  const dc=!!(challan && ordIsDelivered(pl));     /* v18.43 — Factory Delivery Challan */
   const GREEN='#1f4d3a', GOLD='#b9822f', LINE='#c9c3b4', INK='#14332a';
   const KNOCK="font-family:Arial,Helvetica,'Noto Sans Bengali',sans-serif !important;";
   const PCA='-webkit-print-color-adjust:exact;print-color-adjust:exact;';
@@ -7973,16 +8059,19 @@ function orderStatementHTML(d){
      '</div>'+
      '<div style="height:2px;background:'+GOLD+';margin-bottom:9px;"></div>';
   /* title */
-  h+='<div style="text-align:center;margin-bottom:9px;"><span style="display:inline-block;font-size:13.5px;font-weight:800;letter-spacing:3px;color:#fff;background:'+GREEN+';padding:5px 24px;border-radius:3px;'+KNOCK+PCA+'">ORDER STATEMENT</span></div>';
+  h+='<div style="text-align:center;margin-bottom:9px;"><span style="display:inline-block;font-size:13.5px;font-weight:800;letter-spacing:3px;color:#fff;background:'+GREEN+';padding:5px 24px;border-radius:3px;'+KNOCK+PCA+'">'+(dc?'FACTORY DELIVERY CHALLAN':'ORDER STATEMENT')+'</span></div>';
   /* meta */
   h+='<table style="width:100%;font-size:11px;margin-bottom:9px;border-collapse:collapse;"><tr>'+
        '<td style="width:60%;vertical-align:top;padding:7px 11px;border:0.5px solid '+LINE+';background:#f7f6f1;">'+
          '<div style="font-size:9.5px;letter-spacing:1px;color:'+GOLD+';font-weight:700;text-transform:uppercase;margin-bottom:4px;">Buyer / Party</div>'+
          '<div style="font-size:13px;font-weight:800;">'+esc(pl.buyer||'—')+'</div></td>'+
        '<td style="width:40%;vertical-align:top;padding:7px 11px;border:0.5px solid '+LINE+';">'+
+         (dc?qmRow('Challan No.', esc(pl.challanNo||'—'), LINE):'')+
+         (dc?qmRow('Delivery Date', esc(pl.deliveryDate||fmtDate(pl.deliveredAt)), LINE):'')+
          qmRow('Order Ref.', esc(pl.ref||'—'), LINE)+
-         qmRow('Date', esc(pl.date||fmtDate(nowISO())), LINE)+
+         qmRow(dc?'Order Date':'Date', esc(pl.date||fmtDate(dc?pl.createdAt:nowISO())), LINE)+
          qmRow('Section', esc(ctypeLabel(d.ctype)), LINE)+
+         (dc&&pl.vehicle?qmRow('Vehicle No.', esc(pl.vehicle), LINE):'')+
        '</td></tr></table>';
   /* table */
   h+='<table style="width:100%;border-collapse:collapse;margin-bottom:4px;table-layout:auto;"><thead><tr style="background:'+GREEN+';">'+
@@ -7997,13 +8086,20 @@ function orderStatementHTML(d){
   /* amount in words */
   h+='<div style="font-size:10.5px;border:0.5px solid '+LINE+';border-top:0;padding:4px 9px;background:#f7f6f1;margin-bottom:12px;">'+
        '<b style="color:'+GOLD+';">Amount in words:</b> <i>'+amountWords(totVal, isExp)+'</i></div>';
+  if(dc && pl.deliveryNote) h+='<div style="font-size:10.5px;margin:-6px 0 10px;"><b style="color:'+GOLD+';">Note:</b> '+esc(pl.deliveryNote)+'</div>';
+  if(dc) h+='<div style="font-size:10px;color:#444;margin:-4px 0 6px;font-style:italic;">Received the above goods in good order and condition.</div>';
   /* signatures */
+  const sw = dc ? '33%' : '50%';
   h+='<table style="width:100%;font-size:10.5px;margin-top:30px;page-break-inside:avoid;"><tr>'+
-       '<td style="width:50%;text-align:center;vertical-align:bottom;">'+
+       '<td style="width:'+sw+';text-align:center;vertical-align:bottom;">'+
          '<div style="border-top:1px solid #000;width:75%;margin:0 auto;padding-top:4px;">'+
            '<div style="font-weight:800;">Prepared By</div>'+
            '<div style="font-size:10px;color:#555;margin-top:2px;">'+esc(meName())+'</div></div></td>'+
-       '<td style="width:50%;text-align:center;vertical-align:bottom;">'+
+       (dc?('<td style="width:34%;text-align:center;vertical-align:bottom;">'+
+         '<div style="border-top:1px solid #000;width:75%;margin:0 auto;padding-top:4px;">'+
+           '<div style="font-weight:800;">Received By</div>'+
+           '<div style="font-size:10px;color:#555;margin-top:2px;">'+esc(pl.buyer||'Buyer / Party')+'</div></div></td>'):'')+
+       '<td style="width:'+sw+';text-align:center;vertical-align:bottom;">'+
          (DB.settings&&DB.settings.seal?('<img src="'+DB.settings.seal+'" alt="" style="max-height:52px;max-width:150px;object-fit:contain;margin-bottom:2px;"><br>'):'<div style="height:22px;"></div>')+
          '<div style="border-top:1px solid #000;width:75%;margin:0 auto;padding-top:4px;">'+
            '<div style="font-weight:800;">Approved By</div>'+
@@ -8018,11 +8114,11 @@ function qmRow(lab,val,LINE){
   return '<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:0.5px dotted #ccc;">'+
     '<span style="color:#666;font-size:10.5px;">'+lab+'</span><b style="font-size:11px;">'+val+'</b></div>';
 }
-function printOrderStatement(){
+function printOrderStatement(challan){
   if(!needTool('print','Print')) return;
   const d=orderCalc();
   if(!d.totCtn){ toast('আগে Order Qty দিন',true); return; }
-  document.getElementById('printArea').innerHTML='<div style="padding:6px 10px;'+'-webkit-print-color-adjust:exact;print-color-adjust:exact;">'+orderStatementHTML(d)+'</div>';
+  document.getElementById('printArea').innerHTML='<div style="padding:6px 10px;'+'-webkit-print-color-adjust:exact;print-color-adjust:exact;">'+orderStatementHTML(d, !!challan)+'</div>';
   setPrintOrientation('portrait','9mm 9mm');
   window.print();
 }
@@ -9851,9 +9947,9 @@ function printCostSheet(id){
   setPrintOrientation('portrait');
   window.print();
 }
-function printAllCostSheets(ctype){
+function printAllCostSheets(ctype, folder){
   if(!needTool('print','Print')) return;
-  const list=DB.products.filter(function(p){ return !ctype || (p.ctype||'export')===ctype; });
+  const list=costXlScope(ctype, folder||'');      /* v18.43 — বাছা Folder থাকলে শুধু সেটাই */
   if(!list.length){ toast('Print করার মতো কোনো Costing নেই',true); return; }
   const sorted=list.slice().sort(function(a,b){return (a.code||'').localeCompare(b.code||'')||a.name.localeCompare(b.name);});
   const h=sorted.map(function(p,i){
@@ -10624,24 +10720,82 @@ function exportCostingExcel(id){
   xlsDL(wb, 'Costing_'+String(p.name||p.code).replace(/[^A-Za-z0-9]/g,'_').slice(0,24)+'.xlsx');
   toast('Costing Excel (print format) তৈরি হচ্ছে...');
 }
-function exportCostingBulk(section){
+/* v18.43 — Folder ধরে Costing Excel: কোন Folder এর Excel নামাবেন বাছার ছোট বক্স */
+function costXlScope(section, folder){
+  return DB.products.filter(function(p){
+    if(section && (p.ctype||'export')!==section) return false;
+    if(folder==='__none__') return !folderOf(p);
+    if(folder) return folderOf(p)===folder;
+    return true;
+  });
+}
+function openCostXlChooser(section){
+  if(!needTool('excel','Excel Export')) return;
+  const fs=prodFoldersOf(section);
+  if(!fs.length){ exportCostingBulk(section, ''); return; }     /* Folder নেই — আগের মতোই সরাসরি */
+  const all=costXlScope(section,'').length, none=costXlScope(section,'__none__').length;
+  const cur=(PROD_FOLDER && (PROD_FOLDER==='__none__' ? none : fs.some(function(f){return f.name===PROD_FOLDER;}))) ? PROD_FOLDER : '';
+  function opt(v,label,cnt){
+    return '<label style="display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:7px;cursor:pointer;">'+
+      '<input type="radio" name="cx_f" value="'+esc(v)+'"'+(cur===v?' checked':'')+' onchange="cxSync()"> '+
+      '<span style="flex:1;">'+label+'</span><b style="color:var(--text-dim);font-size:12px;">'+cnt+' টি</b></label>';
+  }
+  let list=opt('', '\u{1F4C2} সব Costing'+(section?(' — '+esc(ctypeLabel(section))):' (সব Section)'), all);
+  fs.forEach(function(f){ list+=opt(f.name, '\u{1F4C1} '+esc(f.name), f.count); });
+  if(none) list+=opt('__none__', '— ফোল্ডারহীন', none);
+  const old=document.getElementById('costXlModal'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='costXlModal';
+  ov.innerHTML='<div class="modal" style="max-width:440px;"><div class="modal-head"><h3>&#8681; Costing Excel — Folder বাছুন</h3>'+
+    '<button class="close-x" onclick="closeCostXl()">✕</button></div><div class="modal-body">'+
+    '<p class="hint" style="margin:-4px 0 12px;">যে Folder এর Excel চান সেটা বাছুন। প্রতিটা ফাইলে আগের মতোই INDEX + প্রতিটা Costing sheet (সূত্রসহ) থাকবে।</p>'+
+    list+
+    '<label id="cx_splitWrap" style="display:flex;align-items:center;gap:8px;margin:11px 0 16px;font-size:12.5px;cursor:pointer;">'+
+      '<input type="checkbox" id="cx_split"> প্রতিটা Folder এর জন্য <b>আলাদা আলাদা Excel ফাইল</b> নামান</label>'+
+    '<div style="display:flex;gap:9px;justify-content:flex-end;">'+
+      '<button class="btn btn-ghost btn-sm" onclick="closeCostXl()">বাতিল</button>'+
+      '<button class="btn btn-accent btn-sm" onclick="doCostXl(\''+esc(section||'')+'\')">&#8681; Excel নামান</button></div>'+
+    '</div></div>';
+  document.body.appendChild(ov);
+  openModal('costXlModal'); cxSync();
+}
+function cxSync(){
+  const r=document.querySelector('input[name="cx_f"]:checked');
+  const w=document.getElementById('cx_splitWrap'); if(!w) return;
+  const on=!r || !r.value;          /* "আলাদা ফাইল" শুধু "সব" বাছলে অর্থবহ */
+  w.style.opacity=on?'1':'.4'; const c=document.getElementById('cx_split'); if(c){ c.disabled=!on; if(!on) c.checked=false; }
+}
+function closeCostXl(){ const m=document.getElementById('costXlModal'); if(m){ m.classList.remove('open'); setTimeout(function(){ if(m&&m.parentNode) m.remove(); },200); } }
+function doCostXl(section){
+  const r=document.querySelector('input[name="cx_f"]:checked');
+  const f=r ? r.value : '';
+  const split=!f && !!((document.getElementById('cx_split')||{}).checked);
+  closeCostXl();
+  if(!split){ exportCostingBulk(section, f); return; }
+  const parts=prodFoldersOf(section).map(function(x){return x.name;});
+  if(costXlScope(section,'__none__').length) parts.push('__none__');
+  parts.forEach(function(fn,i){ setTimeout(function(){ exportCostingBulk(section, fn, true); }, i*900); });
+  toast(parts.length+' টি আলাদা Excel ফাইল তৈরি হচ্ছে — browser "একাধিক download" অনুমতি চাইলে Allow দিন');
+}
+function exportCostingBulk(section, folder, quiet){
   if(!needTool('excel','Excel Export')) return;
   if(!needExcelJS()) return;
+  folder=folder||'';
   /* v16.8 — নামের ক্রমে (A → Z)। INDEX এর সারি আর Sheet গুলো — দুটোই এই
      একই তালিকা থেকে বানানো হয়, তাই দুটোই একই ক্রমে আসে।
      numeric:true — "Toast 2" আগে, "Toast 10" পরে (1, 10, 2 এর মতো গোলমাল নয়) */
-  const list=DB.products.filter(function(p){ return !section || (p.ctype||'export')===section; })
+  const list=costXlScope(section, folder)
     .slice().sort(function(a,b){
       return String(a.name||'').trim().localeCompare(String(b.name||'').trim(), undefined, {numeric:true, sensitivity:'base'})
           || String(a.code||'').localeCompare(String(b.code||''), undefined, {numeric:true});
     });
-  if(!list.length){ toast('এই Section এ কোনো costing নেই',true); return; }
+  if(!list.length){ toast(folder?'এই Folder এ কোনো costing নেই':'এই Section এ কোনো costing নেই',true); return; }
+  const fLab = folder==='__none__' ? 'Without Folder' : folder;
   const wb=new ExcelJS.Workbook(); wb.creator='AMAZ Product Costing';
   wb.calcProperties={fullCalcOnLoad:true};     /* v17.0 */
   const ix=wb.addWorksheet('INDEX',{views:[{showGridLines:true}]});
   ix.columns=[{width:34},{width:12},{width:18},{width:7},{width:14},{width:14},{width:14},{width:15},{width:14},{width:14},{width:14}];
   ix.addRow([DB.settings.companyName]); ix.getCell('A1').font={bold:true,size:13};
-  ix.addRow(['Costing Index — '+(section?ctypeLabel(section):'All Sections')+'   ·   '+fmtDate(nowISO())]);
+  ix.addRow(['Costing Index — '+(section?ctypeLabel(section):'All Sections')+(fLab?(' / Folder: '+fLab):'')+'   ·   '+fmtDate(nowISO())]);
   ix.addRow([]);
   const hdr=ix.addRow(['Product','Code','Section','Unit','Std Out/Batch','Material ৳','Mfg Exp ৳','Total Cost ৳',
     'Break-even $','Break-even ৳','Net Profit ৳']);
@@ -10689,9 +10843,10 @@ function exportCostingBulk(section){
     'Product এর নামে ক্লিক করলে ওই Costing sheet এ চলে যাবে। '+
     'RM LIST ও PM LIST এ দাম বদলালে সব Costing sheet এ নিজে থেকেই বদলে যাবে।']);
   note.getCell(1).font={italic:true, size:9};
-  const tag = section ? ctypeLabel(section).replace(/[^A-Za-z]/g,'') : 'All';
+  const tag = (section ? ctypeLabel(section).replace(/[^A-Za-z]/g,'') : 'All') +
+              (fLab ? ('_'+String(fLab).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,30)) : '');
   xlsDL(wb, 'Costing_'+tag+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  toast(list.length+' টি costing এক ফাইলে তৈরি হচ্ছে...');
+  if(!quiet) toast(list.length+' টি costing এক ফাইলে তৈরি হচ্ছে'+(fLab?(' (Folder: '+fLab+')'):'')+'...');
 }
 
 /* ---------- IMPORT ---------- */
@@ -12577,6 +12732,16 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.43', d:'2026-10-19', t:'Folder ধরে Costing Excel · Order Delivered · Factory Delivery Challan', li:[
+   '<b>Costing Excel এখন Folder ধরে নামানো যায়</b> — FG Product Costing এ <b>⇩ Costing Excel</b> চাপলে ছোট একটা বক্স আসে: <b>সব</b> / নির্দিষ্ট <b>Folder</b> (যেমন Malaysia) / <b>ফোল্ডারহীন</b> — যেটা বাছবেন শুধু সেগুলোর Excel (INDEX + প্রতিটা Costing sheet, সূত্রসহ)',
+   '“সব” বাছলে চাইলে <b>প্রতিটা Folder এর জন্য আলাদা আলাদা Excel ফাইল</b> একবারে নামানো যায় (browser “একাধিক download” অনুমতি চাইলে Allow দিন)',
+   'ফাইলের নামে ও INDEX এর শিরোনামে Folder এর নাম বসে (যেমন <code>Costing_Export_Malaysia_2026-10-19.xlsx</code>); কোনো Folder না থাকলে আগের মতোই সরাসরি নামে',
+   '<b>সব Print</b>-ও এখন বাছা Folder মানে — Folder chip এ Malaysia বাছা থাকলে শুধু Malaysia-র Costing Sheet গুলো Print হয়',
+   '<b>Order Requirement এ নতুন 🚚 Delivered বোতাম</b> — মাল delivery হয়ে গেলে চাপুন; Delivery তারিখ, <b>Challan No.</b> (নিজে থেকে DC-2026-0001 এভাবে আসে, বদলানো যায়), গাড়ি নম্বর ও নোট দেওয়া যায়',
+   'খসড়া Order Delivered করলে নিজে থেকেই <b>চূড়ান্ত (লক)</b> হয়ে দর হিমায়িত হয় — Delivered মালের হিসাব পরে দর বদলালেও বদলায় না। Delivered Order “আবার খুলুন” যায় না; ভুল হলে <b>↩ Delivery বাতিল</b>',
+   'Order তালিকায় অবস্থা <b>🚚 Delivered</b> দেখায়, নিচে Delivery তারিখ ও Challan No.; উপরে ছাঁকনি — <b>সব / ⏳ চলমান / 🚚 Delivered</b>',
+   '<b>Delivery Challan Print</b> — Delivered হলে Statement এর পাশে নতুন <b>🚚 Delivery Challan</b> বোতাম; একই Statement, কিন্তু শিরোনাম <b>FACTORY DELIVERY CHALLAN</b>, সাথে Challan No., Delivery Date, Vehicle No., আর সই তিনটা — Prepared By · <b>Received By</b> · Approved By',
+   'আগের <b>📄 Statement</b> (ORDER STATEMENT শিরোনাম) আগের মতোই থাকে; Delivery তথ্য Order এর সাথেই Cloud Sync এ যায়']},
  {v:'18.42', d:'2026-10-11', t:'Login নতুন রূপ · Order Statement আরও গোছানো · পুরো সফটওয়্যার Cloud Sync', li:[
    '<b>Login page নতুন করে সাজানো</b> — AMAZ Worker Supply অ্যাপের মতো: বাঁ দিকে brand + কাজের ধাপ (Material → Labour → Overhead → Costing → Break-even → Profit), নিচে একটা animated <b>accounts/costing office</b> দৃশ্য (মনিটরে live চার্ট, ক্যালকুলেটর, কয়েন, খাতা, হিসাবরক্ষক), ডান দিকে frosted সবুজ-সোনালি login বক্স',
    'মোবাইলে সুন্দরভাবে বসে — হিরো লেখা/ধাপ লুকিয়ে বক্সটাই মাঝখানে আসে; reduced-motion হলে animation বন্ধ',
@@ -14195,7 +14360,7 @@ const HELP=[
   hBox('Export এ রায়ের বাক্সেই দেখায় — এক কন্টেইনারে (যেমন ৭৯২ কার্টন) মোট কত লাভ হবে।')
 },
 
-{id:'order', title:'Order Requirement', tags:'order requirement অর্ডার চাহিদা projection material batch দিন',
+{id:'order', title:'Order Requirement', tags:'order requirement অর্ডার চাহিদা projection material batch দিন delivered delivery challan চালান ডেলিভারি',
  html:
   hP('এক বা একাধিক পণ্যের অর্ডার ধরে <b>মোট কী কী কতটুকু লাগবে</b> বের করে।')+
   hOl([
@@ -14205,7 +14370,16 @@ const HELP=[
    'কয় ব্যাচ ও কত দিন লাগবে সেটাও দেখাবে'
   ])+
   hP('এক অর্ডারে <b>আলাদা এককের পণ্য একসাথে</b> রাখা যায় — প্রতিটা সারিতে নিজের Unit কলাম থাকে।')+
-  hP('Excel export ও Print (স্বাক্ষরের লাইন সহ Material Requirement Sheet) দুটোই আছে।')
+  hP('Excel export ও Print (স্বাক্ষরের লাইন সহ Material Requirement Sheet) দুটোই আছে।')+
+  hT('🚚 Delivered ও Factory Delivery Challan (v18.43)')+
+  hOl([
+   'মাল delivery হয়ে গেলে Order খুলে <b>🚚 Delivered</b> চাপুন',
+   'Delivery তারিখ, <b>Challan No.</b> (নিজে থেকে DC-2026-0001 আসে, বদলানো যায়), গাড়ি নম্বর ও নোট দিন → <b>Delivered করুন</b>',
+   'খসড়া Order হলে নিজে থেকেই চূড়ান্ত (লক) হয়ে দর হিমায়িত হয়',
+   'তারপর <b>🚚 Delivery Challan</b> বোতামে Print — শিরোনাম <b>FACTORY DELIVERY CHALLAN</b>, সাথে Challan No., Delivery Date, Vehicle ও Received By সই'
+  ])+
+  hP('Order তালিকায় <b>সব / ⏳ চলমান / 🚚 Delivered</b> ছাঁকনি আছে। আগের <b>📄 Statement</b> (ORDER STATEMENT) আগের মতোই থাকে।')+
+  hBox('ভুল করে Delivered করলে Order খুলে <b>↩ Delivery বাতিল</b> চাপুন — Order আবার চূড়ান্ত (লক) অবস্থায় ফিরে যাবে।')
 },
 
 {id:'import', title:'Excel থেকে Import', tags:'import excel csv upload আনা master rate',
