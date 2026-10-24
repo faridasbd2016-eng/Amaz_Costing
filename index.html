@@ -1767,9 +1767,9 @@ tr.sel{background:var(--ok-bg) !important;}
 
 <div class="modal-overlay" id="quoteModal"><div class="modal" style="max-width:1000px;">
   <div class="modal-head"><h3>&#129534; দরপত্র / Price Quotation</h3>
-    <button class="close-x" onclick="closeModal('quoteModal')">&#10005;</button></div>
+    <button class="close-x" onclick="closeQuoteModal()">&#10005;</button></div>
   <div class="modal-body"><div id="quoteBody"></div></div>
-  <div class="modal-foot"><button class="btn" onclick="closeModal('quoteModal')">বন্ধ</button>
+  <div class="modal-foot"><button class="btn" onclick="closeQuoteModal()">বন্ধ</button>
     <span style="flex:1"></span>
     <button class="btn btn-primary btn-sm" onclick="qSave()">&#128190; সেভ</button>
     <button class="btn btn-sm" onclick="quoteToOrder()">&#128722; Order এ পাঠান</button>
@@ -2059,6 +2059,28 @@ function printFooterHTML(align){
     'Printed By: <b>'+esc(meName())+'</b> &nbsp;·&nbsp; '+fmtDate(nowISO())+
     '<br>Powered By AMAZ ERP Solution</div>';
 }
+/* v18.48 — তারিখের ঘর এখন সব জায়গায় আসল Date picker। ভেতরে সবসময় yyyy-mm-dd, দেখানোর সময় "19 Oct 2026"।
+   পুরনো লেখা তারিখ ("19 Oct 2026", "19/10/2026") পড়ে নিয়ে নিজে থেকেই ঠিক করে দেখায়। */
+const _MON3=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+const _MONN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function toISODate(v){
+  if(v===null||v===undefined) return '';
+  const t=String(v).trim(); if(!t) return '';
+  let m=t.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[1]+'-'+m[2]+'-'+m[3];
+  m=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){ let y=+m[3]; if(y<100) y+=2000; const mo=+m[2], d=+m[1];
+    if(mo>=1&&mo<=12&&d>=1&&d<=31) return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+  m=t.match(/^(\d{1,2})\s+([A-Za-z]{3,})\.?,?\s+(\d{4})$/);
+  if(m){ const k=_MON3.indexOf(m[2].slice(0,3).toLowerCase());
+    if(k>=0) return m[3]+'-'+String(k+1).padStart(2,'0')+'-'+String(+m[1]).padStart(2,'0'); }
+  return '';
+}
+function showDate(v){
+  const iso=toISODate(v);
+  if(iso){ const p=iso.split('-'); return p[2]+' '+_MONN[+p[1]-1]+' '+p[0]; }
+  return (v===null||v===undefined)?'':String(v);
+}
+function todayISO(){ const d=new Date(), z=function(x){return (x<10?'0':'')+x;}; return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate()); }
 function fmtDate(iso){ if(!iso) return '-'; return new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 function esc(s){ if(s===undefined||s===null) return ''; return String(s).replace(/[&<>"']/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -2562,6 +2584,7 @@ const NAV=[
  {id:'packaging',label:'Packing Materials',sub:'Packing item master & rates',icon:'package'},
  {id:'machines',label:'Machine / Utility',sub:'মেশিনের বিদ্যুৎ, গ্যাস ও দর',icon:'gear'},
  {id:'fgproducts',label:'FG Product Master',sub:'Product, দাম, কার্টন মাপ ও CBM',icon:'tag'},
+ {id:'quotation',label:'দরপত্র (Quotation)',sub:'ক্রেতাকে পাঠানোর Price Quotation — তৈরি, সংরক্ষণ ও Order এ পাঠানো',icon:'doc'},
  {id:'orderreq',label:'Order Requirement',sub:'Order/Projection অনুযায়ী সমন্বিত material চাহিদা',icon:'list'},
  {id:'exportset',label:'Export Setting',sub:'দেশভিত্তিক সাধারণ খরচ ও ডলার রেট',icon:'globe'},
  {id:'reports',label:'Reports',sub:'Cost summary & export',icon:'chart'},
@@ -2586,6 +2609,7 @@ const ICONS={
  box:'<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
  leaf:'<path d="M11 20A7 7 0 019.8 6.1C15.5 5 20 5.8 20 5.8s.8 4.5-.3 10.2A7 7 0 0111 20z"/><path d="M2 21c4-4 7-7 12-12"/>',
  package:'<path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.3 7l8.7 5 8.7-5M12 22V12"/>',
+ doc:'<path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
  chart:'<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/>',
  list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/>',
  tag:'<path d="M20.6 12.3L12 3.7H4v8l8.6 8.6a2 2 0 002.8 0l5.2-5.2a2 2 0 000-2.8z"/><circle cx="7.5" cy="7.5" r="1.4"/>'};
@@ -2676,6 +2700,7 @@ function render(){
   else if(currentPage==='machines'){ c.innerHTML=renderMCPage(); renderMCTable(); }
   else if(currentPage==='packaging'){ c.innerHTML=renderPKPage(); renderPKTable(); }
   else if(currentPage==='fgproducts'){ c.innerHTML=renderFgPage(); renderFgTable(); }
+  else if(currentPage==='quotation') c.innerHTML=renderQuotationPage();
   else if(currentPage==='orderreq'){ c.innerHTML=renderOrderReqPage(); renderOrderReq(); }
   else if(currentPage==='settings') c.innerHTML=renderSettings();
   else if(currentPage==='users') c.innerHTML=renderUsers();
@@ -6158,6 +6183,7 @@ function beFixApply(){
     if(!(v>0)) return;
     if(d.isExp) p.sellUsd=Number(v.toFixed(4)); else p.sellBdt=Number(v.toFixed(2));
     p.beBase = Number(d.now.toFixed(d.isExp?4:2));
+    chgPush(p,['Break-even দাম নতুন করে বসানো হয়েছে ('+(d.isExp?('US$'+money(v,4)):('৳'+money(v,2)))+')']);
     p.updatedAt=nowISO(); cnt++;
   });
   saveDB();
@@ -6428,6 +6454,116 @@ function summaryHTML(r){
     ):'')+
     '</tbody></table></div>';
 }
+/* ===== v18.48 — সত্যিকারের পরিবর্তন ধরা: "সর্বশেষ আপডেট" তারিখ ও কী কী বদলেছে তার তালিকা ===== */
+const CHG_SKIP={_ts:1,_dev:1,updatedAt:1,changedAt:1,chgLog:1,createdAt:1,code:1,beBase:1,
+  status:1,submitBy:1,submitAt:1,approveBy:1,approveAt:1,approveNote:1};
+function chgNorm(v){
+  if(v===null||v===undefined||v===false||v===0) return undefined;
+  if(Array.isArray(v)) return v.length?v:undefined;                     /* খালি তালিকা = নেই */
+  if(typeof v==='object') return Object.keys(v).length?v:undefined;
+  if(typeof v==='string'){ const t=v.trim(); if(t==='') return undefined;
+    if(/^-?\d+(\.\d+)?$/.test(t)){ const x=Number(t); return x===0?undefined:x; } return t; }
+  return v;
+}
+function chgFp(p){ return JSON.stringify(p,function(k,v){ if(CHG_SKIP[k]) return undefined; return chgNorm(v); }); }
+const CHG_LBL={name:'পণ্যের নাম',unitLabel:'একক',smallLabel:'ছোট একক',measure:'পরিমাপ',outUnit:'আউটপুট একক',prodCap:'Production Capacity',
+  workHours:'কাজের ঘণ্টা',pktCtn:'Pkt/Ctn',packKg:'Pack Size',loss:'Process Loss %',batchDay:'Batch/Day',workDays:'Working Days',shift:'Shift',
+  usd:'ডলার রেট',sellUsd:'Sales/Break-even (USD)',sellBdt:'Sales/Break-even (৳)',sellNoVat:'আসল বিক্রয়মূল্য',note:'নোট',targetMargin:'Target Margin %',
+  beAuto:'Break-even নিজে থেকে হালনাগাদ',otherLabor:'Other Labor',otherFOH:'Others Factory O/H',otherFohMode:'Others F.O/H পদ্ধতি',otherFohCost:'Others F.O/H খরচ',
+  otherFohProdVal:'Others F.O/H উৎপাদন মূল্য',otherFohPct:'Others F.O/H %',depAsset:'Depreciable Asset',depRate:'Depreciation %',
+  hoOH:'Head Office O/H',hoMode:'H/O পদ্ধতি',hoCost:'H/O খরচ',hoProdVal:'H/O উৎপাদন মূল্য',hoPct:'H/O %',bank:'Bank Interest %',risk:'Risk Factor %',
+  cbmMode:'CBM পদ্ধতি',containerCbm:'Container CBM',totalCbm:'Total CBM',ctnL:'কার্টন দৈর্ঘ্য',ctnW:'কার্টন প্রস্থ',ctnH:'কার্টন উচ্চতা',
+  freightMode:'Freight পদ্ধতি',freightTotal:'Freight মোট',freight:'Freight',presetId:'Export Setting',presetLock:'Export Setting লক',
+  fgLinkId:'FG Master সংযোগ',ctype:'Section',folder:'Folder',demoUnit:'Demo একক',demoExport:'Demo Export',demoOutMode:'Demo Output পদ্ধতি',demoStdOut:'Demo Std Output'};
+const CHG_ARR={rmLines:'Raw Material',pkLines:'Packing Material',manpower:'Manpower',commonCosts:'সাধারণ/Export খরচ',assets:'Asset',powerLines:'Power/Utility',sellingOH:'বিক্রয়/বিতরণ খরচ'};
+const CHG_PROP={qty:'Qty',qtyCtn:'Qty/Ctn',basis:'ভিত্তি',mult:'×',div:'÷',count:'সংখ্যা',wage:'বেতন',amount:'পরিমাণ',mode:'ধরন',rate:'রেট',
+  vat:'VAT %',fixed:'Fixed',value:'মূল্য',linkTo:'লিংক',min:'সর্বনিম্ন',max:'সর্বোচ্চ',name:'নাম',label:'নাম',title:'পদবি',price:'দর',unit:'একক',
+  kw:'kW',hours:'ঘণ্টা',machineId:'মেশিন'};
+function chgShow(v){ if(v===undefined||v===null||v===''||v===false) return '—'; if(v===true) return 'হ্যাঁ';
+  if(typeof v==='object') return '…'; const t=String(v); return t.length>40?(t.slice(0,38)+'…'):t; }
+function chgMatName(id){
+  const m=(DB.rawMaterials||[]).find(function(x){return x.id===id;})||(DB.packaging||[]).find(function(x){return x.id===id;})||(DB.machines||[]).find(function(x){return x.id===id;});
+  return m?m.name:'';
+}
+function chgLineName(l,i){
+  return (l&&(chgMatName(l.matId)||chgMatName(l.machineId)||l.title||l.label||l.name))||('লাইন '+(i+1));
+}
+function chgLineMap(arr){
+  const map={}, seen={};
+  (arr||[]).forEach(function(l,i){
+    let k=chgLineName(l,i); seen[k]=(seen[k]||0)+1; if(seen[k]>1) k+=' #'+seen[k];
+    map[k]=l||{};
+  });
+  return map;
+}
+function chgDiff(a,b){
+  const out=[]; a=a||{}; b=b||{};
+  const keys={}; Object.keys(a).concat(Object.keys(b)).forEach(function(k){ keys[k]=1; });
+  Object.keys(keys).forEach(function(k){
+    if(CHG_SKIP[k]) return;
+    const x=a[k], y=b[k];
+    if(CHG_ARR[k]){
+      const A=chgLineMap(x), B=chgLineMap(y), lab=CHG_ARR[k];
+      Object.keys(B).forEach(function(n1){ if(!(n1 in A)){
+        const l=B[n1]; const q=l.qty!==undefined?l.qty:(l.qtyCtn!==undefined?l.qtyCtn:(l.count!==undefined?l.count:(l.amount!==undefined?l.amount:l.value)));
+        out.push(lab+' যোগ: '+n1+(chgNorm(q)!==undefined?(' (Qty '+chgShow(q)+')'):'')); } });
+      Object.keys(A).forEach(function(n1){ if(!(n1 in B)) out.push(lab+' বাদ: '+n1); });
+      Object.keys(B).forEach(function(n1){ if(n1 in A){
+        const p={}; Object.keys(A[n1]).concat(Object.keys(B[n1])).forEach(function(q){ p[q]=1; });
+        Object.keys(p).forEach(function(q){
+          if(q==='matId'||q==='machineId'||q==='id'||CHG_SKIP[q]) return;
+          if(JSON.stringify(chgNorm(A[n1][q]))!==JSON.stringify(chgNorm(B[n1][q])))
+            out.push(lab+': '+n1+' — '+(CHG_PROP[q]||q)+' '+chgShow(A[n1][q])+' → '+chgShow(B[n1][q]));
+        });
+      } });
+      return;
+    }
+    const nx=chgNorm(x), ny=chgNorm(y);
+    if(JSON.stringify(nx)===JSON.stringify(ny)) return;
+    if((nx&&typeof nx==='object')||(ny&&typeof ny==='object')){ out.push((CHG_LBL[k]||k)+' বদলেছে'); return; }
+    if(k==='ctype'){ out.push('Section: '+ctypeLabel(x||'export')+' → '+ctypeLabel(y||'export')); return; }
+    if(k==='presetId'){ const nm=function(id){ const pr=(DB.exportPresets||[]).find(function(z){return z.id===id;}); return pr?pr.name:(id?'—':'নেই'); };
+      out.push('Export Setting: '+nm(x)+' → '+nm(y)); return; }
+    if(k==='fgLinkId'){ out.push('FG Master সংযোগ '+(y?'যুক্ত হয়েছে':'বিচ্ছিন্ন করা হয়েছে')); return; }
+    out.push((CHG_LBL[k]||k)+': '+chgShow(x)+' → '+chgShow(y));
+  });
+  return out;
+}
+function chgPush(p, items, force){
+  if(!p) return;
+  if(!items || !items.length){ if(!force) return; items=['পরিবর্তন']; }
+  const MAX=60; let it=items.slice(0,MAX); if(items.length>MAX) it.push('… আরও '+(items.length-MAX)+' টি পরিবর্তন');
+  p.changedAt=nowISO();
+  p.chgLog=[{at:p.changedAt, by:(ME?(ME.name||ME.username):''), items:it}].concat(p.chgLog||[]).slice(0,25);
+}
+function chgWhen(p){ return (p&&(p.changedAt||p.updatedAt))||''; }
+function openChgLog(id){
+  const p=DB.products.find(function(x){return x.id===id;}); if(!p) return;
+  const old=document.getElementById('chgModal'); if(old) old.remove();
+  const log=(p.chgLog||[]);
+  let body;
+  if(!log.length){
+    body='<p class="hint" style="padding:6px 2px;">এই Costing এর কোনো পরিবর্তনের তালিকা এখনো জমা হয়নি। এখন থেকে প্রতিবার <b>সত্যিকারের কিছু বদলালে</b> এখানে জমা হবে'+
+      (chgWhen(p)?(' (সর্বশেষ সেভ: '+esc(fmtDate(chgWhen(p)))+')'):'')+'।</p>';
+  } else {
+    body=log.map(function(e,i){
+      const d=new Date(e.at);
+      return '<div style="border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:9px;'+(i===0?'background:var(--ok-bg);':'')+'">'+
+        '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;">'+
+          '<b>'+(i===0?'🕘 সর্বশেষ আপডেট — ':'')+esc(d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}))+'</b>'+
+          '<span class="muted" style="font-size:12px;">'+esc(e.by||'')+'</span></div>'+
+        '<ul style="margin:0;padding-left:19px;font-size:12.5px;line-height:1.65;">'+
+          (e.items||[]).map(function(t){ return '<li>'+esc(t)+'</li>'; }).join('')+'</ul></div>';
+    }).join('');
+  }
+  const ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='chgModal';
+  ov.innerHTML='<div class="modal" style="max-width:640px;"><div class="modal-head"><h3>🕘 কী কী আপডেট হয়েছিল — '+esc((p.code?p.code+' · ':'')+p.name)+'</h3>'+
+    '<button class="close-x" onclick="closeChgLog()">✕</button></div>'+
+    '<div class="modal-body" style="max-height:70vh;overflow:auto;">'+body+
+    '<p class="hint" style="margin-top:6px;">শুধু সত্যিকারের পরিবর্তন জমা হয় — খুলে কিছু না বদলে Save করলে তারিখ বা তালিকা বদলায় না। সর্বশেষ ২৫টি পরিবর্তন রাখা হয়।</p></div></div>';
+  document.body.appendChild(ov); openModal('chgModal');
+}
+function closeChgLog(){ const m=document.getElementById('chgModal'); if(m){ m.classList.remove('open'); setTimeout(function(){ if(m&&m.parentNode) m.remove(); },200); } }
 function saveProduct(){
   if(!need('products', CUR&&CUR.id?'e':'a','Costing সেভ')) return;
   if(CUR && CUR.id){
@@ -6443,7 +6579,14 @@ function saveProduct(){
   if(r.stdOut<=0){ toast('Raw Material qty দিন — Standard Output 0 হচ্ছে',true); switchTab(1); return; }
   CUR.rmLines=CUR.rmLines.filter(function(l){return l.matId&&n(l.qty)>0;});
   CUR.pkLines=CUR.pkLines.filter(function(l){return l.matId&&n(l.qtyCtn)!==0;});
+  const _prev = CUR.id ? DB.products.find(function(x){return x.id===CUR.id;}) : null;
+  /* v18.48 — কিছুই না বদলালে সেভ হয় না: তারিখ/ইতিহাস/sync কিছুতেই হাত পড়ে না */
+  if(_prev && chgFp(_prev)===chgFp(CUR)){
+    closeModal('productModal'); render(); toast('কিছুই বদলায়নি — আগের অবস্থাই আছে (সর্বশেষ আপডেট: '+fmtDate(chgWhen(_prev))+')'); return;
+  }
   CUR.id=CUR.id||uid('prod'); CUR.createdAt=CUR.createdAt||nowISO(); CUR.updatedAt=nowISO();
+  if(_prev){ CUR.chgLog=(_prev.chgLog||[]).slice(); CUR.changedAt=_prev.changedAt; chgPush(CUR, chgDiff(_prev,CUR), true); }
+  else { CUR.chgLog=[]; chgPush(CUR, ['নতুন Costing তৈরি']); }
   const i=DB.products.findIndex(function(x){return x.id===CUR.id;});
   if(i>=0) DB.products[i]=CUR; else DB.products.push(CUR);
   try{ verSnap(CUR); }catch(e){}          /* এই অবস্থার একটা ছবি ইতিহাসে */
@@ -6468,6 +6611,7 @@ function duplicateProduct(id){
   if(!need('products','a','Costing কপি')) return;
   const p=JSON.parse(JSON.stringify(DB.products.find(function(x){return x.id===id;})));
   p.id=uid('prod'); p.name=p.name+' (Copy)'; p.code=''; p.createdAt=nowISO(); p.updatedAt=nowISO();
+  p.chgLog=[]; chgPush(p,['কপি হিসেবে তৈরি (মূল: '+(p.name||'').replace(' (Copy)','')+')']);
   p.status='draft'; p.submitBy=''; p.submitAt=''; p.approveBy=''; p.approveAt=''; p.approveNote='';
   /* কপি সবসময় মূলটার ধরনেই থাকে — একই ট্যাবে, একই ধরনের পরের কোড পায় */
   DB.products.push(p); resequenceCodes();
@@ -6546,6 +6690,7 @@ function doCostOrg(id, isCopy){
     np.id=uid('prod');
     np.name=(((document.getElementById('co_name')||{}).value)||p.name).trim()||p.name;
     np.code=''; np.ctype=sec; np.folder=folder; np.createdAt=nowISO(); np.updatedAt=nowISO();
+    np.chgLog=[]; chgPush(np,['কপি হিসেবে তৈরি (মূল: '+p.name+') → '+ctypeLabel(sec)+(folder?(' / '+folder):'')]);
     ensureDemoFields(np);
     np.status='draft'; np.submitBy=''; np.submitAt=''; np.approveBy=''; np.approveAt=''; np.approveNote='';
     DB.products.push(np); resequenceCodes();
@@ -6553,7 +6698,12 @@ function doCostOrg(id, isCopy){
     saveDB(); closeCostOrg(); PROD_TAB=sec; PROD_FOLDER=folder||''; render();
     toast('Copy তৈরি হয়েছে: '+ctypeLabel(sec)+(folder?(' / '+folder):'')+' — Code: '+(np.code||'-'));
   } else {
-    const oldSec=p.ctype||'export';
+    const oldSec=p.ctype||'export', oldFolder=folderOf(p);
+    if(oldSec!==sec || oldFolder!==folder){
+      const it=[]; if(oldSec!==sec) it.push('Section: '+ctypeLabel(oldSec)+' → '+ctypeLabel(sec));
+      if(oldFolder!==folder) it.push('Folder: '+(oldFolder||'নেই')+' → '+(folder||'নেই'));
+      chgPush(p,it);
+    }
     p.ctype=sec; p.folder=folder; p.updatedAt=nowISO();
     ensureDemoFields(p);
     if(oldSec!==sec) resequenceCodes();
@@ -6703,8 +6853,10 @@ function renderProductsGrid(){
            (d.pct>=0?'+':'')+money(d.pct,2)+'% &rarr; '+(d.isExp?('US$'+money(d.now,2)):('৳'+money(d.now)))+'</span></div>')
         : ''; })()+
       '<div class="pc-row"><span>Net Profit / '+r.uLab+'</span><span class="'+(r.netCtn>=0?'profit-pos':'profit-neg')+'">৳'+money(r.netCtn)+'</span></div>'+
+      '<div class="pc-row" title="সত্যিকারের কিছু বদলালেই শুধু এই তারিখ বদলায়"><span>&#128339; সর্বশেষ আপডেট</span><span>'+esc(fmtDate(chgWhen(p)))+'</span></div>'+
       '<div class="pc-actions" onclick="event.stopPropagation()">'+
       '<button class="btn btn-sm btn-ghost" style="flex:1" onclick="printCostSheet(\''+p.id+'\')">Print</button>'+
+      '<button class="btn btn-sm btn-ghost" title="কী কী আপডেট হয়েছিল — পরিবর্তনের তালিকা" onclick="openChgLog(\''+p.id+'\')">&#128221;</button>'+
       '<button class="btn btn-sm btn-ghost" title="Top Sheet" onclick="openTopSheet(\''+p.id+'\')">Top</button>'+
       '<button class="btn btn-sm btn-ghost" title="বিশ্লেষণ — What-if ছক ও Break-even Quantity" onclick="openWhatIf(\''+p.id+'\')">&#128202;</button>'+
       '<button class="btn btn-sm btn-ghost" title="ইতিহাস — আগের অবস্থাগুলো" onclick="openVersions(\''+p.id+'\')">&#8634;</button>'+
@@ -6842,7 +6994,6 @@ function renderReports(){
    '<div class="panel">'+repTabsHTML()+'<div class="panel-head">'+
    '<h3 style="flex:1">'+(all?'সব Section':ctypeLabel(REP_TAB))+' &mdash; Costing Summary <span class="muted" style="font-weight:400;font-size:12px;">('+unitNote+')</span></h3>'+
    '<button class="btn btn-sm" onclick="openCompare()">&#8646; তুলনা</button>'+
-   '<button class="btn btn-sm" onclick="openQuote()">&#129534; দরপত্র</button>'+
    (canTool('print')?'<button class="btn btn-sm" onclick="printReports()">&#128424; Print</button>':'')+
    '<button class="btn btn-accent btn-sm" onclick="exportProducts()">&#8681; Excel</button></div><div class="table-wrap">'+
    (list.length===0?emptyState(all?'কোনো ডাটা নেই।':(ctypeLabel(REP_TAB)+' section এ এখনো কোনো Costing নেই।')):
@@ -7153,7 +7304,7 @@ function ordDeliverOpen(id){
       (ordIsLocked(o)?'':'<b>এটা এখনো খসড়া — Delivered করলে এখনকার দর দিয়ে নিজে থেকেই চূড়ান্ত (লক) হয়ে যাবে।</b> ')+
       'তারপর <b>Factory Delivery Challan</b> Print করা যাবে।</p>'+
     '<div class="field-row cols-2" style="margin-bottom:11px;">'+
-      '<div class="field"><label>Delivery তারিখ</label><input type="text" id="dl_date" value="'+esc(fmtDate(nowISO()))+'"></div>'+
+      '<div class="field"><label>Delivery তারিখ</label><input type="date" id="dl_date" value="'+esc(todayISO())+'"></div>'+
       '<div class="field"><label>Challan No.</label><input type="text" id="dl_no" value="'+esc(ordNextChallan())+'"></div></div>'+
     '<div class="field" style="margin-bottom:11px;"><label>গাড়ি / Vehicle No. <small style="color:var(--text-dim);">(ঐচ্ছিক)</small></label><input type="text" id="dl_veh" placeholder="যেমন: Dhaka Metro-Ta 11-2345"></div>'+
     '<div class="field" style="margin-bottom:16px;"><label>নোট <small style="color:var(--text-dim);">(ঐচ্ছিক)</small></label><input type="text" id="dl_note" placeholder="যেমন: Container No / Driver"></div>'+
@@ -7169,7 +7320,7 @@ function ordDeliver(id){
   if(!need('orderreq','e','Order Delivered করা')) return;
   const o=ordById(id); if(!o) return;
   const g=function(k){ return (((document.getElementById(k)||{}).value)||'').trim(); };
-  const dt=g('dl_date')||fmtDate(nowISO()), no=g('dl_no')||ordNextChallan();
+  const dt=toISODate(g('dl_date'))||todayISO(), no=g('dl_no')||ordNextChallan();
   /* খসড়া হলে আগে চূড়ান্ত (দর হিমায়িত) — Delivered মাল এর হিসাব পরে দর বদলালেও বদলাবে না */
   if(!ordIsLocked(o)){
     const prev=OR_CUR; OR_CUR=o.id;
@@ -7184,7 +7335,7 @@ function ordDeliver(id){
   o.delivered=true; o.deliveryDate=dt; o.challanNo=no; o.vehicle=g('dl_veh'); o.deliveryNote=g('dl_note');
   o.deliveredAt=nowISO(); o.deliveredBy=(ME&&(ME.name||ME.username))||'';
   o.updatedAt=nowISO();
-  audit('edit','order',o.ref||o.buyer||'Order','Delivered — Challan '+no+' · '+dt);
+  audit('edit','order',o.ref||o.buyer||'Order','Delivered — Challan '+no+' · '+showDate(dt));
   saveDB(); closeOrdDlv(); render(); toast('Delivered হয়েছে — এখন "Delivery Challan" Print করতে পারবেন');
 }
 function ordUndeliver(id){
@@ -7222,8 +7373,8 @@ function renderOrdersList(){
     const dl=ordIsDelivered(o);
     return '<tr style="cursor:pointer;'+(dl?'opacity:.88;':'')+'" onclick="ordOpen(\''+o.id+'\')">'+
       '<td><b>'+esc(o.ref||'(Ref নেই)')+'</b><div class="muted" style="font-size:11px;">'+esc(o.buyer||'-')+'</div></td>'+
-      '<td class="muted">'+esc(o.date||fmtDate(o.createdAt))+'</td>'+
-      '<td>'+ordBadge(o)+(dl?('<div class="muted" style="font-size:10.5px;margin-top:3px;white-space:nowrap;">'+esc(o.deliveryDate||fmtDate(o.deliveredAt))+(o.challanNo?(' · '+esc(o.challanNo)):'')+'</div>'):'')+'</td>'+
+      '<td class="muted">'+esc(showDate(o.date)||fmtDate(o.createdAt))+'</td>'+
+      '<td>'+ordBadge(o)+(dl?('<div class="muted" style="font-size:10.5px;margin-top:3px;white-space:nowrap;">'+esc(showDate(o.deliveryDate)||fmtDate(o.deliveredAt))+(o.challanNo?(' · '+esc(o.challanNo)):'')+'</div>'):'')+'</td>'+
       '<td class="num">'+money(d.totCtn,0)+'</td>'+
       '<td class="num">'+(ordHasCbm(OR_TAB)?money(d.totCbm,2):'-')+'</td>'+
       '<td class="num">'+money(d.totCost)+'</td>'+
@@ -7385,7 +7536,7 @@ function renderOrderForm(o){
    (dlv?'<button class="btn btn-primary btn-sm" onclick="printOrderStatement(true)" title="Heading: FACTORY DELIVERY CHALLAN — Challan No, Delivery তারিখ সহ">🚚 Delivery Challan</button>':'')+
    '</div>'+
    (dlv?('<p class="hint" style="margin:0 0 12px;background:#DCE8F7;color:#1D4E89;padding:8px 12px;border-radius:8px;">'+
-     '🚚 এই Order <b>Delivered</b> — তারিখ '+esc(o.deliveryDate||fmtDate(o.deliveredAt))+' · Challan No. <b>'+esc(o.challanNo||'-')+'</b>'+
+     '🚚 এই Order <b>Delivered</b> — তারিখ '+esc(showDate(o.deliveryDate)||fmtDate(o.deliveredAt))+' · Challan No. <b>'+esc(o.challanNo||'-')+'</b>'+
      (o.vehicle?(' · গাড়ি '+esc(o.vehicle)):'')+(o.deliveredBy?(' — '+esc(o.deliveredBy)):'')+'</p>'):'')+
    '<div class="panel" style="margin-bottom:16px;"><div class="panel-body">'+
    (lk?('<p class="hint" style="margin:-2px 0 12px;background:var(--ok-bg);color:var(--ok);padding:8px 12px;border-radius:8px;">'+
@@ -7394,7 +7545,7 @@ function renderOrderForm(o){
    '<div class="field-row cols-3" style="margin-bottom:6px;">'+
    '<div class="field"><label>Buyer / Party</label><input type="text" id="or_buyer" value="'+esc(o.buyer||'')+'" oninput="orMeta()"'+dis+' placeholder="যেমন: Selangor Foods Sdn Bhd"></div>'+
    '<div class="field"><label>Order / PI Ref.</label><input type="text" id="or_ref" value="'+esc(o.ref||'')+'" oninput="orMeta()"'+dis+' placeholder="ORD-MY-2026-014"></div>'+
-   '<div class="field"><label>তারিখ</label><input type="text" id="or_date" value="'+esc(o.date||'')+'" oninput="orMeta()"'+dis+' placeholder="dd/mm/yyyy"></div></div>'+
+   '<div class="field"><label>তারিখ</label><input type="date" id="or_date" value="'+esc(toISODate(o.date))+'" onchange="orMeta()" oninput="orMeta()"'+dis+'></div></div>'+
    (isExp?('<div class="field-row cols-3" style="margin-bottom:6px;">'+
      '<div class="field"><label>গন্তব্য (Export Setting)</label><select id="or_preset" onchange="orMeta()"'+dis+'>'+
        '<option value="">-- বাছুন --</option>'+
@@ -7911,7 +8062,7 @@ function orderPLHTML(d, pageBreak){
         (ordIsLocked(o)?(' &nbsp;·&nbsp; চূড়ান্ত '+fmtDate(o.lockedAt)+' — দর হিমায়িত'):' &nbsp;·&nbsp; খসড়া (আজকের দর)')+'</div></div>'+
     '<table style="width:100%;'+S+'font-size:11px;margin-bottom:6px;border:1px solid #000;">'+
     '<tr><td style="'+cl+'"><b>Order Ref:</b> '+esc(o.ref||'-')+'</td><td style="'+cl+'"><b>Buyer:</b> '+esc(o.buyer||'-')+'</td>'+
-    '<td style="'+cl+'"><b>তারিখ:</b> '+esc(o.date||fmtDate(o.createdAt))+'</td></tr>'+
+    '<td style="'+cl+'"><b>তারিখ:</b> '+esc(showDate(o.date)||fmtDate(o.createdAt))+'</td></tr>'+
     (isExp?('<tr><td style="'+cl+'"><b>গন্তব্য:</b> '+esc(d.preset?d.preset.name:'-')+'</td>'+
       '<td style="'+cl+'"><b>Container:</b> '+d.containers+' × '+money(d.contCbm,2)+' CBM</td>'+
       '<td style="'+cl+'"><b>USD Rate:</b> ৳'+money(d.usdRate,2)+'</td></tr>'):'')+
@@ -8076,9 +8227,9 @@ function orderStatementHTML(d, challan){
          '<div style="font-size:13px;font-weight:800;">'+esc(pl.buyer||'—')+'</div></td>'+
        '<td style="width:40%;vertical-align:top;padding:7px 11px;border:0.5px solid '+LINE+';">'+
          (dc?qmRow('Challan No.', esc(pl.challanNo||'—'), LINE):'')+
-         (dc?qmRow('Delivery Date', esc(pl.deliveryDate||fmtDate(pl.deliveredAt)), LINE):'')+
+         (dc?qmRow('Delivery Date', esc(showDate(pl.deliveryDate)||fmtDate(pl.deliveredAt)), LINE):'')+
          qmRow('Order Ref.', esc(pl.ref||'—'), LINE)+
-         qmRow(dc?'Order Date':'Date', esc(pl.date||fmtDate(dc?pl.createdAt:nowISO())), LINE)+
+         qmRow(dc?'Order Date':'Date', esc(showDate(pl.date)||fmtDate(dc?pl.createdAt:nowISO())), LINE)+
          qmRow('Section', esc(ctypeLabel(d.ctype)), LINE)+
          (dc&&pl.vehicle?qmRow('Vehicle No.', esc(pl.vehicle), LINE):'')+
        '</td></tr></table>';
@@ -8209,7 +8360,7 @@ function orderReqHTML(d, pageBreak){
     '<table style="width:100%;'+S+'font-size:11.5px;margin-bottom:6px;border:1px solid #000;">'+
     '<tr><td style="'+cl+'width:50%;"><b>Buyer:</b> '+esc(pl.buyer||'-')+'</td>'+
     '<td style="'+cl+'"><b>Order Ref:</b> '+esc(pl.ref||'-')+'</td></tr>'+
-    '<tr><td style="'+cl+'"><b>Order Date:</b> '+esc(pl.date||'-')+'</td>'+
+    '<tr><td style="'+cl+'"><b>Order Date:</b> '+esc(showDate(pl.date)||'-')+'</td>'+
     '<td style="'+cl+'"><b>Printed By:</b> '+esc(meName())+' &nbsp;·&nbsp; '+fmtDate(nowISO())+'</td></tr></table>'+
     '<div style="font-weight:bold;margin:10px 0 4px;border-bottom:1.5px solid #000;">ORDER SUMMARY</div>'+
     '<table style="width:100%;border-collapse:collapse;'+S+'font-size:11px;">'+
@@ -8596,6 +8747,8 @@ function vhRestore(){
   const restored=JSON.parse(JSON.stringify(v.snap));
   restored.id=keep.id; restored.code=keep.code; restored.createdAt=keep.createdAt;
   restored.updatedAt=nowISO();
+  restored.chgLog=(keep.chgLog||[]).slice(); restored.changedAt=keep.changedAt;
+  chgPush(restored,['পুরনো অবস্থায় ফিরিয়ে আনা হয়েছে ('+d.toLocaleString()+')']);
   DB.products[i]=restored;
   verSnap(restored,'ফিরিয়ে আনা হয়েছে');
   audit('restore','product',restored.name,d.toLocaleString()+' এর অবস্থায়');
@@ -9000,7 +9153,7 @@ function openQuote(){
     const d=new Date();
     const pad=function(x){ return (x<10?'0':'')+x; };
     const no='QT-'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes());
-    QUOTE={ no:no, date:fmtDate(nowISO()), valid:'', buyer:'', addr:'',
+    QUOTE={ no:no, date:todayISO(), valid:'', buyer:'', addr:'',
             cur:'BDT', disc:0, vat:0, note:'', status:'draft', lines:[],
             lhMode:(DB.settings&&DB.settings.qLhMode)||'none',
             lhTop:(DB.settings&&n(DB.settings.qLhTop)>0)?n(DB.settings.qLhTop):38,
@@ -9030,7 +9183,7 @@ function renderQuoteBody(){
      '</div>'+
      '<div class="field-row cols-4" style="margin-top:2px;">'+
      '<div class="field"><label>দরপত্র নং</label><input type="text" value="'+esc(QUOTE.no)+'" onchange="qSet(\'no\',this.value)"></div>'+
-     '<div class="field"><label>তারিখ</label><input type="text" value="'+esc(QUOTE.date)+'" onchange="qSet(\'date\',this.value)"></div>'+
+     '<div class="field"><label>তারিখ</label><input type="date" value="'+esc(toISODate(QUOTE.date))+'" onchange="qSet(\'date\',this.value)"></div>'+
      '<div class="field"><label>বৈধতা (কত দিন)</label><input type="text" value="'+esc(QUOTE.valid)+'" placeholder="৩০ দিন" onchange="qSet(\'valid\',this.value)"></div>'+
      '<div class="field"><label>মুদ্রা</label><select onchange="qSetCur(this.value)">'+
        ['BDT','USD'].map(function(c){ return '<option value="'+c+'"'+(QUOTE.cur===c?' selected':'')+'>'+(c==='BDT'?'৳ Taka':'$ USD')+'</option>'; }).join('')+
@@ -9055,16 +9208,20 @@ function renderQuoteBody(){
        .map(function(p){ return '<option value="'+esc(qProdLabel(p))+'"></option>'; }).join('')+'</datalist>';
   h+='<div style="display:flex;gap:10px;align-items:center;margin:10px 0 6px;flex-wrap:wrap;">'+
      '<button class="btn btn-sm btn-accent" onclick="qAddCustom(true)">＋ লাইন যোগ করুন</button>'+
-     '<span class="hint">নাম ঘরে টাইপ করে Costing পণ্য খুঁজুন · Tab/তীর/Enter দিয়ে ঘরে ঘরে · শেষ ঘরে Enter দিলে নতুন লাইন</span></div>';
+     '<label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:'+(qBasis()==='sell'?'var(--ok-bg)':'var(--panel-2)')+';" '+
+       'title="টিক দিলে সব Costing-পণ্যের দরের ঘরে Break-even এর বদলে FG Master এর আসল Selling Price বসে যাবে (হাতে লেখা লাইন বদলায় না)">'+
+       '<input type="checkbox"'+(qBasis()==='sell'?' checked':'')+' onchange="qSetBasis(this.checked)"> <b>আসল Selling Price ধরে দর বসান</b></label>'+
+     '<span class="hint">'+(qBasis()==='sell'?'দর এখন <b>Selling Price</b> থেকে আসছে · ':'দর এখন <b>Break-even</b> থেকে আসছে · ')+'নাম ঘরে টাইপ করে Costing পণ্য খুঁজুন · Tab/তীর/Enter</span></div>';
 
   /* লাইন টেবিল */
   h+='<div class="table-wrap"><table class="tbl"><thead><tr>'+
      '<th style="width:34px;">#</th><th>পণ্য</th><th style="width:90px;">Code</th>'+
-     '<th style="width:70px;">একক</th><th style="width:80px;">Qty</th>'+
-     '<th style="width:110px;">দর ('+sym+')</th><th style="width:120px;" class="num">মোট</th>'+
+     '<th style="width:64px;">একক</th><th style="width:74px;">Qty</th>'+
+     '<th style="width:82px;" title="প্রতি কার্টনের CBM (Costing/FG Master থেকে আসে, বদলানো যায়)">CBM/Ctn</th><th style="width:78px;" class="num">মোট CBM</th>'+
+     '<th style="width:100px;">দর ('+sym+')</th><th style="width:112px;" class="num">মোট</th>'+
      '<th style="width:40px;"></th></tr></thead><tbody id="qLinesBody">';
   if(!QUOTE.lines.length){
-    h+='<tr><td colspan="8" class="muted" style="text-align:center;padding:14px;">উপরে থেকে পণ্য যোগ করুন</td></tr>';
+    h+='<tr><td colspan="10" class="muted" style="text-align:center;padding:14px;">উপরে থেকে পণ্য যোগ করুন</td></tr>';
   } else {
     QUOTE.lines.forEach(function(L,i){
       h+='<tr>'+
@@ -9073,7 +9230,11 @@ function renderQuoteBody(){
         '<td><input type="text" id="qCode'+i+'" value="'+esc(L.code)+'" onchange="qLineSet('+i+',\'code\',this.value)" style="width:100%;"></td>'+
         '<td><input type="text" id="qUnit'+i+'" value="'+esc(L.unit)+'" onchange="qLineSet('+i+',\'unit\',this.value)" style="width:100%;"></td>'+
         '<td><input type="text" id="qQty'+i+'" value="'+esc(L.qty)+'" onchange="qLineSet('+i+',\'qty\',this.value)" style="width:100%;text-align:right;"></td>'+
-        '<td><input type="text" id="qPrice'+i+'" value="'+esc(L.price)+'" onchange="qLineSet('+i+',\'price\',this.value)" style="width:100%;text-align:right;"></td>'+
+        '<td><input type="text" id="qCbm'+i+'" value="'+esc(n(L.cbm)>0?L.cbm:'')+'" onchange="qLineSet('+i+',\'cbm\',this.value)" style="width:100%;text-align:right;"></td>'+
+        '<td class="num" id="qCbmT'+i+'">'+qCbmFmt(n(L.qty)*n(L.cbm))+'</td>'+
+        '<td><input type="text" id="qPrice'+i+'" value="'+esc(L.price)+'" onchange="qLineSet('+i+',\'price\',this.value)" style="width:100%;text-align:right;'+
+          ((qBasis()==='sell' && L.pid && (function(){ const p=(DB.products||[]).find(function(x){return x.id===L.pid;}); return p && !calc(p).hasAct; })())?'border-color:var(--danger);':'')+
+          '" title="'+((qBasis()==='sell' && L.pid)?'লাল দাগ = এই পণ্যে আসল Selling Price বসানো নেই, Break-even দর আছে':'')+'"></td>'+
         '<td class="num" id="qAmt'+i+'" style="font-weight:600;">'+qMoney(n(L.qty)*n(L.price))+'</td>'+
         '<td><button class="btn btn-sm btn-danger" onclick="qDelLine('+i+')" title="বাদ">&#10005;</button></td>'+
         '</tr>';
@@ -9099,7 +9260,10 @@ function renderQuoteBody(){
 
 function qTotalsHTML(t){
   const rowStyle='display:flex;justify-content:space-between;gap:24px;font-size:13px;padding:2px 0;';
-  return '<div style="'+rowStyle+'"><span>Subtotal</span><b>'+qMoney(t.sub)+'</b></div>'+
+  const cb=qLineCbmSum(); let qs=0; (QUOTE.lines||[]).forEach(function(L){ qs+=n(L.qty); });
+  return '<div style="'+rowStyle+'color:var(--text-dim);"><span>মোট Qty</span><b>'+money(qs,0)+'</b></div>'+
+    (cb>0?('<div style="'+rowStyle+'color:var(--text-dim);"><span>মোট CBM</span><b>'+money(cb,3)+'</b></div>'):'')+
+    '<div style="'+rowStyle+'"><span>Subtotal</span><b>'+qMoney(t.sub)+'</b></div>'+
     (n(QUOTE.disc)>0?('<div style="'+rowStyle+'color:var(--danger);"><span>ছাড় ('+money(QUOTE.disc,2)+'%)</span><b>−'+qMoney(t.disc)+'</b></div>'):'')+
     (n(QUOTE.vat)>0?('<div style="'+rowStyle+'"><span>VAT ('+money(QUOTE.vat,2)+'%)</span><b>+'+qMoney(t.vat)+'</b></div>'):'')+
     '<div style="'+rowStyle+'border-top:1.5px solid var(--border);margin-top:3px;padding-top:5px;font-size:15px;">'+
@@ -9160,25 +9324,55 @@ function qSetLHBot(v){
   QUOTE.lhBot=n(v)||0;
   DB.settings=DB.settings||{}; DB.settings.qLhBot=QUOTE.lhBot; saveDB();
 }
+function qCbmFmt(v){ return n(v)>0 ? money(v,3) : '—'; }
 function qLineSet(i,f,v){
   const L=QUOTE.lines[i]; if(!L) return;
-  L[f]=(f==='qty'||f==='price')?n(v):v;
-  if(f==='qty'||f==='price'){
+  L[f]=(f==='qty'||f==='price'||f==='cbm')?n(v):v;
+  if(f==='qty'||f==='price'||f==='cbm'){
     const a=document.getElementById('qAmt'+i); if(a) a.textContent=qMoney(n(L.qty)*n(L.price));
+    const ct=document.getElementById('qCbmT'+i); if(ct) ct.textContent=qCbmFmt(n(L.qty)*n(L.cbm));
     qUpdTotals();
   }
 }
+/* v18.46 — দরের ভিত্তি: 'be' = Break-even দাম (আগের মতো) · 'sell' = আসল Selling Price (FG Master এর আসল বিক্রয়মূল্য) */
+function qBasis(){ return (QUOTE && QUOTE.priceBasis==='sell') ? 'sell' : 'be'; }
+function qBasePrice(r){
+  const usd = QUOTE.cur==='USD';
+  if(qBasis()==='sell' && r.hasAct){
+    if(usd){        /* Export পণ্যে ডলার দামই আসল; Local পণ্যে ৳ দামকে ডলার রেট দিয়ে ভাগ */
+      if(r.isExport) return n(r.actUsd)||0;
+      const rate=qUsdRate(); return (rate>0 && n(r.actBdt)>0) ? +(n(r.actBdt)/rate).toFixed(2) : 0;
+    }
+    return n(r.actBdt)||0;
+  }
+  return usd ? (n(r.sellUsd)||0) : (n(r.sellBdt)||0);
+}
+function qSetBasis(on){
+  if(!QUOTE) return;
+  QUOTE.priceBasis = on ? 'sell' : 'be';
+  let changed=0, missing=0;
+  (QUOTE.lines||[]).forEach(function(L){
+    if(!L.pid) return;
+    const p=(DB.products||[]).find(function(x){return x.id===L.pid;}); if(!p) return;
+    const r=calc(p);
+    if(on && !r.hasAct) missing++;
+    L.price=qBasePrice(r); changed++;
+  });
+  renderQuoteBody();
+  toast(on ? ('আসল Selling Price বসানো হয়েছে ('+changed+' লাইন)'+(missing?(' — '+missing+'টি পণ্যে Selling Price বসানো নেই, ওগুলোতে Break-even দর রাখা হয়েছে'):''))
+           : ('Break-even দরে ফেরা হয়েছে ('+changed+' লাইন)'), missing>0);
+}
+function qLineCbmSum(){ let c=0; (QUOTE.lines||[]).forEach(function(L){ c+=n(L.qty)*n(L.cbm); }); return c; }
 function qAddLine(pid){
   if(!pid) return;
   const p=(DB.products||[]).find(function(x){ return x.id===pid; });
   if(!p) return;
   const r=calc(p);
-  const price = QUOTE.cur==='USD' ? (n(r.sellUsd)||0) : (n(r.sellBdt)||0);
-  QUOTE.lines.push({pid:pid, name:p.name||'', code:p.code||'', unit:r.uLab||'', qty:1, price:price});
+  QUOTE.lines.push({pid:pid, name:p.name||'', code:p.code||'', unit:r.uLab||'', qty:1, price:qBasePrice(r), cbm:+n(r.cbmPerCtn).toFixed(6)});
   renderQuoteBody();
 }
 function qAddCustom(focus){
-  QUOTE.lines.push({pid:'', name:'', code:'', unit:'', qty:1, price:0});
+  QUOTE.lines.push({pid:'', name:'', code:'', unit:'', qty:1, price:0, cbm:0});
   renderQuoteBody();
   if(focus){ const el=document.getElementById('qName'+(QUOTE.lines.length-1)); if(el){ el.focus(); if(el.select) el.select(); } }
 }
@@ -9206,15 +9400,18 @@ function qLineName(i, txt){
   if(p){
     const r=calc(p);
     L.pid=p.id; L.code=p.code||''; L.unit=r.uLab||L.unit;
-    if(!(n(L.price)>0)) L.price = QUOTE.cur==='USD' ? (n(r.sellUsd)||0) : (n(r.sellBdt)||0);
+    if(!(n(L.price)>0)) L.price = qBasePrice(r);
+    if(!(n(L.cbm)>0)) L.cbm = +n(r.cbmPerCtn).toFixed(6);
     /* ঘরগুলো জায়গায় বসাই — নতুন করে আঁকি না, তাই নাম-ঘরের কার্সর/focus থাকে */
     const ce=document.getElementById('qCode'+i);  if(ce) ce.value=L.code;
     const ue=document.getElementById('qUnit'+i);  if(ue) ue.value=L.unit;
     const pe=document.getElementById('qPrice'+i); if(pe) pe.value=L.price;
+    const be=document.getElementById('qCbm'+i);   if(be) be.value=L.cbm||'';
   } else { L.pid=''; }
   const inp=document.getElementById('qName'+i);
   if(inp) inp.style.borderColor = (String(txt||'').trim() && !p) ? 'var(--danger)' : '';
   const a=document.getElementById('qAmt'+i); if(a) a.textContent=qMoney(n(L.qty)*n(L.price));
+  const ct=document.getElementById('qCbmT'+i); if(ct) ct.textContent=qCbmFmt(n(L.qty)*n(L.cbm));
   qUpdTotals();
 }
 
@@ -9231,7 +9428,7 @@ function qTopBarHTML(){
   const saved=DB.quotations.slice().sort(function(a,b){ return (b.at||0)-(a.at||0); });
   const opts='<option value="">📂 সংরক্ষিত দরপত্র খুলুন…</option>'+
     saved.map(function(r){ return '<option value="'+esc(r.id)+'">'+
-      esc('['+qStatusLabel(r.status||'draft')+'] '+(r.no||'')+' · '+(r.buyer||'নামহীন')+' · '+(r.date||''))+'</option>'; }).join('');
+      esc('['+qStatusLabel(r.status||'draft')+'] '+(r.no||'')+' · '+(r.buyer||'নামহীন')+' · '+showDate(r.date))+'</option>'; }).join('');
   const status = QUOTE.id
     ? '<span class="hint" style="color:var(--ok,#22c55e);">&#10003; সেভ করা — '+esc(QUOTE.no)+'</span>'+
       '<button class="btn btn-sm btn-ghost" onclick="qDuplicate()" title="এটার নকল দিয়ে নতুন দরপত্র">&#128203; কপি</button>'+
@@ -9242,7 +9439,83 @@ function qTopBarHTML(){
     '<select onchange="qLoad(this.value); this.value=\'\'" style="min-width:230px;">'+opts+'</select>'+
     qStatusSelHTML()+'<span style="flex:1"></span>'+status+'</div>';
 }
-function qNew(){ QUOTE=null; openQuote(); }
+/* ===== v18.45 — দরপত্র এখন আলাদা মেনু (আগে Reports এ বোতাম ছিল) ===== */
+let Q_FILT='', Q_SEARCH='';
+function closeQuoteModal(){ closeModal('quoteModal'); if(currentPage==='quotation') render(); }
+function qTotalOf(r){
+  const prev=QUOTE; QUOTE=r;
+  try{ return {t:qCalcRows().grand, sym:qSym()}; } finally { QUOTE=prev; }
+}
+function qSetFilt(v){ Q_FILT=v; render(); }
+function qSetSearch(v){ Q_SEARCH=v; const pos=v.length; render(); const e=document.getElementById('qSearch'); if(e){ e.focus(); try{ e.setSelectionRange(pos,pos); }catch(_){} } }
+function qBackfillCbm(){      /* পুরনো দরপত্রে CBM ঘর ছিল না — খুললে Costing থেকে বসিয়ে দিই (সেভ না করা পর্যন্ত শুধু স্ক্রিনে) */
+  (QUOTE.lines||[]).forEach(function(L){
+    if(L.cbm===undefined){ L.cbm=0;
+      const p=L.pid?(DB.products||[]).find(function(x){return x.id===L.pid;}):null;
+      if(p) L.cbm=+n(calc(p).cbmPerCtn).toFixed(6); }
+  });
+}
+function qOpenSaved(id){ qEnsureStore(); const r=DB.quotations.find(function(x){return x.id===id;}); if(!r) return;
+  QUOTE=JSON.parse(JSON.stringify(r)); QUOTE.id=r.id; qBackfillCbm(); openQuote(); }
+function qDupSaved(id){
+  if(!need('quotation','a','দরপত্র কপি')) return;
+  qEnsureStore(); const r=DB.quotations.find(function(x){return x.id===id;}); if(!r) return;
+  QUOTE=JSON.parse(JSON.stringify(r)); QUOTE.id=r.id; qDuplicate(); openModal('quoteModal');
+}
+function qDelFromList(id){
+  if(!need('quotation','d','দরপত্র মুছে ফেলা')) return;
+  qEnsureStore(); const i=DB.quotations.findIndex(function(x){return x.id===id;}); if(i<0) return;
+  const r=DB.quotations[i];
+  if(!confirm('"'+(r.no||'')+(r.buyer?(' · '+r.buyer):'')+'" মুছে ফেলবেন? এটা আর ফেরানো যাবে না।')) return;
+  DB.quotations.splice(i,1); audit('del','quotations','দরপত্র মুছে ফেলা',(r.no||'')); saveDB(); render(); toast('দরপত্র মুছে ফেলা হয়েছে');
+}
+function qSetStatusFromList(id,v){
+  if(!need('quotation','e','দরপত্রের অবস্থা বদল')) return;
+  qEnsureStore(); const r=DB.quotations.find(function(x){return x.id===id;}); if(!r) return;
+  r.status=v; r.at=Date.now(); saveDB(); audit('edit','quotations','দরপত্রের অবস্থা',(r.no||'')+' → '+qStatusLabel(v)); render();
+}
+function renderQuotationPage(){
+  qEnsureStore();
+  const all=DB.quotations.slice().sort(function(a,b){ return (b.at||0)-(a.at||0); });
+  const cnt={}; Q_STATUS.forEach(function(x){ cnt[x[0]]=0; }); all.forEach(function(r){ const k=r.status||'draft'; cnt[k]=(cnt[k]||0)+1; });
+  const chip=function(v,l,c){ return '<span class="fchip'+(Q_FILT===v?' on':'')+'" onclick="qSetFilt(\''+v+'\')">'+l+' <b>'+c+'</b></span>'; };
+  let chips='<div class="folder-chips">'+chip('','সব',all.length);
+  Q_STATUS.forEach(function(x){ chips+=chip(x[0],x[1],cnt[x[0]]||0); }); chips+='</div>';
+  const q=(Q_SEARCH||'').toLowerCase().trim();
+  const list=all.filter(function(r){
+    if(Q_FILT && (r.status||'draft')!==Q_FILT) return false;
+    return !q || String(r.no||'').toLowerCase().indexOf(q)>-1 || String(r.buyer||'').toLowerCase().indexOf(q)>-1;
+  });
+  const canA=can('quotation','a'), canE=can('quotation','e'), canD=can('quotation','d');
+  const stColor={draft:'',sent:'background:#DCE8F7;color:#1D4E89;',accepted:'background:var(--ok-bg);color:var(--ok);',rejected:'background:var(--danger-bg);color:var(--danger);'};
+  const rows=list.map(function(r){
+    const st=r.status||'draft', tt=qTotalOf(r);
+    const sel=canE?('<select onclick="event.stopPropagation()" onchange="qSetStatusFromList(\''+r.id+'\',this.value)" style="padding:3px 6px;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-size:12px;">'+
+      Q_STATUS.map(function(x){ return '<option value="'+x[0]+'"'+(st===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join('')+'</select>')
+      :('<span class="tag" style="'+(stColor[st]||'')+'">'+qStatusLabel(st)+'</span>');
+    return '<tr style="cursor:pointer" onclick="qOpenSaved(\''+r.id+'\')">'+
+      '<td><b>'+esc(r.no||'-')+'</b></td>'+
+      '<td class="muted">'+esc(showDate(r.date))+'</td>'+
+      '<td><b>'+esc(r.buyer||'নামহীন')+'</b>'+(r.addr?('<div class="muted" style="font-size:11px;">'+esc(r.addr)+'</div>'):'')+'</td>'+
+      '<td class="num">'+(r.lines||[]).length+'</td>'+
+      '<td class="num"><b>'+tt.sym+money(tt.t,2)+'</b></td>'+
+      '<td onclick="event.stopPropagation()">'+sel+'</td>'+
+      '<td class="muted" style="font-size:11px;">'+esc(r.by||'')+'</td>'+
+      '<td onclick="event.stopPropagation()" style="text-align:center;white-space:nowrap;">'+
+        (canA?'<button class="btn btn-sm btn-ghost" title="কপি" onclick="qDupSaved(\''+r.id+'\')">&#9707;</button>':'')+
+        (canD?'<button class="btn btn-sm btn-danger" onclick="qDelFromList(\''+r.id+'\')">Del</button>':'')+'</td></tr>';
+  }).join('');
+  return '<div class="page-toolbar"><div class="tb-row">'+
+    '<div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'+
+      '<input type="text" id="qSearch" placeholder="দরপত্র নং / ক্রেতা খুঁজুন..." value="'+esc(Q_SEARCH)+'" oninput="qSetSearch(this.value)"></div>'+
+    '<div class="spacer"></div>'+
+    (canA?'<button class="btn btn-primary btn-sm" onclick="qNew()">+ নতুন দরপত্র</button>':'')+'</div></div>'+
+    chips+
+    (list.length
+      ? '<div class="panel"><div class="table-wrap"><table><thead><tr><th>দরপত্র নং</th><th>তারিখ</th><th>ক্রেতা</th><th class="num">পণ্য</th><th class="num">মোট</th><th>অবস্থা</th><th>তৈরি করেছেন</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'
+      : '<div class="panel"><div class="panel-body">'+emptyState(all.length?'এই ছাঁকনিতে কোনো দরপত্র নেই।':'এখনো কোনো দরপত্র নেই — "+ নতুন দরপত্র" চাপুন।')+'</div></div>');
+}
+function qNew(){ if(!need('quotation','a','নতুন দরপত্র')) return; QUOTE=null; openQuote(); }
 function qDuplicate(){
   if(!QUOTE) return;
   const d=new Date(), pad=function(x){return (x<10?'0':'')+x;};
@@ -9250,7 +9523,7 @@ function qDuplicate(){
   delete copy.id;                       /* নতুন হিসেবে ধরা হবে */
   copy.status='draft';
   copy.no='QT-'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes());
-  copy.date=fmtDate(nowISO());
+  copy.date=todayISO();
   QUOTE=copy;
   renderQuoteBody();
   toast('নকল তৈরি — সেভ করলে নতুন দরপত্র হবে');
@@ -9290,6 +9563,7 @@ function quoteToOrder(){
   toast(added+' পণ্য Order Requirement এ বসানো হলো'+(touched.length>1?(' ('+touched.length+' Section)'):'')+(updated?(' · '+updated+'টি আগে ছিল, Qty হালনাগাদ'):'')+' — দেখে নিন');
 }
 function qSave(){
+  if(!need('quotation', (QUOTE&&QUOTE.id)?'e':'a', 'দরপত্র সেভ')) return;
   if(!QUOTE || !QUOTE.lines.length){ toast('আগে অন্তত একটি পণ্য যোগ করুন',true); return; }
   qEnsureStore();
   const rec=JSON.parse(JSON.stringify(QUOTE));
@@ -9304,25 +9578,26 @@ function qSave(){
   saveDB();
   audit('save','quotations','দরপত্র সেভ', (rec.no||'')+(rec.buyer?(' · '+rec.buyer):''));
   toast('দরপত্র সেভ হয়েছে');
-  renderQuoteBody();
+  renderQuoteBody(); if(currentPage==='quotation') render();
 }
 function qLoad(id){
   if(!id) return;
   qEnsureStore();
   const r=DB.quotations.find(function(x){ return x.id===id; });
   if(!r){ toast('দরপত্রটি পাওয়া যায়নি',true); return; }
-  QUOTE=JSON.parse(JSON.stringify(r)); QUOTE.id=r.id;
+  QUOTE=JSON.parse(JSON.stringify(r)); QUOTE.id=r.id; qBackfillCbm();
   renderQuoteBody();
 }
 function qDelSaved(){
   if(!QUOTE || !QUOTE.id) return;
+  if(!need('quotation','d','দরপত্র মুছে ফেলা')) return;
   if(!confirm('এই সংরক্ষিত দরপত্রটি মুছে ফেলবেন?')) return;
   qEnsureStore();
   const i=DB.quotations.findIndex(function(x){ return x.id===QUOTE.id; });
   if(i>-1) DB.quotations.splice(i,1);
   saveDB();
   toast('দরপত্র মুছে ফেলা হয়েছে');
-  QUOTE.id=null; renderQuoteBody();
+  QUOTE.id=null; renderQuoteBody(); if(currentPage==='quotation') render();
 }
 
 /* ---------- Print (Letterhead + Times New Roman) ---------- */
@@ -9354,6 +9629,9 @@ function quoteInnerHTML(){
   const t=qCalcRows(), sym=qSym(), S="font-family:Georgia,'Times New Roman',serif;";
   const INK='#14332a', GREEN='#1f4d3a', GOLD='#b9822f', LINE='#c9c3b4';
   const hasCode=(QUOTE.lines||[]).some(function(L){ return String(L.code||'').trim(); });
+  const hasCbm=(QUOTE.lines||[]).some(function(L){ return n(L.cbm)>0; });       /* v18.46 */
+  const cbmSum=qLineCbmSum();
+  let qtySum=0; (QUOTE.lines||[]).forEach(function(L){ qtySum+=n(L.qty); });      /* v18.47 */
   /* v18.30 — সবুজ বাক্সে সাদা লেখা: প্রিন্টে Times New Roman (serif) হলে সরু হয়ে মিলিয়ে যায়,
      তাই এখানে জোর করে bold sans-serif (Arial) দিই — inline !important যাতে print-এর
      `*{font-family:serif !important}` কে হারায়। সাদা knockout লেখা এতে প্রিন্টে পরিষ্কার আসে। */
@@ -9370,11 +9648,12 @@ function quoteInnerHTML(){
       (hasCode?('<td style="'+td+'text-align:center;">'+esc(L.code||'—')+'</td>'):'')+
       '<td style="'+td+'text-align:center;">'+esc(L.unit||'')+'</td>'+
       '<td style="'+td+'text-align:right;">'+money(n(L.qty),0)+'</td>'+
+      (hasCbm?('<td style="'+td+'text-align:right;">'+(n(L.cbm)>0?money(n(L.qty)*n(L.cbm),3):'—')+'</td>'):'')+
       '<td style="'+td+'text-align:right;">'+sym+money(n(L.price),2)+'</td>'+
       '<td style="'+td+'text-align:right;font-weight:600;">'+sym+money(n(L.qty)*n(L.price),2)+'</td>'+
       '</tr>';
   });
-  const colspan=hasCode?5:4;
+  const colspan=(hasCode?5:4)+(hasCbm?1:0);
   const totRow=function(lab,val,strong,accent){ return '<tr>'+
     '<td colspan="'+colspan+'" style="border:0.5px solid '+LINE+';"></td>'+
     '<td style="padding:2.5px 7px;border:0.5px solid '+LINE+';text-align:right;font-size:10.5px;'+(strong?'font-weight:800;background:'+GREEN+';color:#fff;'+KNOCK+'-webkit-print-color-adjust:exact;print-color-adjust:exact;':(accent?'font-weight:700;':''))+'">'+lab+'</td>'+
@@ -9410,7 +9689,7 @@ function quoteInnerHTML(){
        '</td>'+
        '<td style="width:42%;vertical-align:top;padding:7px 11px;border:0.5px solid '+LINE+';">'+
          qMetaRow('Ref. No.', esc(QUOTE.no))+
-         qMetaRow('Date', esc(QUOTE.date))+
+         qMetaRow('Date', esc(showDate(QUOTE.date)))+
          (QUOTE.valid?qMetaRow('Validity', esc(QUOTE.valid)):'')+
          qMetaRow('Currency', (QUOTE.cur==='USD'?'USD (US Dollar)':'BDT (Taka)'))+
        '</td></tr></table>';
@@ -9427,9 +9706,15 @@ function quoteInnerHTML(){
        (hasCode?('<th style="'+th+'text-align:center;">Item / HS Code</th>'):'')+
        '<th style="'+th+'text-align:center;">Unit</th>'+
        '<th style="'+th+'text-align:right;">Qty</th>'+
+       (hasCbm?('<th style="'+th+'text-align:right;">CBM</th>'):'')+
        '<th style="'+th+'text-align:right;">Unit Price</th>'+
        '<th style="'+th+'text-align:right;">Amount</th></tr></thead><tbody>'+
      rows+
+     '<tr style="background:#eef2ee;-webkit-print-color-adjust:exact;print-color-adjust:exact;">'+
+       '<td colspan="'+(hasCode?4:3)+'" style="'+td+'text-align:right;font-weight:800;letter-spacing:.5px;">TOTAL</td>'+
+       '<td style="'+td+'text-align:right;font-weight:800;">'+money(qtySum,0)+'</td>'+
+       (hasCbm?('<td style="'+td+'text-align:right;font-weight:800;">'+money(cbmSum,3)+'</td>'):'')+
+       '<td colspan="2" style="'+td+'"></td></tr>'+
      totRow('Subtotal', sym+money(t.sub,2), false, false)+
      (t.disc>0?totRow('Discount ('+money(QUOTE.disc,2)+'%)', '−'+sym+money(t.disc,2), false, true):'')+
      (t.vat>0?totRow('VAT ('+money(QUOTE.vat,2)+'%)', '+'+sym+money(t.vat,2), false, true):'')+
@@ -9522,22 +9807,24 @@ function exportQuote(){
   aoa.push(['দরপত্র / Price Quotation']);
   aoa.push([]);
   aoa.push(['To:', QUOTE.buyer||'', '', 'দরপত্র নং:', QUOTE.no]);
-  aoa.push([QUOTE.addr||'', '', '', 'তারিখ:', QUOTE.date]);
+  aoa.push([QUOTE.addr||'', '', '', 'তারিখ:', showDate(QUOTE.date)]);
   aoa.push(['', '', '', 'বৈধতা:', QUOTE.valid||'', 'মুদ্রা:', QUOTE.cur]);
   aoa.push([]);
-  aoa.push(['#','পণ্যের বিবরণ','Code','একক','পরিমাণ','একক দর ('+sym+')','মোট ('+sym+')']);
+  aoa.push(['#','পণ্যের বিবরণ','Code','একক','পরিমাণ','CBM','একক দর ('+sym+')','মোট ('+sym+')']);
   QUOTE.lines.forEach(function(L,i){
-    aoa.push([i+1, (L.code?qStripCode(L.name,L.code):(L.name||'')), L.code||'', L.unit||'', n(L.qty), n(L.price), n(L.qty)*n(L.price)]);
+    aoa.push([i+1, (L.code?qStripCode(L.name,L.code):(L.name||'')), L.code||'', L.unit||'', n(L.qty), (n(L.cbm)>0?+(n(L.qty)*n(L.cbm)).toFixed(3):''), n(L.price), n(L.qty)*n(L.price)]);
   });
   aoa.push([]);
-  aoa.push(['', '', '', '', '', 'Subtotal', t.sub]);
-  if(t.disc>0) aoa.push(['', '', '', '', '', 'ছাড় ('+money(QUOTE.disc,2)+'%)', -t.disc]);
-  if(t.vat>0) aoa.push(['', '', '', '', '', 'VAT ('+money(QUOTE.vat,2)+'%)', t.vat]);
-  aoa.push(['', '', '', '', '', 'সর্বমোট', t.grand]);
+  (function(){ let q=0; QUOTE.lines.forEach(function(L){ q+=n(L.qty); });
+    aoa.push(['', 'TOTAL', '', '', q, (qLineCbmSum()>0?+qLineCbmSum().toFixed(3):'')]); })();
+  aoa.push(['', '', '', '', '', '', 'Subtotal', t.sub]);
+  if(t.disc>0) aoa.push(['', '', '', '', '', '', 'ছাড় ('+money(QUOTE.disc,2)+'%)', -t.disc]);
+  if(t.vat>0) aoa.push(['', '', '', '', '', '', 'VAT ('+money(QUOTE.vat,2)+'%)', t.vat]);
+  aoa.push(['', '', '', '', '', '', 'সর্বমোট', t.grand]);
   if((QUOTE.note||'').trim()){ aoa.push([]); aoa.push(['শর্তাবলি:']);
     String(QUOTE.note).split('\n').forEach(function(ln){ aoa.push([ln]); }); }
   const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols']=[{wch:5},{wch:34},{wch:12},{wch:8},{wch:10},{wch:14},{wch:14}];
+  ws['!cols']=[{wch:5},{wch:34},{wch:12},{wch:8},{wch:10},{wch:10},{wch:14},{wch:14}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
   XLSX.writeFile(wb, 'Quotation_'+String(QUOTE.no).replace(/[^A-Za-z0-9_-]/g,'')+'.xlsx');
@@ -12348,6 +12635,7 @@ const MODULES=[
  {k:'packaging',   l:'Packing Materials',  acts:['v','a','e','d']},
  {k:'machines',    l:'Machine / Utility',   acts:['v','a','e','d']},
  {k:'fgproducts',  l:'FG Product Master',  acts:['v','a','e','d']},
+ {k:'quotation',   l:'দরপত্র (Quotation)',  acts:['v','a','e','d']},
  {k:'orderreq',    l:'Order Requirement',  acts:['v','a','e','d']},
  {k:'exportset',   l:'Export Setting',     acts:['v','a','e','d']},
  {k:'reports',     l:'Reports',            acts:['v']},
@@ -12392,18 +12680,18 @@ function seedAuth(){
        note:'Costing ও Master এ পূর্ণ, User/Role এ নয়',
        perms:permsFrom({dashboard:{v:1}, products:{v:1,a:1,e:1,d:1},
          rawmaterials:{v:1,a:1,e:1,d:1}, packaging:{v:1,a:1,e:1,d:1},
-         orderreq:{v:1,a:1,e:1,d:1}, exportset:{v:1,a:1,e:1,d:1}, reports:{v:1},
+         quotation:{v:1,a:1,e:1,d:1}, orderreq:{v:1,a:1,e:1,d:1}, exportset:{v:1,a:1,e:1,d:1}, reports:{v:1},
          settings:{v:1,e:1}, audit:{v:1}, approval:{a:1,e:1},
          tools:{print:1,excel:1,backup:1,restore:1,settings:1}})},
       {id:'role_operator', name:'Operator', builtin:false, _ts:SEED_TS,
        note:'Costing তৈরি ও সম্পাদনা করতে পারে, মুছতে পারে না',
        perms:permsFrom({dashboard:{v:1}, products:{v:1,a:1,e:1},
-         rawmaterials:{v:1,e:1}, packaging:{v:1,e:1}, orderreq:{v:1,a:1,e:1},
+         rawmaterials:{v:1,e:1}, packaging:{v:1,e:1}, quotation:{v:1,a:1,e:1}, orderreq:{v:1,a:1,e:1},
          reports:{v:1}, approval:{a:1}, tools:{print:1,excel:1}})},
       {id:'role_viewer', name:'Viewer', builtin:false, _ts:SEED_TS,
        note:'শুধু দেখতে পারে, কিছু বদলাতে পারে না',
        perms:permsFrom({dashboard:{v:1}, products:{v:1}, rawmaterials:{v:1},
-         packaging:{v:1}, orderreq:{v:1}, exportset:{v:1}, reports:{v:1},
+         packaging:{v:1}, quotation:{v:1}, orderreq:{v:1}, exportset:{v:1}, reports:{v:1},
          tools:{print:1}})}
     ];
   }
@@ -12452,7 +12740,9 @@ function can(mod, act){
   if(mod==='production') mod='products';
   if(mod==='budget') mod='orderreq';
   const r=myRole(); if(!r||!r.perms) return false;
-  const m=r.perms[mod]; if(!m) return false;
+  let m=r.perms[mod];
+  if(!m && mod==='quotation') m=r.perms.reports && r.perms.reports.v ? {v:1,a:1,e:1,d:1} : null;   /* v18.45 — আগে Reports এ থাকত; পুরনো Role এর অধিকার অপরিবর্তিত */
+  if(!m) return false;
   return !!m[act||'v'];
 }
 function canTool(k){ return can('tools',k); }
@@ -12684,7 +12974,7 @@ function rolePreset(kind){
   R_CUR.perms = (kind==='all') ? fullPerms(true)
               : (kind==='none') ? fullPerms(false)
               : permsFrom({dashboard:{v:1},products:{v:1},rawmaterials:{v:1},packaging:{v:1},
-                  orderreq:{v:1},exportset:{v:1},reports:{v:1},tools:{print:1}});
+                  quotation:{v:1},orderreq:{v:1},exportset:{v:1},reports:{v:1},tools:{print:1}});
   renderRolePerms(false);
 }
 function saveRole(){
@@ -12741,6 +13031,28 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.48', d:'2026-10-24', t:'সব তারিখের ঘর Date picker · Costing এর সর্বশেষ আপডেট তারিখ ও পরিবর্তনের তালিকা', li:[
+   '<b>তারিখের ঘর এখন সব জায়গায় আসল Date picker</b> — Order Requirement এর তারিখ, দরপত্রের তারিখ, Delivery তারিখ (আগে হাতে টাইপ করতে হতো)। Print/Excel/তালিকায় তারিখ একই ধাঁচে দেখায়: <b>24 Oct 2026</b>। আগের হাতে লেখা তারিখও নিজে থেকে পড়ে ঠিকমতো দেখায়',
+   '<b>প্রতিটা Costing card এ “🕘 সর্বশেষ আপডেট” তারিখ</b> — আর এটা শুধু <b>সত্যিকারের পরিবর্তনে</b> বদলায়। Costing খুলে কিছু না বদলে Save করলে তারিখ বদলায় না (“কিছুই বদলায়নি” জানায়, Cloud Sync এও কিছু যায় না)',
+   'যেসব কাজে তারিখ বদলায়: Costing এ যেকোনো সংখ্যা/লাইন/নাম বদল, Section/Folder বদল (Move), Break-even নতুন করে বসানো, পুরনো অবস্থায় ফিরিয়ে আনা। শুধু অনুমোদনের অবস্থা বদলালে (পাঠানো/অনুমোদন) তারিখ বদলায় না',
+   '<b>প্রতিটা card এ নতুন 📝 বোতাম</b> — চাপলে দেখা যায় কী কী আপডেট হয়েছিল: যেমন “Raw Material: Flour — Qty 5 → 6”, “Sales/Break-even (USD): 10 → 12”, “Packing Material যোগ: Carton”। সর্বশেষ ২৫টি আপডেট তারিখ-সময় ও কার নামে সহ জমা থাকে (সবার উপরে সর্বশেষটা)',
+   'পুরনো Costing এ তালিকা খালি থাকবে — এখন থেকে যা বদলাবেন তা জমা হবে; তারিখ আগের Save এর তারিখই দেখাবে']},
+ {v:'18.47', d:'2026-10-24', t:'দরপত্র Print/Excel এ মোট Qty (TOTAL সারি)', li:[
+   'দরপত্রের Print এ টেবিলের নিচে নতুন <b>TOTAL</b> সারি — মোট <b>Qty</b> আর (CBM থাকলে) মোট <b>CBM</b>, ঠিক Qty ও CBM কলামের নিচে',
+   'Excel এও একই <b>TOTAL</b> সারি; দরপত্র পেজের নিচের হিসাবে “মোট Qty” দেখায়']},
+ {v:'18.46', d:'2026-10-24', t:'দরপত্রে আসল Selling Price ধরে দর · CBM কলাম', li:[
+   'আগে দরপত্রের দর ঘরে <b>Break-even</b> দাম আসত। এখন দরপত্রে নতুন টিক-বক্স <b>“আসল Selling Price ধরে দর বসান”</b> — টিক দিলে সব Costing-পণ্যের দর ঘরে FG Master এর <b>আসল বিক্রয়মূল্য</b> বসে যায়; টিক তুললে আবার Break-even এ ফেরে',
+   'টিক দেওয়া থাকলে পরে যোগ করা নতুন পণ্যেও Selling Price থেকেই দর আসে। যে পণ্যে আসল Selling Price বসানো নেই সেটায় Break-even দর থাকে আর দরের ঘরে <b>লাল দাগ</b> দেখায়। হাতে লেখা (Costing ছাড়া) লাইন বদলায় না; দর সবসময় হাতে বদলানো যায়',
+   'USD দরপত্রে ডলার Selling Price না থাকলে টাকার Selling Price ÷ ডলার রেট দিয়ে বসে',
+   '<b>CBM কলাম:</b> প্রতিটা লাইনে <b>CBM/Ctn</b> (Costing এর কার্টন মাপ থেকে নিজে আসে, বদলানো যায়) আর <b>মোট CBM</b> (Qty × CBM/Ctn); নিচে সর্বমোট CBM',
+   '<b>Print ও Excel</b> এ CBM কলাম ও Total CBM যোগ হয়েছে — কোনো লাইনেই CBM না থাকলে Print এ কলামটা আসে না (Local পণ্যের দরপত্র আগের মতোই)',
+   'পুরনো সেভ করা দরপত্র খুললে CBM Costing থেকে নিজে বসে যায় (সেভ না করা পর্যন্ত কিছু বদলায় না)']},
+ {v:'18.45', d:'2026-10-24', t:'দরপত্র এখন আলাদা মেনু (Reports থেকে সরানো হলো)', li:[
+   'বাঁ মেনুতে <b>Order Requirement এর ঠিক আগে</b> নতুন <b>দরপত্র (Quotation)</b> — Reports এর ভেতরের বোতামটা সরিয়ে দেওয়া হয়েছে',
+   'পেজে সব সংরক্ষিত দরপত্রের তালিকা: দরপত্র নং · তারিখ · ক্রেতা · পণ্য সংখ্যা · <b>মোট</b> · অবস্থা। উপরে <b>সব / খসড়া / পাঠানো / গৃহীত / বাতিল</b> ছাঁকনি আর নং/ক্রেতার নামে খোঁজা',
+   'সারিতে ক্লিক করলে দরপত্র খোলে (আগের মতোই Edit, Print, Excel, <b>🛒 Order এ পাঠান</b>); তালিকা থেকেই অবস্থা বদলানো, কপি ও মোছা যায়',
+   'দরপত্রের <b>আলাদা অনুমতি</b> — Role Menu তে এখন “দরপত্র (Quotation)” (দেখা/যোগ/সম্পাদনা/মোছা)। যে Role এ আগে Reports দেখার অনুমতি ছিল, তারা আগের মতোই দরপত্র ব্যবহার করতে পারবে — নতুন করে কিছু সাজাতে হবে না; চাইলে Role Menu থেকে আলাদা করে বন্ধ করা যায়',
+   'আগের সব সংরক্ষিত দরপত্র, Print ও Excel format অপরিবর্তিত']},
  {v:'18.44', d:'2026-10-24', t:'Copy / Move এ এখন DEMO Section ও বাছা যায়', li:[
    'আগে Costing এর <b>📋 Copy</b> ও <b>📁 Move</b> বক্সে Section তালিকায় <b>DEMO</b> আসত না — তাই কোনো Costing DEMO তে রাখা যেত না। এখন তালিকায় DEMO আছে',
    'DEMO তে Copy/Move করলে সেই Costing এর DEMO এর একক ও সুইচ ঠিকঠাক বসে যায়; DEMO এর Folder ও কাজ করে',
@@ -15884,7 +16196,7 @@ function renderPrdEntry(){
     const v=varianceOf(e);
     const tk=v?v.totalTk:0;
     const col = tk<-0.005?'var(--danger)':(tk>0.005?'var(--ok,#22c55e)':'');
-    h+='<tr><td>'+esc(e.date)+(e.source==='tally'?' <span class="muted" style="font-size:11px;">Tally</span>':'')+
+    h+='<tr><td>'+esc(showDate(e.date))+(e.source==='tally'?' <span class="muted" style="font-size:11px;">Tally</span>':'')+
        (e.estimated?' <span style="font-size:11px;color:#f59e0b;">আন্দাজ</span>':'')+'</td>'+
        '<td><a href="#" onclick="prdOpen(\''+e.id+'\');return false;">'+esc(prdProdName(e.productId))+'</a></td>'+
        '<td class="num-cell">'+money(n(e.batches),2)+'</td>'+
