@@ -6509,7 +6509,7 @@ function openCostOrg(id, mode){
   if(isCopy && !need('products','a','Costing কপি')) return;
   if(!isCopy && !need('products','e','Costing সরানো')) return;
   const dl=allFolderNames().map(function(f){return '<option value="'+esc(f)+'"></option>';}).join('');
-  const secOpts=allCTYPES().filter(function(t){return t.v!=='demo';}).map(function(t){
+  const secOpts=allCTYPES().map(function(t){      /* v18.44 — DEMO ও বাছা যায় */
     return '<option value="'+t.v+'"'+(((p.ctype||'export')===t.v)?' selected':'')+'>'+esc(t.l)+'</option>'; }).join('');
   const old=document.getElementById('costOrgModal'); if(old) old.remove();
   const ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='costOrgModal';
@@ -6530,6 +6530,13 @@ function openCostOrg(id, mode){
   setTimeout(function(){ const e=document.getElementById(isCopy?'co_name':'co_folder'); if(e){ e.focus(); if(e.select) e.select(); } },60);
 }
 function closeCostOrg(){ const m=document.getElementById('costOrgModal'); if(m){ m.classList.remove('open'); setTimeout(function(){ if(m&&m.parentNode) m.remove(); },200); } }
+/* DEMO তে গেলে একক/স্যুইচের default নিশ্চিত করে (পুরনো পণ্যে এই ঘর না-ও থাকতে পারে) */
+function ensureDemoFields(p){
+  if(!p || p.ctype!=='demo') return;
+  if(!p.demoUnit) p.demoUnit='ctn';
+  if(!p.demoOutMode) p.demoOutMode='auto';
+  if(!p.demoOn || typeof p.demoOn!=='object') p.demoOn={mp:1};
+}
 function doCostOrg(id, isCopy){
   const p=DB.products.find(function(x){return x.id===id;}); if(!p) return;
   const sec=((document.getElementById('co_sec')||{}).value)||(p.ctype||'export');
@@ -6539,6 +6546,7 @@ function doCostOrg(id, isCopy){
     np.id=uid('prod');
     np.name=(((document.getElementById('co_name')||{}).value)||p.name).trim()||p.name;
     np.code=''; np.ctype=sec; np.folder=folder; np.createdAt=nowISO(); np.updatedAt=nowISO();
+    ensureDemoFields(np);
     np.status='draft'; np.submitBy=''; np.submitAt=''; np.approveBy=''; np.approveAt=''; np.approveNote='';
     DB.products.push(np); resequenceCodes();
     audit('create','product',np.name,'Copy → '+ctypeLabel(sec)+(folder?(' / '+folder):''));
@@ -6547,6 +6555,7 @@ function doCostOrg(id, isCopy){
   } else {
     const oldSec=p.ctype||'export';
     p.ctype=sec; p.folder=folder; p.updatedAt=nowISO();
+    ensureDemoFields(p);
     if(oldSec!==sec) resequenceCodes();
     audit('update','product',p.name,'সরানো → '+ctypeLabel(sec)+(folder?(' / '+folder):''));
     saveDB(); closeCostOrg(); PROD_TAB=sec; PROD_FOLDER=folder||''; render();
@@ -12732,6 +12741,10 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.44', d:'2026-10-24', t:'Copy / Move এ এখন DEMO Section ও বাছা যায়', li:[
+   'আগে Costing এর <b>📋 Copy</b> ও <b>📁 Move</b> বক্সে Section তালিকায় <b>DEMO</b> আসত না — তাই কোনো Costing DEMO তে রাখা যেত না। এখন তালিকায় DEMO আছে',
+   'DEMO তে Copy/Move করলে সেই Costing এর DEMO এর একক ও সুইচ ঠিকঠাক বসে যায়; DEMO এর Folder ও কাজ করে',
+   'DEMO থেকে আবার Export/Local ইত্যাদিতে সরানোও আগের মতোই চলে']},
  {v:'18.43', d:'2026-10-19', t:'Folder ধরে Costing Excel · Order Delivered · Factory Delivery Challan', li:[
    '<b>Costing Excel এখন Folder ধরে নামানো যায়</b> — FG Product Costing এ <b>⇩ Costing Excel</b> চাপলে ছোট একটা বক্স আসে: <b>সব</b> / নির্দিষ্ট <b>Folder</b> (যেমন Malaysia) / <b>ফোল্ডারহীন</b> — যেটা বাছবেন শুধু সেগুলোর Excel (INDEX + প্রতিটা Costing sheet, সূত্রসহ)',
    '“সব” বাছলে চাইলে <b>প্রতিটা Folder এর জন্য আলাদা আলাদা Excel ফাইল</b> একবারে নামানো যায় (browser “একাধিক download” অনুমতি চাইলে Allow দিন)',
