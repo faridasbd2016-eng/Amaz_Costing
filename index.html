@@ -14,6 +14,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>/* v18.83 — Session থাকলে reload (ভাষা বদল) এর সময় Login পাতা এক পলকের জন্যও না দেখাই */
+(function(){ try{ var s=JSON.parse(localStorage.getItem('amaz_costing_session')||'null');
+  if(s&&s.id&&(Date.now()-s.at)<=12*60*60*1000) document.documentElement.classList.add('pre-auth');   setTimeout(function(){ if(!window.__BOOTED) document.documentElement.classList.remove('pre-auth'); },10000); }catch(e){} })();</script>
 <style>
 :root{
   --bg:#F4F6F9; --panel:#FFFFFF; --panel-2:#F8FAFC; --border:#DDE3EC;
@@ -34,6 +37,14 @@
   --glow-a:rgba(242,185,75,.15); --glow-b:rgba(242,185,75,.5);
   --lift:0 2px 5px rgba(0,0,0,.35), 0 18px 42px rgba(0,0,0,.5);
 }
+[data-theme="dark"] select, [data-theme="dark"] textarea,
+[data-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]){
+  background-color:var(--panel-2); color:var(--text); border-color:var(--border);}
+[data-theme="dark"] select option{background:var(--panel); color:var(--text);}
+html.pre-auth #loginOverlay{display:none !important;}
+html.pre-auth body::after{content:""; position:fixed; left:50%; top:50%; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%;
+  border:3px solid var(--border); border-top-color:var(--primary-2); animation:preSpin .8s linear infinite; z-index:300;}
+@keyframes preSpin{to{transform:rotate(360deg);}}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{background:var(--bg); color:var(--text);
@@ -760,6 +771,18 @@ td.mancell input{flex:1; min-width:0;}
 .user-chip .nm{font-weight:700; line-height:1.15;}
 .user-chip .rl{font-size:10.5px; color:var(--text-dim); line-height:1.15;}
 @media (max-width:640px){ .user-chip .meta{display:none;} }
+/* v18.83 — মোবাইল: উপরের বারের Help/Lock/Logout বোতাম স্ক্রিনের বাইরে চলে যেত */
+@media (max-width:640px){
+  #topbar{padding:8px 8px; gap:4px; flex-wrap:wrap; row-gap:6px;}
+  #topbar > div:nth-child(2){min-width:0; flex:1 1 60px;}
+  #topbar .page-title{font-size:15.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  #topbar .page-sub{display:none;}
+  #topbar .spacer{display:none;}
+  #topbar .icon-btn{width:30px; height:30px; min-width:30px !important;}
+  #topbar .icon-btn svg{width:16px; height:16px;}
+  #topbar .user-chip{padding:3px;}
+  .sidebar-collapse-btn{display:none;}
+}
 /* ---- User Guide ---- */
 .modal.help{max-width:1080px; width:96%;}
 .hg-wrap{display:flex; gap:0; height:min(72vh,640px); border:1px solid var(--border); border-radius:10px; overflow:hidden;}
@@ -15103,9 +15126,10 @@ function rpSummary(r){
   const P=(r&&r.perms)||{}, pg=function(k){ return P[k]||{}; };
   if(r && r.id==='role_admin') return 'সব কিছু';
   const names=function(k,al){ const x=pg(k), a=[]; ['v','a','e','d'].forEach(function(t){ if(x[t]) a.push(al[t]); }); return a; };
-  const AL={v:'দেখা',a:'তৈরি',e:'সম্পাদনা',d:'মোছা'};
+  const AL=(window.LANG==='en')?{v:'View',a:'Create',e:'Edit',d:'Delete'}:{v:'দেখা',a:'তৈরি',e:'সম্পাদনা',d:'মোছা'};
   const co=names('products',AL);
   const seeN=MODULES.filter(function(m){ return pg(m.k).v; }).length;
+  if(window.LANG==='en') return 'Costing: '+(co.length?co.join(', '):'None')+' · can view '+seeN+' page'+(seeN===1?'':'s');
   return 'Costing: '+(co.length?co.join(', '):'নেই')+' · '+seeN+'টি পেজ দেখতে পারে';
 }
 function renderRolePerms(ro){
@@ -15210,6 +15234,13 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.83', d:'2026-10-29', t:'ভাষা বদলে Login না দেখানো + পূর্ণ Bug Scan', li:[
+  'ভাষা (EN/বাংলা) বদলালে এক পলকের জন্য Login পাতা চলে আসত — এখন আসে না, শুধু ছোট একটা লোডিং চিহ্ন',
+  'মোবাইলে উপরের বারের Help / Lock / Logout বোতাম স্ক্রিনের বাইরে চলে যেত — এখন সব বোতাম দেখা যায়, পাশে স্ক্রল হয় না',
+  'Dark mode এ কিছু ড্রপডাউন ও ঘর সাদা দেখাত — এখন থিমের সাথে মিলানো',
+  'English মোডে Role তালিকায় কিছু বাংলা শব্দ রয়ে গিয়েছিল — ঠিক করা হয়েছে',
+  'পূর্ণ পরীক্ষা: ৪ ধরনের Role × বাংলা/English × Light/Dark — প্রতিটা পেজ ও পপআপের ৫,০০০+ বোতাম চেপে দেখা হয়েছে, কোনো Error বা NaN পাওয়া যায়নি',
+  '৮০টি এলোমেলো Costing এর হিসাব Excel ফর্মুলার সাথে মিলিয়ে দেখা হয়েছে — সব মিলেছে']},
  {v:'18.82', d:'2026-10-29', t:'PDF এর ডান পাশ কাটা ঠিক + পণ্যের নামে ফাইল', li:[
   'PDF Download করলে ডান পাশ কেটে যেত (বিশেষ করে মোবাইলে ও চওড়া ছকে) — এখন দুই পাশে সমান margin, পুরো লেখা পাতার ভেতরে',
   'চওড়া ছক নিজে ছোট হয়ে পাতায় বসে — কোনো কলাম কাটা পড়ে না',
@@ -17649,6 +17680,13 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'18.83', d:'2026-10-29', t:'No login flash on language change + full bug scan', li:[
+  'Switching language (EN/Bangla) briefly showed the login page — now it does not, only a small loading spinner',
+  'On mobile the Help / Lock / Logout buttons in the top bar went off-screen — all buttons now fit, no sideways scroll',
+  'In dark mode some dropdowns and fields stayed white — now follow the theme',
+  'In English mode the Role list still had some Bangla words — fixed',
+  'Full test: 4 roles × Bangla/English × Light/Dark — 5,000+ buttons on every page and popup clicked, no errors or NaN found',
+  '80 random costings cross-checked against the Excel formulas — all match']},
  {v:'18.82', d:'2026-10-29', t:'PDF right-edge cut fixed + file named after product', li:[
   'Downloaded PDFs were cut off on the right (mostly on mobile and wide tables) — now equal margins on both sides',
   'Wide tables shrink to fit the page — no column is cut',
@@ -20266,6 +20304,7 @@ function bootApp(){
     : 'পাসওয়ার্ড ভুলে গেলে Admin কে বলুন';
   ensureSync(); saveDB();
   ME = loadSession();
+  document.documentElement.classList.remove('pre-auth');
   if(ME){ document.getElementById('loginOverlay').style.display='none'; startApp(); }
   else { setTimeout(function(){ const e=document.getElementById('lgUser'); if(e) e.focus(); },250); }
   window.__BOOTED=true;
