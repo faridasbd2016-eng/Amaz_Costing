@@ -1490,7 +1490,7 @@ tr.sel{background:var(--ok-bg) !important;}
       <div id="fullSummary"></div>
       <div id="topSheetOrder" style="margin-top:16px;"></div>
       <div style="display:flex;justify-content:flex-end;margin-top:14px;">
-        <button class="btn btn-ghost btn-sm" onclick="pdfRun(printTopSheet,'TopSheet')">PDF</button> <button class="btn btn-primary btn-sm" onclick="printTopSheet()">Top Sheet Print</button>
+        <button class="btn btn-ghost btn-sm" onclick="pdfRun(printTopSheet,function(){return CUR?pdfProdName(CUR,'top'):'Top Sheet';})">PDF</button> <button class="btn btn-primary btn-sm" onclick="printTopSheet()">Top Sheet Print</button>
       </div>
     </div>
   </div>
@@ -2738,7 +2738,13 @@ function pdfMenu(btn,key){
     b.onmouseenter=function(){ b.style.background='var(--panel-2,#eee)'; }; b.onmouseleave=function(){ b.style.background='none'; };
     b.onclick=function(){ const x=items[+b.dataset.i]; close(); pdfRun(x[2], function(){ return pdfOrdName(x[3]); }); }; });
 }
-function pdfSafe(s){ return String(s||'').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40); }
+function pdfSafe(s){ return String(s||'').replace(/[\\\/:*?"<>|'`\u0000-\u001f]+/g,' ').replace(/\s+/g,' ').trim().replace(/^[.\s]+|[.\s]+$/g,'').slice(0,90); }
+/* v18.82 — PDF ফাইলের নাম পণ্যের নাম অনুযায়ী */
+function pdfProdName(id,kind){ const p=(typeof id==='object')?id:DB.products.find(function(x){return x.id===id;});
+  const n=pdfSafe(p&&(p.name||p.code))||'Costing'; return kind==='top'?pdfSafe(n+' - Top Sheet'):n; }
+function pdfListName(list,mode){ if(!list.length) return 'Costing';
+  const base=pdfProdName(list[0]), more=list.length>1?' + '+(list.length-1)+' more':'';
+  return pdfSafe(base+more+(mode==='top'?' - Top Sheet':'')); }
 function pdfOrdName(pfx){ const o=orderPlan(); return pdfSafe(pfx+'_'+(o.ref||o.buyer||'Order')); }
 /* Page কেমন হবে — Portrait নাকি Landscape */
 function pdfAsk(def, cb){
@@ -2832,7 +2838,13 @@ function pdfFromPrintArea(name, land){
     html2pdf().set({margin:[mv,mh,mv,mh], filename:fname, image:{type:'jpeg',quality:.96},
       html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},
       jsPDF:{unit:'mm',format:'a4',orientation:land?'landscape':'portrait'},
-      pagebreak:{mode:[]}}).from(finalBox).outputPdf('blob').then(function(blob){
+      pagebreak:{mode:[]}}).from(finalBox).toContainer().then(function(){
+        /* v18.82 — html2pdf container টা পাতার ভেতরের মাপে (innerW) থাকে; ছক চওড়া হলে ডান পাশ কেটে যেত।
+           container কে W চওড়া করি — html2pdf নিজেই canvas ছোট করে পাতায় বসায় */
+        const c=this.prop&&this.prop.container; if(c){ c.style.width=W+'px'; c.style.maxWidth='none'; c.style.overflow='visible'; c.style.left='0'; c.style.right='auto'; c.style.margin='0'; }
+        const ov=this.prop&&this.prop.overlay; if(ov){ ov.style.overflow='visible'; }   /* মোবাইলে স্ক্রিন সরু — overlay এর overflow:hidden এ ডান পাশ কাটত */
+        if(this.opt&&this.opt.html2canvas){ this.opt.html2canvas.windowWidth=Math.max(W+40, 1280); this.opt.html2canvas.windowHeight=900; }
+      }).toCanvas().toPdf().outputPdf('blob').then(function(blob){
         const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
         const file=new File([blob],fname,{type:'application/pdf'});
         if(mobile && navigator.canShare && navigator.canShare({files:[file]})){
@@ -8428,7 +8440,7 @@ function pselPrint(pdf){
   if(!list.length){ toast('আগে কার্ড-এর টিক বক্স দিয়ে Costing বাছুন',true); return; }
   const mEl=document.getElementById('pselMode'), mode=mEl?mEl.value:'both';   /* both | cost | top */
   const go=function(){ printCostList(list, mode!=='cost', mode==='top'); };
-  if(pdf) pdfRun(go,(mode==='top'?'TopSheet_':'Costing_')+list.length+'_items'); else go();
+  if(pdf) pdfRun(go,pdfListName(list,mode)); else go();
 }
 function renderProductsGrid(){
   const w0=document.getElementById('productsGridWrap'); if(!w0) return;
@@ -8476,7 +8488,7 @@ function renderProductsGrid(){
       '<div class="pc-row" title="সত্যিকারের কিছু বদলালেই শুধু এই তারিখ বদলায়"><span>&#128339; সর্বশেষ আপডেট</span><span>'+esc(fmtDate(chgWhen(p)))+'</span></div>'+
       '<div class="pc-actions" onclick="event.stopPropagation()">'+
       '<label title="PDF/Print এর জন্য বাছুন" style="display:flex;align-items:center;padding:0 4px;cursor:pointer;"><input type="checkbox" class="pselc" data-id="'+p.id+'" '+(PSEL[p.id]?'checked ':'')+'onchange="pselTog(\''+p.id+'\',this.checked)"></label>'+
-      '<button class="btn btn-sm btn-ghost" onclick="pdfRun(function(){printCostSheet(\''+p.id+'\')},\'Costing_'+pdfSafe(p.name)+'\')" title="PDF">PDF</button>'+
+      '<button class="btn btn-sm btn-ghost" onclick="pdfRun(function(){printCostSheet(\''+p.id+'\')},function(){return pdfProdName(\''+p.id+'\')})" title="PDF">PDF</button>'+
       '<button class="btn btn-sm btn-ghost" style="flex:1" onclick="printCostSheet(\''+p.id+'\')">Print</button>'+
       '<button class="btn btn-sm btn-ghost" title="কী কী আপডেট হয়েছিল — পরিবর্তনের তালিকা" onclick="openChgLog(\''+p.id+'\')">&#128221;</button>'+
       '<button class="btn btn-sm btn-ghost" title="Top Sheet" onclick="openTopSheet(\''+p.id+'\')">Top</button>'+
@@ -15198,6 +15210,12 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.82', d:'2026-10-29', t:'PDF এর ডান পাশ কাটা ঠিক + পণ্যের নামে ফাইল', li:[
+  'PDF Download করলে ডান পাশ কেটে যেত (বিশেষ করে মোবাইলে ও চওড়া ছকে) — এখন দুই পাশে সমান margin, পুরো লেখা পাতার ভেতরে',
+  'চওড়া ছক নিজে ছোট হয়ে পাতায় বসে — কোনো কলাম কাটা পড়ে না',
+  'Costing PDF এর ফাইলের নাম এখন পণ্যের নাম — যেমন "Nata De Coco Jelly 35gm x 144.pdf"',
+  'Top Sheet PDF: "পণ্যের নাম - Top Sheet.pdf"; একাধিক বাছাই করলে: "প্রথম পণ্য + 2 more.pdf"',
+  'বাংলা নামও ফাইলের নামে থাকে (আগে বাদ পড়ত)']},
  {v:'18.81', d:'2026-10-29', t:'নতুন প্রফেশনাল কালার থিম ও ফন্ট', li:[
   'পুরো সফটওয়্যারে একটি স্ট্যান্ডার্ড কালার কম্বিনেশন — Navy (প্রধান), Slate Gray (ব্যাকগ্রাউন্ড/বর্ডার), Gold (হাইলাইট)',
   'সব পেজ, বাটন, ব্যাজ, লগইন স্ক্রিন একই রঙে — আলাদা আলাদা সবুজ রঙ সরানো হয়েছে',
@@ -17631,6 +17649,12 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'18.82', d:'2026-10-29', t:'PDF right-edge cut fixed + file named after product', li:[
+  'Downloaded PDFs were cut off on the right (mostly on mobile and wide tables) — now equal margins on both sides',
+  'Wide tables shrink to fit the page — no column is cut',
+  'Costing PDF file name is now the product name — e.g. "Nata De Coco Jelly 35gm x 144.pdf"',
+  'Top Sheet PDF: "Product name - Top Sheet.pdf"; multiple selected: "First product + 2 more.pdf"',
+  'Bangla names are kept in file names (were dropped before)']},
  {v:'18.81', d:'2026-10-29', t:'New professional colour theme & font', li:[
   'One standard colour combination across the app — Navy (primary), Slate Gray (background/borders), Gold (highlight)',
   'All pages, buttons, badges and the login screen now share the same palette — scattered greens removed',
