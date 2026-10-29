@@ -29,7 +29,7 @@
 ## সাহায্য / Changelog
 
 অ্যাপের ভেতরে **F1** চাপুন — পূর্ণ User Guide ও প্রতিটা version-এর পরিবর্তন (Changelog) আছে।
-**বর্তমান version: v18.80**
+**বর্তমান version: v18.81**
 
 ## Tech
 
