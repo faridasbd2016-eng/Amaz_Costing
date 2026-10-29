@@ -7524,7 +7524,7 @@ function mixCardHTML(m){
       '<button class="btn btn-sm btn-ghost" title="সম্পাদনা" onclick="openMix(\''+m.id+'\')">&#9998;</button>'+
       '<button class="btn btn-sm btn-ghost" title="কী কী আপডেট হয়েছিল" onclick="openMixChg(\''+m.id+'\')">&#128221;</button>'+
       '<button class="btn btn-sm btn-ghost" title="Excel" onclick="mixExcel(\''+m.id+'\')">XL</button>'+
-      '<button class="btn btn-sm btn-ghost" title="Order Requirement এ যোগ (flavour ধরে ভেঙে)" onclick="mixToOrder(\''+m.id+'\')">&#128722;</button>'+
+      '<button class="btn btn-sm btn-ghost" title="Order Requirement এ যোগ" onclick="mixToOrder(\''+m.id+'\')">&#128722;</button>'+
       '<button class="btn btn-sm btn-ghost" title="Copy" onclick="mixCopy(\''+m.id+'\')">&#128203;</button>'+
       '<button class="btn btn-sm btn-danger" onclick="mixDel(\''+m.id+'\')">Del</button></div></div>';
 }
@@ -8014,16 +8014,16 @@ function mixToOrder(id){
   const m=mixEnsure().find(function(x){return x.id===id;}); if(!m) return;
   const q=prompt('"'+m.name+'" এর কয়টা Mix Carton এর Order?','100'); if(q===null) return;
   const N=n(q); if(!(N>0)){ toast('সঠিক সংখ্যা দিন',true); return; }
-  const ex=mixExpand(m,N); if(!ex.length) return;
-  const ct=m.ctype||'export';
+  if(!mixParts(m).length){ toast('এই Mix এ কোনো flavour নেই',true); return; }
+  const ct=m.ctype||'export', mid='mix:'+m.id;
   let o=ordersOf(ct).find(function(x){ return !ordIsLocked(x); });
   if(!o){ o={id:uid('ord'), ctype:ct, ref:'', buyer:'', date:'', presetId:(ordIsExport(ct)&&(DB.exportPresets||[])[0])?DB.exportPresets[0].id:'', containers:1,
       lines:[], status:'draft', snap:null, createdAt:nowISO(), updatedAt:nowISO()}; ordersAll().push(o); }
-  ex.forEach(function(e){ const l=o.lines.find(function(z){return z.prodId===e.prodId;});
-    if(l) l.ctn=+(n(l.ctn)+e.ctn).toFixed(4); else o.lines.push({prodId:e.prodId, ctn:e.ctn}); });
+  const l=o.lines.find(function(z){return z.prodId===mid;});
+  if(l) l.ctn=+(n(l.ctn)+N).toFixed(4); else o.lines.push({prodId:mid, ctn:N});
   o.updatedAt=nowISO(); saveDB(); OR_TAB=ct; OR_CUR=o.id;
   audit('add','order','Mix → Order', m.name+' × '+N+' Ctn');
-  goTo('orderreq'); toast(N+' Mix Ctn → '+ex.length+' flavour এর লাইনে ভেঙে Order এ বসানো হলো (আগের Qty এর সাথে যোগ)');
+  goTo('orderreq'); toast(N+' Mix Ctn Order এ বসানো হলো (আগে থাকলে Qty এর সাথে যোগ)');
 }
 
 /* ===== বদল ধরা ===== */
@@ -8734,18 +8734,53 @@ function ordMigrate(){
   DB.ordMigratedV1=true; saveDB();
 }
 /* এক লাইনের হিসাব — locked হলে snapshot থেকে, নাহলে সরাসরি Costing Sheet থেকে */
+/* v18.84 — Mix Carton Costing ও Order Requirement এ সরাসরি (একটা লাইন হিসেবে)।
+   id = 'mix:<mixId>'। হিসাব প্রতিটা flavour এর Costing থেকে, পিসের অংশ (f) অনুযায়ী ভাগ করে। */
+function ordIsMixId(id){ return String(id||'').indexOf('mix:')===0; }
+function ordMixById(id){ const k=String(id||'').slice(4); return (DB.mixes||[]).find(function(m){ return m.id===k; })||null; }
+function ordMixLineData(id){
+  const m=ordMixById(id); if(!m) return null;
+  const c=mixCalc(m); if(!c.parts.length) return null;
+  let bpc=0, dpc=0; const rmM={}, pkM={};
+  c.parts.forEach(function(x){
+    const r=x.r;
+    if(r.stdOut>0){ bpc+=x.f/r.stdOut; if(r.batchDay>0) dpc+=x.f/(r.stdOut*r.batchDay); }
+    [['rm',rmM],['pk',pkM]].forEach(function(t){ (r[t[0]]||[]).forEach(function(z){ if(!z.matId) return;
+      const e=t[1][z.matId]=t[1][z.matId]||{matId:z.matId,name:z.name,unit:z.unit,rate:z.rate,qtyCtn:0};
+      e.qtyCtn+=n(z.qtyCtn)*x.f; }); });
+  });
+  const soh=c.parts.reduce(function(a,x){ return a+x.f*n(x.r.hasAct?x.r.actSellOhCtn:x.r.sellOhCtn); },0);
+  const vals=function(o){ return Object.keys(o).map(function(k){ return o[k]; }); };
+  return {
+    prodId:id, isMix:true, name:m.name, code:m.code||'', ctype:m.ctype||'export', uLab:'Ctn', uKey:'ctn',
+    stdOut:bpc>0?1/bpc:0, batchDay:(bpc>0&&dpc>0)?bpc/dpc:0,
+    cbmCtn:c.cbmPerCtn, kgCtn:c.kgCtn,
+    rmAmtCtn:c.rmAmtCtn, pkAmtCtn:c.pkAmtCtn, laborCtn:c.laborCtn+c.otherLaborCtn,
+    factoryOhCtn:c.factoryOhCtn, mfgCtn:c.mfgCtn,
+    hoCtn:c.hoCtn, bankCtn:c.bankCtn, riskCtn:c.riskCtn, indirectCtn:c.indirectCtn,
+    sohCtn:soh, baseCtn:c.mfgCtn+c.indirectCtn+soh,
+    sellBdt:(c.hasAct?c.actBdt:c.sellBdt), sellUsd:(c.hasAct?c.actUsd:c.sellUsd), hasAct:c.hasAct,
+    rm:vals(rmM), pk:vals(pkM)
+  };
+}
+/* Order এর তালিকায় বাছাই করা যায় এমন সব: Costing + ওই Section এর Mix Carton */
+function ordPickList(ct){
+  return ordSectionProducts(ct).concat((DB.mixes||[]).filter(function(m){ return (m.ctype||'export')===ct; })
+    .map(function(m){ return {id:'mix:'+m.id, name:m.name+' (Mix)', code:m.code||'', isMix:true}; }));
+}
 function ordLineData(o, l, idx){
   if(ordIsLocked(o)){
     const s=(o.snap.lines||[])[idx];
     return (s && s.prodId===l.prodId) ? s : null;
   }
+  if(ordIsMixId(l.prodId)) return ordMixLineData(l.prodId);
   const p=DB.products.find(function(x){return x.id===l.prodId;});
   if(!p) return null;
   const r=calc(p);
   return {
     prodId:p.id, name:p.name, code:p.code||'', ctype:r.ctype, uLab:r.uLab, uKey:r.uKey,
     stdOut:r.stdOut, batchDay:r.batchDay,
-    cbmCtn:r.cbmPerCtn, kgCtn:r.packKg*r.pktCtn,
+    cbmCtn:r.cbmPerCtn, kgCtn:kgCtnOf(r),
     rmAmtCtn:r.rmAmtCtn, pkAmtCtn:r.pkAmtCtn, laborCtn:r.laborCtn+r.otherLaborCtn,
     factoryOhCtn:r.factoryOhCtn, mfgCtn:r.mfgCtn,
     hoCtn:r.hoCtn, bankCtn:r.bankCtn, riskCtn:r.riskCtn, indirectCtn:r.indirectCtn,
@@ -9527,7 +9562,7 @@ function ordSectionProducts(ct){ return DB.products.filter(function(p){ return (
 function ordProdLabel(p){ return p.name; }
 function ordFillDL(ct){
   const dl=document.getElementById('orProdDL'); if(!dl) return;
-  dl.innerHTML=ordSectionProducts(ct).slice()
+  dl.innerHTML=ordPickList(ct).slice()
     .sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||'')); })
     .map(function(p){ return '<option value="'+esc(ordProdLabel(p))+'"></option>'; }).join('');
 }
@@ -9537,7 +9572,7 @@ function ordFillDL(ct){
 function findOrProduct(txt){
   const t=String(txt||'').trim().toLowerCase(); if(!t) return null;
   const o=orderPlan();
-  const L=ordSectionProducts(o.ctype||'export');
+  const L=ordPickList(o.ctype||'export');
   let hit=L.find(function(p){ return String(p.name||'').toLowerCase()===t; })
        || L.find(function(p){ return String(p.code||'').toLowerCase()===t; })
        || L.find(function(p){ return ((p.code?p.code+' — ':'')+p.name).toLowerCase()===t; });
@@ -9564,7 +9599,7 @@ function orSetProduct(i, txt){
 }
 function orAdd(){
   const o=orderPlan(); if(!o.id || ordIsLocked(o)) return;
-  const list=ordSectionProducts(o.ctype||'export');
+  const list=ordPickList(o.ctype||'export');
   if(!list.length){ toast(ctypeLabel(o.ctype)+' section এ কোনো Costing Sheet নেই',true); return; }
   o.lines.push({prodId:'', ctn:''}); o.updatedAt=nowISO();   /* খালি থাকবে — নিজে বেছে নিন */
   saveDB(); renderOrderReq(); orFocus(o.lines.length-1,0);
@@ -9670,7 +9705,7 @@ function renderOrderReq(){
   const o=orderPlan(), d=orderCalc();
   const hasCbm=ordHasCbm(d.ctype), isExp=d.isExport, lk=ordIsLocked(o);
   const cols=3+2+(hasCbm?1:0)+1+(isExp?2:0)+3+1;
-  const sectionList=ordSectionProducts(o.ctype||'export');
+  const sectionList=ordPickList(o.ctype||'export');
   body.innerHTML = (o.lines||[]).length===0
     ? '<tr><td colspan="'+cols+'" class="muted" style="text-align:center;padding:16px;">কোনো product যোগ করা হয়নি।'+(lk?'':' "+ Product যোগ করুন" চাপুন।')+'</td></tr>'
     : o.lines.map(function(l,i){
@@ -11607,19 +11642,12 @@ function qDuplicate(){
 function quoteToOrder(){
   if(!QUOTE) return;
   if(!need('orderreq','a','Order Requirement এ যোগ')) return;
-  /* Mix Carton লাইন → প্রতিটা flavour এর আলাদা Costing লাইনে ভেঙে (Qty × পিসের অংশ) */
-  const withPid=[];
-  (QUOTE.lines||[]).forEach(function(L){
-    if(!L.pid) return;
-    if(String(L.pid).indexOf('mix:')===0){
-      const m=(DB.mixes||[]).find(function(x){return x.id===String(L.pid).slice(4);}); if(!m) return;
-      mixExpand(m, n(L.qty)).forEach(function(e){ withPid.push({pid:e.prodId, qty:e.ctn}); });
-    } else withPid.push(L);
-  });
+  /* v18.84 — Mix Carton এখন Order এ নিজের একটা লাইন হিসেবেই যায় (আর flavour এ ভাঙে না) */
+  const withPid=(QUOTE.lines||[]).filter(function(L){ return !!L.pid; });
   if(!withPid.length){ toast('Costing থেকে বাছা পণ্য নেই — Order এ পাঠানোর মতো কিছু নেই',true); return; }
   let added=0, updated=0, touched=[], firstId=null;
   withPid.forEach(function(L){
-    const p=DB.products.find(function(x){ return x.id===L.pid; });
+    const p=ordIsMixId(L.pid)?ordMixById(L.pid):DB.products.find(function(x){ return x.id===L.pid; });
     if(!p) return;
     const ct=p.ctype||'export';
     let o=ordersOf(ct).find(function(x){ return !ordIsLocked(x); });
@@ -15234,6 +15262,12 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'18.84', d:'2026-10-29', t:'Mix Carton এখন Order Requirement এর তালিকায়', li:[
+  'Order Requirement এ Product এর ঘরে নাম লিখলে Mix Carton Costing ও আসে — নামের শেষে "(Mix)" লেখা থাকে',
+  'Mix একটা লাইন হিসেবেই থাকে — Qty দিন Mix Carton এ; Material, Batch, দিন, CBM, ওজন সব প্রতিটা flavour এর Costing থেকে পিসের অংশ অনুযায়ী হিসাব হয়',
+  'Material এর মোট চাহিদা flavour আলাদা করে বসালে যা হতো, ঠিক তাই — মিলিয়ে দেখা হয়েছে',
+  'Mix কার্ডের 🛒 বোতাম ও দরপত্র → Order: এখন Mix একটা লাইন হিসেবেই যায় (আগে flavour এ ভেঙে যেত)',
+  'Order এর ওজন (Kg) এখন Pcs মাপের পণ্যে ভুল ওজন ধরে না']},
  {v:'18.83', d:'2026-10-29', t:'ভাষা বদলে Login না দেখানো + পূর্ণ Bug Scan', li:[
   'ভাষা (EN/বাংলা) বদলালে এক পলকের জন্য Login পাতা চলে আসত — এখন আসে না, শুধু ছোট একটা লোডিং চিহ্ন',
   'মোবাইলে উপরের বারের Help / Lock / Logout বোতাম স্ক্রিনের বাইরে চলে যেত — এখন সব বোতাম দেখা যায়, পাশে স্ক্রল হয় না',
@@ -17680,6 +17714,12 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'18.84', d:'2026-10-29', t:'Mix Carton now in the Order Requirement list', li:[
+  'Typing in the Product field of Order Requirement now also shows Mix Carton costings — marked "(Mix)"',
+  'A Mix stays one line — enter Qty in Mix Cartons; Material, Batch, Days, CBM and weight come from each flavour costing by its piece share',
+  'Total material requirement is exactly the same as entering the flavours separately — verified',
+  'Mix card 🛒 button and Quotation → Order now add the Mix as one line (previously split into flavours)',
+  'Order weight (Kg) no longer counts a wrong weight for Pcs-measured products']},
  {v:'18.83', d:'2026-10-29', t:'No login flash on language change + full bug scan', li:[
   'Switching language (EN/Bangla) briefly showed the login page — now it does not, only a small loading spinner',
   'On mobile the Help / Lock / Logout buttons in the top bar went off-screen — all buttons now fit, no sideways scroll',
