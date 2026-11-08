@@ -1,11 +1,13 @@
 /* AMAZ Product Costing — অফলাইন সার্ভিস ওয়ার্কার */
-const CACHE = 'amaz-costing-v19.06';
+const CACHE = 'amaz-costing-v19.11';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './app-icon-192.png', './app-icon-512.png', './app-icon-maskable.png', './app-apple-touch.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if(req.method !== 'GET') return;
+  // v19.08 — নতুন ভার্সনের খবর সবসময় নেটওয়ার্ক থেকে (ক্যাশ নয়)
+  if(url.pathname.endsWith('/version.json')){ e.respondWith(fetch(req, {cache:'no-store'}).catch(() => new Response('{}', {headers:{'Content-Type':'application/json'}}))); return; }
   // অ্যাপ পেজ: আগে নেটওয়ার্ক (নতুন আপডেট পেতে), না পেলে ক্যাশ
   if(req.mode === 'navigate'){
     e.respondWith(fetch(req).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put('./index.html', cp)); return r; })
