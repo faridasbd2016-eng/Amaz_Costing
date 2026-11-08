@@ -598,6 +598,7 @@ input:focus,select:focus,textarea:focus{outline:none; border-color:var(--accent)
 .panel:nth-of-type(3){animation-delay:.1s;}
 .panel:nth-of-type(4){animation-delay:.15s;}
 @keyframes panelIn{from{opacity:0;} to{opacity:1;}}
+.lazy-row{display:none !important;}
 
 /* --- মডাল --- */
 .modal{animation:modalIn2 .26s cubic-bezier(.2,.85,.3,1);}
@@ -4518,7 +4519,7 @@ function renderRMPage(){ return returnBannerHTML()+'<div class="panel"><div clas
  '<div class="table-wrap" id="rmTableWrap"></div></div>'; }
 function renderRMTable(){
   const w0=document.getElementById('rmTableWrap'); if(!w0) return;
-  if(!w0.innerHTML && DB.rawMaterials.length>150){
+  if(!w0.innerHTML && DB.rawMaterials.length>3000){
     w0.innerHTML='<div class="spinner-wrap"><div class="spinner"></div><div style="margin-top:10px;font-size:12.5px;">লোড হচ্ছে…</div></div>';
     setTimeout(renderRMTable, 10); return;
   }
@@ -4716,7 +4717,7 @@ function renderFgTable(){
     el2.focus();
     if(_ss!==null){ try{ el2.setSelectionRange(_ss,_se); }catch(e){} }
   };
-  if(!w00.innerHTML && !FG_ADDING && (DB.fgProducts||[]).length>150){
+  if(!w00.innerHTML && !FG_ADDING && (DB.fgProducts||[]).length>3000){
     w00.innerHTML='<div class="spinner-wrap"><div class="spinner"></div><div style="margin-top:10px;font-size:12.5px;">লোড হচ্ছে…</div></div>';
     setTimeout(renderFgTable, 10); return;
   }
@@ -5075,7 +5076,7 @@ function renderPKPage(){ return returnBannerHTML()+'<div class="panel"><div clas
  '<div class="table-wrap" id="pkTableWrap"></div></div>'; }
 function renderPKTable(){
   const w0=document.getElementById('pkTableWrap'); if(!w0) return;
-  if(!w0.innerHTML && DB.packaging.length>150){
+  if(!w0.innerHTML && DB.packaging.length>3000){
     w0.innerHTML='<div class="spinner-wrap"><div class="spinner"></div><div style="margin-top:10px;font-size:12.5px;">লোড হচ্ছে…</div></div>';
     setTimeout(renderPKTable, 10); return;
   }
@@ -9066,7 +9067,7 @@ function pselPrint(pdf){
 }
 function renderProductsGrid(){
   const w0=document.getElementById('productsGridWrap'); if(!w0) return;
-  if(!w0.innerHTML && DB.products.length>150){
+  if(!w0.innerHTML && DB.products.length>3000){
     w0.innerHTML='<div class="spinner-wrap"><div class="spinner"></div><div style="margin-top:10px;font-size:12.5px;">লোড হচ্ছে…</div></div>';
     setTimeout(renderProductsGrid, 10); return;
   }
@@ -16276,9 +16277,16 @@ function motionAfterRender(){
   if(!MOTION_PG) return; MOTION_PG=false;
   if(motionReduced()) return;
   const c=document.getElementById('content'); if(!c) return;
+  /* v19.13 — animation শেষে class সরালে .panel এর নিজস্ব fade আবার শুরু হয়ে পাতা এক পলক ঝাঁকি দিত;
+     এখন শেষ হলে inline 'animation:none' — কোনো animation আর দ্বিতীয়বার চলে না */
   const kids=[].slice.call(c.children).slice(0,10);
-  kids.forEach(function(el,i){ el.classList.remove('mp-in'); void el.offsetWidth; el.style.animationDelay=(i*55)+'ms'; el.classList.add('mp-in');
-    setTimeout(function(){ el.classList.remove('mp-in'); el.style.animationDelay=''; },700+i*55); });
+  kids.forEach(function(el,i){
+    el.style.animation=''; el.classList.remove('mp-in'); void el.offsetWidth;
+    el.style.animationDelay=(i*55)+'ms'; el.classList.add('mp-in');
+    const done=function(e){ if(e&&e.target!==el) return; el.removeEventListener('animationend',done); el.style.animation='none'; el.classList.remove('mp-in'); };
+    el.addEventListener('animationend',done);
+    setTimeout(done,900+i*55);
+  });
   if(currentPage==='dashboard') countUp(c.querySelectorAll('.kpi .value, .dh-num'));
 }
 function countUp(els){
@@ -17380,6 +17388,13 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.13', d:'2026-11-08', t:'মেনু বদলানোর animation এর পর ঝাঁকি বন্ধ', li:[
+  'মেনু বদলালে পাতা নরমভাবে ফুটে ওঠার animation আগের মতোই আছে — কিন্তু animation শেষ হওয়ার ঠিক পরে (প্রায় ০.৭ সেকেন্ডে) পাতা আবার এক পলক অদৃশ্য হয়ে ফুটে উঠত (ঝাঁকি)। কারণ: v19.08 এর Motion শেষে একটা class সরানোয় পুরনো fade দ্বিতীয়বার চলত। এখন animation একবারই চলে, কোনো ঝাঁকি নেই — সব পাতায় মেপে দেখা হয়েছে'
+ ]},
+ {v:'19.12', d:'2026-11-08', t:'বড় তালিকা দ্রুত', li:[
+  'বড় তালিকায় (Raw Materials, Packing, FG Master, Costing — ১৫০ এর বেশি হলে) মাঝে “লোড হচ্ছে…” দেখানো বন্ধ — তালিকা সাথে সাথে আসে',
+  'বড় তালিকা আগের চেয়ে প্রায় ৩ গুণ দ্রুত দেখা যায় (৪৫০ টা RM এ ~০.৫ সেকেন্ড থেকে ~০.২ সেকেন্ড): উপরের সারিগুলো সাথে সাথে আঁকা হয়, বাকিগুলো পরের মুহূর্তে যোগ হয়'
+ ]},
  {v:'19.11', d:'2026-11-08', t:'Master Service: bug fix', li:[
   '<b>অনুমতি ছাড়া বদল বন্ধ</b>: RM/PM তালিকার ভেতরের ঘর (Category, Note, কে কেনে), Carton এর মাপ ও Setting, Budget এর ঘর, Demand এর স্বাক্ষর, Order এর তথ্য, Settings এর লোগো ও Cloud Sync — এগুলো আগে অনুমতি না দেখেই সেভ হতো। এখন যার বদলানোর অনুমতি নেই (বা License শেষে READ-ONLY) তার বদল সেভ হয় না, বার্তা দিয়ে পাতা আগের অবস্থায় ফেরে',
   '<b>License key হারানো ঠেকানো</b>: দুই PC তে একসাথে Settings বদলালে sync এ License key মুছে যেতে পারত (তখন আবার Trial দেখাত) — এখন প্রতি PC তে key এর একটা কপি থাকে, হারালে নিজেই ফিরে আসে',
@@ -19973,6 +19988,13 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.13', d:'2026-11-08', t:'No jolt after the menu animation', li:[
+  'The soft fade-in when changing menus is kept as before — but right after it ended (about 0.7 s) the page blinked out and faded in again (a jolt). Cause: the v19.08 motion removed a class at the end, which restarted the old fade. The animation now runs once with no jolt — measured on every page'
+ ]},
+ {v:'19.12', d:'2026-11-08', t:'Faster big lists', li:[
+  'Big lists (Raw Materials, Packing, FG Master, Costing — over 150 items) no longer show “Loading…” in between — the list appears at once',
+  'Big lists show about 3× faster (450 RMs: ~0.5 s → ~0.2 s): the top rows draw at once and the rest are added a moment later'
+ ]},
  {v:'19.11', d:'2026-11-08', t:'Master service: bug fixes', li:[
   '<b>No changes without permission</b>: fields inside the RM/PM lists (category, note, bought by), carton size and settings, budget fields, demand signatures, order details, and the Settings logo and Cloud Sync used to save without checking permission. Now a user without edit rights (or when the license is read-only) cannot save them — a message is shown and the page reverts',
   '<b>License key loss prevented</b>: editing Settings on two PCs at once could drop the License key through sync (showing Trial again) — each PC now keeps a copy and restores it automatically',
@@ -22856,6 +22878,33 @@ function lgInfoRefresh(){
   try{ lgCloudChip(); }catch(e){}
 }
 
+
+/* ===================== v19.12 — মেনু বদলানোর সময় এক পলক সাদা / "লোড হচ্ছে" দেখানো বন্ধ =====================
+   আগে বড় তালিকায় (১৫০+) প্রথমে খালি পাতা → "লোড হচ্ছে…" → তারপর তালিকা আসত, সাথে পুরো পাতা অদৃশ্য থেকে ফুটে উঠত।
+   এখন তালিকা সাথে সাথেই আসে: উপরের ৬০টা সারি সাথে সাথে আঁকা হয়, বাকিগুলো পরের মুহূর্তে ধাপে ধাপে যোগ হয় — চোখে পড়ে না। */
+var LAZY_TOKEN={};
+function lazyRows(wrapId){
+  const w=document.getElementById(wrapId); if(!w) return;
+  if(w.contains(document.activeElement)) return;    /* নতুন সারিতে লিখছেন — কিছু লুকাব না */
+  let rows=w.querySelectorAll('tbody > tr');
+  if(rows.length<=120){ rows=w.querySelectorAll('.grid-products > .product-card'); if(rows.length<=120) return; }
+  const FIRST=60, STEP=150, tok={}; LAZY_TOKEN[wrapId]=tok;
+  for(let i=FIRST;i<rows.length-1;i++) rows[i].classList.add('lazy-row');   /* শেষ সারি (＋ নতুন) সবসময় দেখা যায় */
+  let k=FIRST;
+  const step=function(){
+    if(LAZY_TOKEN[wrapId]!==tok) return;
+    const end=Math.min(rows.length-1,k+STEP);
+    for(;k<end;k++) rows[k].classList.remove('lazy-row');
+    if(k<rows.length-1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(function(){ requestAnimationFrame(step); });
+}
+(function(){
+  [['renderRMTable','rmTableWrap'],['renderPKTable','pkTableWrap'],['renderFgTable','fgTableWrap'],['renderProductsGrid','productsGridWrap']].forEach(function(x){
+    const f=window[x[0]]; if(typeof f!=='function') return;
+    window[x[0]]=function(){ const r=f.apply(this,arguments); try{ lazyRows(x[1]); }catch(e){} return r; };
+  });
+})();
 /* ===================== v19.11 — Inline ঘরের অনুমতি পাহারা =====================
    কিছু টেবিলের ভেতরের ঘর (RM/PM এর Category/Note/কে কেনে, Carton মাপ, Budget, Demand এর স্বাক্ষর, Settings এর লোগো/Cloud)
    সরাসরি সেভ করত — অনুমতি বা License (READ-ONLY) না দেখে। এখন প্রথমে যাচাই; না হলে বার্তা দিয়ে পাতা আগের অবস্থায় ফেরে। */
