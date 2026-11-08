@@ -14786,6 +14786,7 @@ const SYNC_COLLS = [
   {k:'quotations',   l:'দরপত্র'},
   {k:'mixes',        l:'Mix Carton Costing'},
   {k:'licDevices',   l:'License এর PC'},
+  {k:'licenses',     l:'License'},
   {k:'singles',      l:'Company Settings / Order Plan'}
 ];
 function collLabel(k){ const c=SYNC_COLLS.find(function(x){return x.k===k;}); return c?c.l:k; }
@@ -15019,6 +15020,8 @@ function applyRemote(rows){
     if(cur) updated++; else added++;
   });
   SYNC_APPLYING=false;
+  /* v19.14 — অন্য PC তে License বসালে এই PC তেও সাথে সাথে চালু */
+  try{ if(rows.some(function(r){ return r.c==='licenses'||r.c==='singles'||r.c==='licDevices'; })) setTimeout(function(){ try{ licRefresh(); }catch(e){} },60); }catch(e){}
   /* v18.78 — ক্লাউড থেকে User/Role বদলে এলে এখনকার সেশনও নতুন অনুমতিতে চলবে (আগে পুরনো object ধরে থাকত, লগআউট না করা পর্যন্ত বদলাত না) */
   try{ if(ME){ const nu=DB.users.find(function(x){return x.id===ME.id;});
     if(nu){ ME=nu; if(!nu.active){ toast('আপনার অ্যাকাউন্ট বন্ধ করা হয়েছে',true); setTimeout(function(){ try{ logout(); }catch(e){} },300); } else { try{ buildNav(); }catch(e){} } } } }catch(e){}
@@ -16625,7 +16628,8 @@ async function licProductOf(key){   /* ভুল product এর key হলে �
 function licDeviceId(){ try{ let d=localStorage.getItem('amazDevId'); if(!d){ d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); localStorage.setItem('amazDevId',d); } return d; }catch(e){ return 'nodev'; } }
 function _daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5); }
 function licTrialStart(){
-  let t=(DB.settings&&DB.settings.trialStart)||'';
+  const r=(DB.licenses||[]).find(function(x){ return x&&x.id==='trial'; });
+  let t=(r&&r.start)||(DB.settings&&DB.settings.trialStart)||'';
   try{ const l=localStorage.getItem('amazCostTrial0')||''; if(l&&(!t||l<t)) t=l; }catch(e){}
   return t;
 }
@@ -16634,14 +16638,30 @@ async function licRefresh(){
   try{
     DB.settings=DB.settings||{};
     const today=licToday(); let dirty=false;
-    if(!licTrialStart()){ DB.settings.trialStart=today; try{ localStorage.setItem('amazCostTrial0',today); }catch(e){} dirty=true; }
-    else { try{ if(!localStorage.getItem('amazCostTrial0')) localStorage.setItem('amazCostTrial0',licTrialStart()); }catch(e){}
-      if(DB.settings.trialStart!==licTrialStart()){ DB.settings.trialStart=licTrialStart(); dirty=true; } }
-    /* v19.11 — অন্য PC এর পুরনো Settings sync হয়ে এলে key যেন হারিয়ে না যায়: এই PC তেও একটা কপি থাকে */
+    /* v19.14 — License key ও Trial এখন নিজের আলাদা sync রেকর্ডে (DB.licenses) — আগে Company Settings এর ভেতরে ছিল,
+       আর প্রতি PC খোলার সময় Settings এ কিছু লেখায় সেই PC এর (key ছাড়া) Settings নতুন হয়ে ক্লাউডেরটাকে ঢেকে দিত,
+       ফলে এক PC তে key বসালেও অন্য PC তে আবার License চাইত। এখন Settings এ কিছুই লেখা হয় না। */
+    if(!Array.isArray(DB.licenses)) DB.licenses=[];
+    const rec=function(id){ return DB.licenses.find(function(x){ return x&&x.id===id&&!x.del; })||null; };
+    /* Trial শুরু: সব জায়গার মধ্যে সবচেয়ে আগের তারিখ */
+    let ts=[]; const tr=rec('trial'); if(tr&&tr.start) ts.push(tr.start);
+    if(DB.settings.trialStart) ts.push(DB.settings.trialStart);
+    try{ const l=localStorage.getItem('amazCostTrial0'); if(l) ts.push(l); }catch(e){}
+    ts=ts.filter(function(x){ return /^\d{4}-\d\d-\d\d$/.test(x); }).sort();
+    const tStart=ts[0]||today;
+    if(!tr){ DB.licenses.push({id:'trial', start:tStart}); dirty=true; }
+    else if(tr.start!==tStart){ tr.start=tStart; dirty=true; }
+    try{ localStorage.setItem('amazCostTrial0',tStart); }catch(e){}
+    /* Key: আলাদা রেকর্ড → (পুরনো) Settings → এই PC এর কপি; বৈধ যেটা পাওয়া যায় */
     let lsKey=''; try{ lsKey=localStorage.getItem('amazCostLicKey')||''; }catch(e){}
-    if(!DB.settings.licKey && lsKey && await licVerify(lsKey)){ DB.settings.licKey=lsKey; dirty=true; }
-    const key=DB.settings.licKey||'';
-    const p=key?await licVerify(key):null;
+    const kr=rec('key');
+    let key='', p=null;
+    const cands=[kr&&kr.key, DB.settings.licKey, lsKey].filter(Boolean);
+    for(let i=0;i<cands.length;i++){ const q=await licVerify(cands[i]); if(q){ key=cands[i]; p=q; break; } }
+    if(p && (!kr || kr.key!==key)){
+      if(kr) { kr.key=key; kr.at=kr.at||new Date().toISOString(); } else DB.licenses.push({id:'key', key:key, at:new Date().toISOString()});
+      dirty=true;
+    }
     if(p && key!==lsKey){ try{ localStorage.setItem('amazCostLicKey',key); }catch(e){} }
     let L;
     if(!p){
@@ -16662,8 +16682,10 @@ async function licRefresh(){
         if(mine.del||idx<0||idx>=L.pcs){ if(L.status==='ok'||L.status==='grace') L.status='pclimit'; }
       }
     }
+    const prevSig=JSON.stringify([_lic.status,_lic.client,_lic.exp,_lic.left,_lic.devices]);
     _lic=L;
     if(dirty) saveDB();
+    if(prevSig===JSON.stringify([L.status,L.client,L.exp,L.left,L.devices]) && !arguments[0]) return _lic;
   }catch(e){ _lic={status:'trial', left:LIC_TRIAL_DAYS}; }
   try{ if(ME){ buildNav(); render(); } }catch(e){}
   try{ setTimeout(licBillOnLogin,400); }catch(e){}
@@ -16707,9 +16729,12 @@ async function licActivate(elId){
   const p=await licVerify(key);
   if(!p){ const pr=await licProductOf(key);
     toast(pr&&pr!==LIC_PRODUCT?L2('❌ এটা অন্য সফটওয়্যারের ('+pr+') key — Product Costing এর key দিন','❌ This key is for another product ('+pr+') — enter a Product Costing key'):L2('❌ Key টা ঠিক না','❌ Invalid key'),true); return; }
-  DB.settings.licKey=key.replace(/\s+/g,'');
+  { const kk=key.replace(/\s+/g,''); if(!Array.isArray(DB.licenses)) DB.licenses=[];
+    const r=DB.licenses.find(function(x){ return x&&x.id==='key'; });
+    if(r){ r.key=kk; r.at=new Date().toISOString(); r.del=false; } else DB.licenses.push({id:'key', key:kk, at:new Date().toISOString()});
+    try{ localStorage.setItem('amazCostLicKey',kk); }catch(e){} }
   try{ audit('update','settings','License','Activate — '+p.c+' · মেয়াদ '+(p.e||'lifetime')+' · PC '+(p.n||'unlimited')); }catch(e){}
-  saveDB(); await licRefresh();
+  saveDB(); await licRefresh(true);
   const mb=document.getElementById('licBillModal'); if(mb) mb.remove();
   toast(L2('✓ License চালু — '+p.c+(p.e?' · '+p.e+' পর্যন্ত':''),'✓ License activated — '+p.c+(p.e?' · until '+p.e:'')));
   try{ syncSoon&&syncSoon(); }catch(e){}
@@ -17388,6 +17413,11 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.14', d:'2026-11-08', t:'এক PC তে License বসালে সব PC তে চালু', li:[
+  'ঠিক করা হয়েছে: একই Cloud এ যুক্ত থাকলেও এক PC তে License বসানোর পর অন্য PC তে আবার License চাইত। কারণ — Key টা Company Settings এর ভেতরে রাখা হতো, আর প্রতিটা PC খোলার সময় Settings এ Trial এর তারিখ লেখায় সেই PC এর (Key ছাড়া) Settings নতুন হয়ে ক্লাউডেরটাকে ঢেকে দিত',
+  'এখন License Key ও Trial নিজের আলাদা sync রেকর্ডে থাকে, Settings এ কিছু লেখা হয় না — এক PC তে Activate করলে Sync হতেই বাকি সব PC তে (নতুন PC সহ) সাথে সাথে চালু হয়, পাতা রিফ্রেশও লাগে না',
+  'আগে যে PC তে Key বসানো হয়েছিল সেখান থেকে Key নিজেই নতুন জায়গায় চলে যায় — আবার বসাতে হবে না। শুধু সব PC তে এই ভার্সন চালু থাকতে হবে'
+ ]},
  {v:'19.13', d:'2026-11-08', t:'মেনু বদলানোর animation এর পর ঝাঁকি বন্ধ', li:[
   'মেনু বদলালে পাতা নরমভাবে ফুটে ওঠার animation আগের মতোই আছে — কিন্তু animation শেষ হওয়ার ঠিক পরে (প্রায় ০.৭ সেকেন্ডে) পাতা আবার এক পলক অদৃশ্য হয়ে ফুটে উঠত (ঝাঁকি)। কারণ: v19.08 এর Motion শেষে একটা class সরানোয় পুরনো fade দ্বিতীয়বার চলত। এখন animation একবারই চলে, কোনো ঝাঁকি নেই — সব পাতায় মেপে দেখা হয়েছে'
  ]},
@@ -19988,6 +20018,11 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.14', d:'2026-11-08', t:'A license activated on one PC works on all PCs', li:[
+  'Fixed: even on the same cloud, after activating the license on one PC the other PCs still asked for a license. Cause — the key was kept inside Company Settings, and every PC wrote its trial date into Settings when opening, so that PC’s Settings (without the key) became newer and overwrote the cloud copy',
+  'The license key and trial now live in their own sync record and nothing is written to Settings — activate on one PC and after a sync every PC (new ones too) is licensed at once, no page refresh needed',
+  'A key entered earlier moves to the new place automatically — no need to enter it again. All PCs just need this version'
+ ]},
  {v:'19.13', d:'2026-11-08', t:'No jolt after the menu animation', li:[
   'The soft fade-in when changing menus is kept as before — but right after it ended (about 0.7 s) the page blinked out and faded in again (a jolt). Cause: the v19.08 motion removed a class at the end, which restarted the old fade. The animation now runs once with no jolt — measured on every page'
  ]},
