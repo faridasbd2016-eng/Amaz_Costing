@@ -1,1 +1,1 @@
-{"version":"19.20","date":"2026-11-10","notes":"ডাটা সংরক্ষণ আরও নিরাপদ — পুরনো কপি নতুন কাজের উপর বসবে না","notes_en":"Safer data saving — an older copy will not overwrite newer work"}
+{"version":"19.22","date":"2026-11-10","notes":"Popup বন্ধ করা সহজ (Esc / বাইরে ক্লিকে শুধু উপরেরটা); Factory Overhead Setup বাদ","notes_en":"Easier popup closing (Esc / outside click closes only the top one); factory overhead setup removed"}
