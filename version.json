@@ -1,1 +1,1 @@
-{"version":"19.22","date":"2026-11-10","notes":"Popup বন্ধ করা সহজ (Esc / বাইরে ক্লিকে শুধু উপরেরটা); Factory Overhead Setup বাদ","notes_en":"Easier popup closing (Esc / outside click closes only the top one); factory overhead setup removed"}
+{"version":"19.23","date":"2026-11-11","notes":"PDF এ ছক আর মাঝখানে ভাঙে না — Print এর মতো","notes_en":"PDF tables no longer split in the middle — same as print"}

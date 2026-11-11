@@ -3063,7 +3063,9 @@ function pdfPaginate(box, pageH){
       pend.splice(k,1);
       place(el.getBoundingClientRect().bottom, function(sp){ el.parentNode.insertBefore(sp,el.nextSibling); }); }
   };
-  const nodes=[].slice.call(box.querySelectorAll('tr,div,[style*="page-break-before"],[style*="page-break-after"]'));
+  const nodes=[].slice.call(box.querySelectorAll('table,tr,div,[style*="page-break-before"],[style*="page-break-after"]'));
+  /* v19.23 — Print এর মতো: যে ছক "ভাঙবে না" (page-break-inside:avoid / class keep) সেটা পাতার শেষে না ধরলে পুরো ছকটাই পরের পাতায় যায় */
+  const keepT=function(t){ return t.classList.contains('keep') || /page-break-inside:\s*avoid|break-inside:\s*avoid/.test(t.getAttribute('style')||''); };
   let guard=0;
   nodes.forEach(function(el){
     if(!el.parentNode || el.classList.contains('pgsp') || el.classList.contains('pghd')) return;
@@ -3073,6 +3075,15 @@ function pdfPaginate(box, pageH){
     if(before||after){ el.style.pageBreakBefore=''; el.style.pageBreakAfter=''; }
     if(before) place(el.getBoundingClientRect().top, function(sp){ el.parentNode.insertBefore(sp,el); });
     if(after) pend.push(el);
+    if(el.tagName==='TABLE'){
+      if(!keepT(el) || guard++>4000) return;
+      const rt=el.getBoundingClientRect(), tt=rt.top-top0(), th=rt.height;
+      if(th<=0 || th>pageH*0.92) return;                 /* পাতার চেয়ে বড় হলে সারি ধরে ভাগ (নিচে) */
+      const tend=(Math.floor((tt+0.5)/pageH)+1)*pageH;
+      if(tt+th<=tend+0.5) return;
+      const sp=document.createElement('div'); sp.style.cssText='height:'+(tend-tt)+'px;'; el.parentNode.insertBefore(sp,el);
+      return;
+    }
     if(el.tagName==='TR'){ if(el.closest('thead')) return; }
     else if(el.tagName!=='DIV' || el.querySelector('table')) return;
     if(guard++>4000) return;
@@ -18098,6 +18109,9 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.23', d:'2026-11-11', t:'PDF এ ছক আর মাঝখানে ভাঙে না — Print এর মতো', li:[
+  'PDF Download এ Man power Calculation এর মতো ছোট ছকগুলো পাতার শেষে না ধরলে আগে দুই পাতায় ভেঙে যেত। এখন Print এর মতোই <b>পুরো ছকটা পরের পাতায় চলে যায়</b>। শুধু পাতার চেয়ে বড় ছক (যেমন অনেক কাঁচামালের তালিকা) সারি ধরে ভাগ হয়, প্রতি পাতায় হেডার সহ'
+ ]},
  {v:'19.22', d:'2026-11-10', t:'Popup বন্ধ করা সহজ; Factory Overhead Setup বাদ', li:[
   '<b>Popup বন্ধ:</b> Esc চাপলে বা Popup এর বাইরে ক্লিক করলে এখন <b>শুধু সবার উপরের</b> Popup বন্ধ হয় (আগে Esc এ খোলা সব একসাথে বন্ধ হতো)। ফরম্যাট, Price List সহ সব Popup বাইরে ক্লিকে বন্ধ হয়। Popup এর ভেতর থেকে লেখা সিলেক্ট করতে টেনে বাইরে ছাড়লে বন্ধ হয় না',
   'Costing, কাঁচামাল, প্যাকিং, FG ও Import ফর্মে <b>কিছু না বদলালে</b> Esc বা বাইরে ক্লিকে সাথে সাথে বন্ধ হয়; বদলালে থিমের বক্সে জিজ্ঞেস করে “সেভ না করে বন্ধ করবেন?” — “না, থাক” বা Esc চাপলে ফর্ম খোলাই থাকে',
@@ -20742,6 +20756,9 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.23', d:'2026-11-11', t:'PDF tables no longer split in the middle — same as print', li:[
+  'In PDF downloads, small tables such as Man power Calculation used to split across two pages when they did not fit at the bottom. Now, as in print, <b>the whole table moves to the next page</b>. Only tables taller than a page (e.g. a long raw material list) are split by row, with the header repeated on each page'
+ ]},
  {v:'19.22', d:'2026-11-10', t:'Easier popup closing; factory overhead setup removed', li:[
   '<b>Closing popups:</b> Esc or a click outside now closes <b>only the top</b> popup (Esc used to close every open popup at once). Every popup, including Formats and Price List, closes on an outside click. Dragging from inside a popup to outside while selecting text does not close it',
   'The costing, raw material, packing, FG and import forms close straight away on Esc or an outside click when <b>nothing was changed</b>; if something changed, a themed box asks “Close without saving?” — “Cancel” or Esc keeps the form open',
