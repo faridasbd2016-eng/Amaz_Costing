@@ -1,1 +1,1 @@
-{"version":"19.23","date":"2026-11-11","notes":"PDF এ ছক আর মাঝখানে ভাঙে না — Print এর মতো","notes_en":"PDF tables no longer split in the middle — same as print"}
+{"version":"19.25","date":"2026-11-11","notes":"একই পণ্যের পরিবার — এক Costing এ বদলালে অন্য Section এর Costing এ এক জায়গা থেকেই মেলান","notes_en":"Product families — change one costing, match the other sections from one place"}

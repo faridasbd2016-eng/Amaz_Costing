@@ -312,6 +312,20 @@ button,input,select,textarea{font-family:inherit;}
 .kpi.accent{border-left:4px solid var(--accent);}
 .kpi.primary{border-left:4px solid var(--primary-2);}
 .panel{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);}
+.fam-legend{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px;font-size:11.5px;}
+.fam-legend .fl{padding:3px 9px;border-radius:7px;border:1px solid var(--border);}
+.fl.sync,.fam-c.sync{background:rgba(34,197,94,.10);} .fl.diff,.fam-c.diff{background:rgba(234,179,8,.16);} .fl.same,.fam-c.same{background:var(--panel-2);color:var(--text-dim);}
+.fam-cand{background:var(--panel-2);border:1px dashed var(--border);border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.fam-chip{display:inline-flex;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:4px 8px;}
+table.fam-tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.fam-tbl th{position:sticky;top:0;background:var(--panel);z-index:1;text-align:left;vertical-align:top;padding:8px;border-bottom:2px solid var(--border);font-size:11.5px;text-transform:none;letter-spacing:0;}
+table.fam-tbl td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.fam-tbl tr.fam-g td{background:var(--panel-2);font-weight:700;font-size:11.5px;letter-spacing:.3px;text-transform:uppercase;color:var(--text-dim);}
+table.fam-tbl .fam-col{min-width:150px;}
+.fam-new{font-size:10px;background:var(--primary);color:#fff;border-radius:5px;padding:1px 5px;} .fam-del{font-size:10px;background:var(--danger,#c0392b);color:#fff;border-radius:5px;padding:1px 5px;}
+.fam-row{display:flex;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--border);border-radius:9px;margin-bottom:6px;font-size:12.5px;}
+.fam-pill{display:inline-block;font-size:12px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.25);border-radius:8px;padding:3px 9px;line-height:1.5;}
+.fam-pill.sug{background:rgba(234,179,8,.12);border-color:rgba(234,179,8,.4);}
 .ts-card .s.ts-pc{margin-top:5px;padding-top:5px;border-top:1px dashed var(--border);color:var(--primary);font-size:11.5px;}
 .ts-card .s.ts-pc b{font-weight:700;}
 .panel > *:first-child{border-top-left-radius:var(--radius); border-top-right-radius:var(--radius);}
@@ -368,7 +382,7 @@ td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--panel); border-radius:14px; width:100%; max-width:720px; box-shadow:0 20px 60px rgba(0,0,0,.3);
   border:1px solid var(--border); animation:modalIn .18s ease;}
-.modal.wide{max-width:1080px;}
+.modal.wide{max-width:min(1320px,96vw);}   /* v19.24 — বড় স্ক্রিনে Costing আরও চওড়া, নাম কাটা পড়ে না */
 @keyframes modalIn{from{transform:translateY(10px); opacity:0;} to{transform:translateY(0); opacity:1;}}
 .modal-head{display:flex; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border);}
 .modal-head h3{margin:0; font-size:16px; flex:1;}
@@ -765,6 +779,14 @@ tr:hover .qa-ed,.qa-ed:focus{opacity:1;}
 .acrow.qa-add:hover{background:rgba(47,109,181,.13);}
 td.mancell{display:flex; align-items:center; gap:4px;}
 td.mancell input{flex:1; min-width:0;}
+/* v19.24 — Costing এর লাইনে Material / মেশিনের নাম আর ছোট সংখ্যার ঘর যাতে কাটা না পড়ে */
+#productModal td.mancell{min-width:290px;}
+#productModal td.mancell input.matac, #productModal td.mancell input[id^="f_rm_mat"], #productModal td.mancell input[id^="f_pk_mat"]{min-width:240px;}
+#productModal input.mcac{min-width:200px;}
+#productModal input[id^="f_pk_val"]{min-width:74px;}
+#productModal select[onchange^="setPwMode"]{min-width:165px;}
+#productModal #p_cbmMode{min-width:0; text-overflow:ellipsis;}
+@media (max-width:1250px){ #productModal td.mancell{min-width:215px;} #productModal td.mancell input.matac, #productModal td.mancell input[id^="f_rm_mat"], #productModal td.mancell input[id^="f_pk_mat"]{min-width:170px;} #productModal input[id^="f_pk_val"]{min-width:72px;} #productModal select[id^="f_pk_bas"]{width:112px;} }
 .manbtn{padding:3px 6px !important; font-size:12px; line-height:1; flex-shrink:0;
   border:1px solid var(--border) !important; border-radius:6px;}
 .manbtn.on{background:var(--accent); color:#1B2536; border-color:var(--accent) !important;}
@@ -1476,12 +1498,13 @@ tr.sel{background:var(--ok-bg) !important;}
           <input type="text" id="p_code" readonly placeholder="EXP-001" title="Section অনুযায়ী কোড নিজে থেকেই তৈরি হয়" style="background:var(--panel-2); font-weight:800; letter-spacing:.6px; color:var(--primary); cursor:not-allowed;">
           <div class="hint">Section বদলালে কোডও বদলাবে</div></div>
         <div class="field" style="grid-column:span 2;"><label>Product Name *</label>
-          <div style="display:flex;gap:6px;align-items:stretch;">
-            <input type="text" id="p_name" list="fgDatalist" oninput="onProdNameInput(this.value)" placeholder="Hot Chanachur (350 gm X 24 Jar)" style="flex:1;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="p_name" list="fgDatalist" oninput="onProdNameInput(this.value)" placeholder="Hot Chanachur (350 gm X 24 Jar)" style="flex:1 1 100%;min-width:0;">
             <button type="button" class="btn btn-ghost btn-sm" style="white-space:nowrap;" onclick="pullFromFgMaster()" title="FG Product Master এর সাথে যুক্ত করুন — Master এ বদলালে এখানেও নিজে থেকেই বদলাবে">&#8635; Master থেকে আনুন</button>
             <span id="fgLinkBadge" style="display:none;"></span>
           </div>
-          <div class="hint">FG Product Master থেকে বেছে নিলে "প্রকৃত বিক্রয়মূল্য", একক ও কার্টন মাপ নিজে থেকে বসবে (Break-even বদলাবে না)। পুরনো Costing এ পাশের বোতামে চাপুন।</div></div>
+          <div class="hint">FG Product Master থেকে বেছে নিলে "প্রকৃত বিক্রয়মূল্য", একক ও কার্টন মাপ নিজে থেকে বসবে (Break-even বদলাবে না)। পুরনো Costing এ পাশের বোতামে চাপুন।</div>
+          <div id="famChip" style="margin-top:6px;"></div></div>
         <div class="field"><label>একক (Unit)</label>
           <input type="text" id="p_unitLabel" oninput="setUnitLabel(this.value)" placeholder="Ctn">
           <div class="hint">Ctn / Bag / CS / Drum — <b>যা খুশি লিখুন</b>। আলাদা তালিকায় যোগ করার দরকার নেই —
@@ -6477,7 +6500,7 @@ function openProductModal(id, forceType){
   setV('p_measure', measureOf(CUR));
   setV('p_outUnit', UNITS[CUR.outUnit]?CUR.outUnit:'');
   setTimeout(applyFgLinkUI,0);      /* যুক্ত অবস্থা দেখানো ও ঘর লক করা */ setV('p_prodCap',CUR.prodCap||''); setV('p_workHours',CUR.workHours||''); setV('p_pktCtn',CUR.pktCtn); setV('p_packKg',CUR.packKg);
-  setV('p_loss',CUR.loss); setV('p_batchDay',CUR.batchDay); setV('p_workDays',CUR.workDays); setV('p_shift',CUR.shift);
+  setV('p_loss',CUR.loss); setV('p_batchDay',CUR.batchDay); setV('p_workDays',CUR.workDays); setV('p_shift',CUR.shift); try{ famChip(); }catch(e){}
   setV('p_usd',CUR.usd); setV('p_sellUsd',CUR.sellUsd); setV('p_sellBdt',CUR.sellBdt);
   setV('p_sellNoVat',CUR.sellNoVat); setV('p_note',CUR.note);
   renderCtypePick(); applyTypeUI(); refreshCodePreview();
@@ -8623,7 +8646,7 @@ function mixToOrder(id){
 
 
 /* ===== v18.48 — সত্যিকারের পরিবর্তন ধরা: "সর্বশেষ আপডেট" তারিখ ও কী কী বদলেছে তার তালিকা ===== */
-const CHG_SKIP={_ts:1,_dev:1,updatedAt:1,changedAt:1,chgLog:1,createdAt:1,code:1,beBase:1,
+const CHG_SKIP={_ts:1,_dev:1,updatedAt:1,changedAt:1,chgLog:1,createdAt:1,code:1,beBase:1,famId:1,famSkip:1,
   status:1,submitBy:1,submitAt:1,approveBy:1,approveAt:1,approveNote:1};
 function chgNorm(v){
   if(v===null||v===undefined||v===false||v===0) return undefined;
@@ -8808,6 +8831,7 @@ function saveProduct(){
   CUR.rmLines=CUR.rmLines.filter(function(l){return l.matId&&n(l.qty)>0;});
   CUR.pkLines=CUR.pkLines.filter(function(l){return l.matId&&n(l.qtyCtn)!==0;});
   const _prev = CUR.id ? DB.products.find(function(x){return x.id===CUR.id;}) : null;
+  const _famPrev = _prev ? JSON.parse(JSON.stringify(_prev)) : null;   /* v19.25 — পরিবারে মেলানোর জন্য আগের অবস্থা */
   /* v18.48 — কিছুই না বদলালে সেভ হয় না: তারিখ/ইতিহাস/sync কিছুতেই হাত পড়ে না */
   if(_prev && chgFp(_prev)===chgFp(CUR)){
     closeModal('productModal'); render(); toast('কিছুই বদলায়নি — আগের অবস্থাই আছে (সর্বশেষ আপডেট: '+fmtDate(chgWhen(_prev))+')'); return;
@@ -8822,6 +8846,7 @@ function saveProduct(){
     ctypeLabel(CUR.ctype)+' · '+(CUR.code||'')+' · Net ৳'+money(calc(CUR).netCtn));
   resequenceCodes();
   saveDB(); closeModal('productModal'); render(); toast('Costing Sheet সেভ হয়েছে — Code: '+(CUR.code||'-'));
+  if(_famPrev){ const _pid=CUR.id; setTimeout(function(){ try{ famOffer(_famPrev,_pid,true); }catch(e){ console.error(e); } },350); }
 }
 function deleteProduct(id){
   if(!need('products','d','Costing মুছে ফেলা')) return;
@@ -16657,6 +16682,288 @@ function qaSave(){
 
 
 
+/* ===================== v19.25 — একই পণ্যের পরিবার: এক Costing এ বদলালে অন্য Section এর Costing এ মেলানো =====================
+   যেমন Baby Toast 270 gm এর Export, CM, Depot — রেসিপি, Process Loss, Batch, Manpower, Power, Overhead একই থাকে।
+   একটায় বদলিয়ে Save করলে নিচের জানালায় দেখায় পরিবারের অন্যগুলোয় কোনটা বসবে:
+     সবুজ = ওখানে আগে একই ছিল (বসানো নিরাপদ, আগে থেকেই টিক)  ·  হলুদ = ওখানে আগে থেকেই আলাদা ছিল (দেখে টিক দিন)
+     ধূসর = ওখানে আগেই নতুন মানটা আছে।  বিক্রয়মূল্য, Forwarding, Freight, নাম, কোড — Section ভেদে আলাদা, তাই মেলানো হয় না।
+   পরিবার = p.famId একই। নামের মিল দেখে software নিজে প্রস্তাব দেয়, আপনি এক চাপে যুক্ত করেন। */
+function FM(bn,en){ return window.LANG==='en'?en:bn; }
+const FAM_FILLER={x:1,pcs:1,pc:1,pack:1,packs:1,pkt:1,pkts:1,packet:1,packets:1,jar:1,jars:1,ctn:1,carton:1,export:1,exp:1,cm:1,depot:1,depo:1,local:1,morning:1,
+  and:1,of:1,the:1,box:1,bag:1,bags:1,new:1,ltd:1};
+function famTokens(s){
+  s=String(s||'').toLowerCase()
+    .replace(/(\d+(?:\.\d+)?)\s*(gm|gms|grams?|g)(?![a-z])/g,' $1g ').replace(/(\d+(?:\.\d+)?)\s*(kgs?|kilo)(?![a-z])/g,' $1kg ')
+    .replace(/(\d+(?:\.\d+)?)\s*(ml)(?![a-z])/g,' $1ml ').replace(/(\d+(?:\.\d+)?)\s*(ltr|litre|liter|l)(?![a-z])/g,' $1l ');
+  return s.split(/[^a-z0-9.ঀ-৿]+/).map(function(t){ return t.replace(/^\.+|\.+$/g,''); }).filter(function(t){ return t && !FAM_FILLER[t]; });
+}
+function famScore(a,b){
+  const A=famTokens(a), B=famTokens(b); if(!A.length||!B.length) return 0;
+  const isW=function(t){ return /^\d+(?:\.\d+)?(g|kg|ml|l)$/.test(t); }, isN=function(t){ return /^\d+(?:\.\d+)?$/.test(t); };
+  const wa=A.filter(isW).sort().join(' '), wb=B.filter(isW).sort().join(' ');
+  if(wa!==wb) return 0;                                   /* 270g আর 350g আলাদা পণ্য */
+  const na=A.filter(isN), nb=B.filter(isN);
+  const sub=function(x,y){ return x.every(function(t){ return y.indexOf(t)>-1; }); };
+  if(na.length&&nb.length&&!sub(na,nb)&&!sub(nb,na)) return 0;   /* 12 pack আর 24 pack আলাদা */
+  const SA=new Set(A.filter(function(t){ return !isW(t)&&!isN(t); })), SB=new Set(B.filter(function(t){ return !isW(t)&&!isN(t); }));
+  if(!SA.size||!SB.size) return 0;
+  let i=0; SA.forEach(function(t){ if(SB.has(t)) i++; });
+  return i/(SA.size+SB.size-i);
+}
+function famProd(id){ return DB.products.find(function(x){ return x.id===id; })||null; }
+function famMembers(p){ if(!p||!p.famId) return [];
+  return DB.products.filter(function(x){ return x.id!==p.id && x.famId===p.famId; }); }
+function famCands(p){
+  if(!p||!p.name) return [];
+  const skip=p.famSkip||[];
+  return DB.products.filter(function(x){ return x.id!==p.id && (!p.famId||x.famId!==p.famId) && skip.indexOf(x.id)<0 && (x.famSkip||[]).indexOf(p.id)<0; })
+    .map(function(x){ return {p:x, s:famScore(p.name,x.name)}; }).filter(function(o){ return o.s>=0.6; })
+    .sort(function(a,b){ return b.s-a.s; }).slice(0,8).map(function(o){ return o.p; });
+}
+function famLink(a,b){                      /* a আর b একই পরিবারে (দুই পরিবার থাকলে এক হয়ে যায়) */
+  const f=a.famId||b.famId||uid('fam'), old=[a.famId,b.famId].filter(function(x){ return x&&x!==f; });
+  DB.products.forEach(function(x){ if(old.indexOf(x.famId)>-1) x.famId=f; });
+  a.famId=f; b.famId=f;
+  if(CUR && (CUR.id===a.id||CUR.id===b.id)) CUR.famId=f;
+}
+function famUnlink(p){
+  const f=p.famId; if(!f) return; delete p.famId;
+  if(CUR && CUR.id===p.id) delete CUR.famId;
+  const rest=DB.products.filter(function(x){ return x.famId===f; });
+  if(rest.length===1) delete rest[0].famId;                 /* একা থাকলে পরিবার থাকে না */
+}
+/* v19.25 — পরিবারের মধ্যে সবশেষে যেটা বদলানো হয়েছে (তুলনার ভিত্তি) */
+function famLatest(p){ const all=[p].concat(famMembers(p));
+  return all.reduce(function(a,b){ return String(chgWhen(b)||'')>String(chgWhen(a)||'')?b:a; }, p); }
+function famWhen(p){ const w=chgWhen(p); if(!w) return '—'; const d=new Date(w); if(isNaN(d)) return fmtDate(w);
+  return fmtDate(w)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function famSkip(p,q){ p.famSkip=(p.famSkip||[]).concat([q.id]).filter(function(v,i,a){ return a.indexOf(v)===i; }); }
+function famTag(p){ const t=ctypeOf(p.ctype);
+  return '<span class="ctype-badge '+esc(t.v)+'">'+esc(t.l)+'</span> <b>'+esc(p.code||'-')+'</b>'; }
+
+/* ---------- কী কী মেলানো যায় ---------- */
+const FAM_SCAL=[['prod','loss','Process Loss %'],['prod','batchDay','Batch / Day'],['prod','workHours','কর্মঘণ্টা / দিন'],['prod','workDays','Working Days / Month'],
+  ['prod','pktCtn','Pkt / Ctn'],['prod','packKg','প্রতি Pkt এর ওজন (Kg)'],['oh','shift','O/H Divisor'],['mp','otherLabor','Other Labor (Wrap)'],
+  ['oh','bank','Bank Interest %'],['oh','risk','Risk Factor %']];
+const FAM_CMP=[['oh','foh',['otherFohMode','otherFOH','otherFohCost','otherFohProdVal','otherFohPct'],'Others Factory O/H'],
+  ['oh','ho',['hoMode','hoOH','hoCost','hoProdVal','hoPct'],'Head Office O/H'],
+  ['oh','dep',['assets','depAsset','depRate'],'Depreciation (Asset)']];
+const FAM_GRP={prod:['উৎপাদন','Production'],rm:['Raw Materials','Raw Materials'],pk:['Packing Materials','Packing Materials'],mp:['Manpower','Manpower'],pw:['Power / Machine','Power / Machine'],oh:['Overhead','Overhead']};
+function famNum(v){ const s=String(v===undefined||v===null?'':v).trim(); if(s==='') return ''; const x=n(s); return isFinite(x)?String(Math.round(x*1e9)/1e9):s; }
+function famKeyRm(l){ return l.matId?('m:'+l.matId):('n:'+String(l.mName||'').trim().toLowerCase()); }
+function famKeyMp(l){ return String(l.title||'').trim().toLowerCase(); }
+function famKeyPw(l){ return l.machineId?('m:'+l.machineId):('n:'+String(l.name||'').trim().toLowerCase()); }
+function famLinkKey(arr,l){ const v=(l.linkTo===undefined||l.linkTo===null||l.linkTo==='')?-1:parseInt(l.linkTo,10);
+  return (v>=0&&arr[v]&&arr[v]!==l)?famKeyRm(arr[v]):''; }
+const FAM_LIST={
+  rm:{arr:'rmLines', key:famKeyRm, val:function(l,arr){ return {q:famNum(l.qty), lk:famLinkKey(arr,l)}; },
+      name:function(l){ return l.matId?(matName(l.matId)||'?'):(l.mName||'?'); }},
+  pk:{arr:'pkLines', key:famKeyRm, val:function(l){ return {b:l.basis||'ctn', q:famNum(l.qtyCtn), m:famNum(l.mul||1), d:famNum(l.div||1)}; },
+      name:function(l){ const m=(DB.packaging||[]).find(function(x){ return x.id===l.matId; }); return m?m.name:(l.mName||'?'); }},
+  mp:{arr:'manpower', key:famKeyMp, val:function(l){ return {c:famNum(l.count), w:famNum(l.wage)}; }, name:function(l){ return l.title||'?'; }},
+  pw:{arr:'powerLines', key:famKeyPw, val:function(l){ return {mo:l.mode||'', r:famNum(l.rate), c:famNum(l.cons), b:famNum(l.basis)}; }, name:function(l){ return l.name||'?'; }}
+};
+function famEq(a,b){ return JSON.stringify(a)===JSON.stringify(b); }
+function famValOf(it,p){
+  if(!p) return null;
+  if(it.kind==='scal') return famNum(p[it.f]);
+  if(it.kind==='cmp'){
+    if(it.id==='dep') return {a:(p.assets||[]).map(function(x){ return [String(x.name||'').trim(),famNum(x.value)]; }), d:famNum(p.depAsset), r:famNum(p.depRate)};
+    const o={}; it.f.forEach(function(k){ o[k]=famNum(p[k]); }); o[it.f[0]]=p[it.f[0]]||'monthly'; return o; }
+  const L=FAM_LIST[it.list], arr=p[L.arr]||[], l=arr.find(function(x){ return L.key(x)===it.key; });
+  return l?L.val(l,arr):null;
+}
+function famShow(it,v){
+  if(v===null||v===undefined) return '<span class="muted">'+FM('নেই','none')+'</span>';
+  if(it.kind==='scal') return v===''?'—':esc(v);
+  if(it.kind==='cmp'){
+    if(it.id==='dep') return '৳'+money((v.a||[]).reduce(function(s,x){ return s+n(x[1]); },0)+n(v.d),0)+' × '+esc(v.r||'0')+'%';
+    const md=v[it.f[0]], mo=md==='monthly';
+    return mo?('৳'+money(n(v[it.f[1]]),0)+FM('/মাস','/month')):(v[it.f[4]]!==''?(esc(v[it.f[4]])+'%'):('৳'+money(n(v[it.f[2]]),0)+' ÷ ৳'+money(n(v[it.f[3]]),0)));
+  }
+  if(it.list==='rm') return esc(v.q)+(v.lk?(' × '+esc(famLkName(v.lk))):'');
+  if(it.list==='pk'){ const b=(PM_BASIS.find(function(x){ return x.v===v.b; })||{l:v.b}).l.split(' (')[0];
+    return esc(v.q)+' <span class="muted">'+esc(b)+'</span>'+(v.m!=='1'?' ×'+esc(v.m):'')+(v.d!=='1'?' ÷'+esc(v.d):''); }
+  if(it.list==='mp') return esc(v.c||'0')+FM(' জন',' people')+' · ৳'+money(n(v.w),0);
+  if(it.list==='pw'){ const M=(POWER_MODES.find(function(x){ return x.v===v.mo; })||{l:v.mo}).l; return '<span class="muted">'+esc(M)+'</span> '+esc(v.c||'-')+' / '+esc(v.b||'-')+(v.r?(' @'+esc(v.r)):''); }
+  return '';
+}
+function famLkName(k){ if(k.indexOf('m:')===0) return matName(k.slice(2))||'?'; return k.slice(2); }
+
+/* prev (আগের অবস্থা) আর cur এর তফাত — prev না থাকলে "তুলনা": যেখানে পরিবারের কেউ cur থেকে আলাদা */
+function famItems(prev,cur,sibs){
+  const out=[];
+  const add=function(it){ it.from=prev?famValOf(it,prev):null; it.to=famValOf(it,cur);
+    if(prev){ if(famEq(it.from,it.to)) return; }
+    else if(!sibs.some(function(s){ return !famEq(famValOf(it,s),it.to); })) return;
+    out.push(it); };
+  FAM_SCAL.forEach(function(x){ add({g:x[0], kind:'scal', f:x[1], label:x[2]}); });
+  ['rm','pk','mp','pw'].forEach(function(lk){
+    const L=FAM_LIST[lk], keys=[], nm={};
+    [cur].concat(prev?[prev]:[]).concat(prev?[]:sibs).forEach(function(p){ (p[L.arr]||[]).forEach(function(l){ if(lk==='rm'&&!l.matId&&!l.mName) return; if(lk==='pk'&&!l.matId) return; if(lk==='mp'&&!l.title) return; if(lk==='pw'&&!l.name&&!l.machineId) return;
+      const k=L.key(l); if(keys.indexOf(k)<0){ keys.push(k); nm[k]=L.name(l); } }); });
+    keys.forEach(function(k){ add({g:lk, kind:'line', list:lk, key:k, label:nm[k]}); });
+  });
+  FAM_CMP.forEach(function(x){ add({g:x[0], kind:'cmp', id:x[1], f:x[2], label:x[3]}); });
+  return out;
+}
+function famApply(items,cur,sib){
+  /* RM এর "Qty From" লিংক index এ থাকে — আগে চাবিতে বদলাই, সব কাজের শেষে আবার index এ */
+  const rm=sib.rmLines=(sib.rmLines||[]).map(function(l){ const c=JSON.parse(JSON.stringify(l)); c.__lk=famLinkKey(sib.rmLines,l); return c; });
+  items.forEach(function(it){
+    if(it.kind==='scal'){ sib[it.f]=cur[it.f]; return; }
+    if(it.kind==='cmp'){ it.f.forEach(function(k){ sib[k]=JSON.parse(JSON.stringify(cur[k]===undefined?'':cur[k])); }); return; }
+    const L=FAM_LIST[it.list], arr=sib[L.arr]=sib[L.arr]||[], idx=arr.findIndex(function(l){ return L.key(l)===it.key; });
+    const src=(cur[L.arr]||[]).find(function(l){ return L.key(l)===it.key; });
+    if(!src){ if(idx>-1) arr.splice(idx,1); return; }
+    const c=JSON.parse(JSON.stringify(src));
+    if(it.list==='rm'){ c.__lk=famLinkKey(cur.rmLines,src); }
+    if(idx>-1){
+      if(it.list==='rm'){ arr[idx].qty=c.qty; arr[idx].__lk=c.__lk; }
+      else if(it.list==='pk'){ ['basis','qtyCtn','mul','div'].forEach(function(k){ arr[idx][k]=c[k]; }); }
+      else if(it.list==='mp'){ arr[idx].count=c.count; arr[idx].wage=c.wage; }
+      else arr[idx]=c;
+    } else arr.push(c);
+  });
+  sib.rmLines.forEach(function(l){ if(l.__lk!==undefined){ const j=l.__lk?sib.rmLines.findIndex(function(x){ return famKeyRm(x)===l.__lk; }):-1; l.linkTo=j>-1?String(j):''; delete l.__lk; } });
+  return sib;
+}
+
+/* ---------- জানালা ---------- */
+let FAM=null;
+function famOffer(prev,pid,auto){
+  const cur=famProd(pid); if(!cur) return;
+  const sibs=famMembers(cur), cands=famCands(cur);
+  if(auto){
+    if(!prev) return;
+    const it=famItems(prev,cur,sibs); if(!it.length) return;
+    if(!sibs.length && !cands.length) return;
+  }
+  FAM={prev:prev?JSON.parse(JSON.stringify(prev)):null, pid:pid, add:[], tick:{}, init:false};
+  famRender();
+}
+function famCols(){ const cur=famProd(FAM.pid); return famMembers(cur).concat(FAM.add.map(famProd).filter(Boolean)); }
+function famRender(){
+  const cur=famProd(FAM.pid); if(!cur) return;
+  const cols=famCols(), cands=famCands(cur).filter(function(p){ return FAM.add.indexOf(p.id)<0; });
+  const items=famItems(FAM.prev,cur,cols), ed=can('products','e');
+  const st=function(it,s){ const sv=famValOf(it,s); if(famEq(sv,it.to)) return 'same'; if(FAM.prev&&famEq(sv,it.from)) return 'sync'; return 'diff'; };
+  items.forEach(function(it,i){ it.i=i; cols.forEach(function(s){ const k=i+'|'+s.id; if(FAM.tick[k]===undefined) FAM.tick[k]=(st(it,s)==='sync'); }); });
+  let old=document.getElementById('famModal'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.className='modal-overlay open'; ov.id='famModal';
+  const lockedN=cols.filter(isLocked).length;
+  let h='<div class="modal" style="max-width:min(1250px,97vw);"><div class="modal-head"><h3>&#128279; '+(FAM.prev?FM('একই পণ্যের অন্য Costing এও বসাবেন?','Apply to the same product\'s other costings?'):FM('একই পণ্যের Costing গুলোর তুলনা','Compare the same product\'s costings'))+'</h3><button class="close-x" onclick="famClose()">&times;</button></div><div class="modal-body">';
+  const lat=famLatest(cur), allF=[cur].concat(famMembers(cur));
+  h+='<div style="font-size:12.5px;line-height:1.6;margin-bottom:10px;"><b>'+FM('ভিত্তি: ','Base: ')+'</b>'+famTag(cur)+' · '+esc(cur.name)+
+    ' <span class="fam-pill" style="font-size:11px;">'+(FAM.prev?FM('এইমাত্র বদলানো','just changed'):(lat.id===cur.id?FM('সবশেষে বদলানো','most recently changed'):FM('বদল: ','changed: ')))+(chgWhen(cur)?' · '+esc(famWhen(cur)):'')+'</span>'+
+    (!FAM.prev&&allF.length>1?' <select style="font-size:12px;padding:2px 6px;max-width:260px;" title="'+FM('কোন Costing কে ভিত্তি ধরবেন','Which costing is the base')+'" onchange="famOffer(null,this.value)">'+
+      allF.slice().sort(function(a,b){ return String(chgWhen(b)||'').localeCompare(String(chgWhen(a)||'')); }).map(function(p){ return '<option value="'+p.id+'"'+(p.id===cur.id?' selected':'')+'>'+esc((p.code||'')+' · '+famWhen(p))+(p.id===lat.id?FM(' (সবশেষে বদলানো)',' (latest)'):'')+'</option>'; }).join('')+'</select>':'')+
+    (!FAM.prev&&lat.id!==cur.id?'<div style="color:#b7791f;font-size:12px;">⚠ '+FM('পরিবারে ','In this family, ')+esc(lat.code||lat.name)+FM(' পরে বদলানো হয়েছে — সাধারণত সেটাকেই ভিত্তি ধরা উচিত',' was changed later — it is usually the right base')+'</div>':'')+
+    '<br><span class="muted">'+
+    (FAM.prev?FM('এই Costing এ যা বদলালেন নিচে আছে। পরিবারের অন্য Costing এ কোনটা বসবে টিক দিন — রেসিপি, Process Loss, Batch, Manpower, Power, Overhead মেলে; দাম, Forwarding, Freight Section ভেদে আলাদা, তাই ধরা হয় না।',
+      'Your changes to this costing are below. Tick where each one should also go — recipe, process loss, batch, manpower, power and overhead are matched; price, forwarding and freight differ by section and are left alone.')
+      :FM('এই Costing থেকে যা যা আলাদা, নিচে আছে। যেটা এখানের মতো করতে চান টিক দিন।','Everything that differs from this costing is below. Tick what should be made the same as here.'))+'</span></div>';
+  h+='<div class="fam-legend">'+(FAM.prev?'<span class="fl sync">'+FM('আগে একই ছিল — বসানো নিরাপদ','Was the same — safe to apply')+'</span><span class="fl diff">'+FM('ওখানে আগে থেকেই আলাদা — দেখে টিক দিন','Already different there — check first')+'</span>':
+    '<span class="fl diff">'+FM('এখান থেকে আলাদা — টিক দিলে এখানের মতো হবে','Different from here — tick to make it the same')+'</span>')+'<span class="fl same">'+FM('এখানের মতোই আছে','Same as here')+'</span></div>';
+  if(cands.length){
+    h+='<div class="fam-cand"><b>'+FM('নামে মিল আছে — এগুলো কি একই পণ্য?','Similar names — are these the same product?')+'</b> '+
+      cands.map(function(p){ return '<span class="fam-chip">'+famTag(p)+' <span class="muted">'+esc(p.name)+'</span> '+
+        (ed?'<button class="btn btn-sm btn-primary" onclick="famAddCol(\''+p.id+'\')">+ '+FM('যুক্ত','Link')+'</button><button class="btn btn-sm btn-ghost" title="'+FM('আলাদা পণ্য — আর দেখাবে না','Different product — do not suggest again')+'" onclick="famNo(\''+p.id+'\')">'+FM('আলাদা','No')+'</button>':'')+'</span>'; }).join('')+'</div>';
+  }
+  if(!cols.length){
+    h+='<div class="empty" style="padding:22px;text-align:center;">'+FM('এই পণ্যের পরিবারে এখনো কোনো Costing যুক্ত নেই। উপরে মিল থাকা Costing “যুক্ত” করুন, বা নিচে “পরিবার সাজান” থেকে যেকোনো Costing যোগ করুন।','No costings are linked to this product yet. Link a similar one above, or add any costing from “Manage family” below.')+'</div>';
+  } else if(!items.length){
+    h+='<div class="empty" style="padding:22px;text-align:center;">&#10004; '+FM('পরিবারের সব Costing এ এগুলো একই আছে — কিছু মেলানোর নেই।','These items are already the same in every linked costing — nothing to match.')+'</div>';
+  } else {
+    h+='<div style="overflow:auto;max-height:56vh;border:1px solid var(--border);border-radius:10px;"><table class="fam-tbl"><thead><tr><th style="min-width:220px;text-align:left;">'+(FAM.prev?FM('কী বদলেছে','What changed'):FM('কোন জিনিস','Item'))+'</th><th style="min-width:150px;">'+(FAM.prev?FM('আগে → এখন','Before → now'):FM('এখানে','Here'))+'</th>'+
+      cols.map(function(s){ const lk=isLocked(s); return '<th class="fam-col">'+(lk?'':'<input type="checkbox" title="'+FM('এই Costing এ সব','All for this costing')+'" onchange="famTickCol(\''+s.id+'\',this.checked)" '+(items.every(function(it){ return FAM.tick[it.i+'|'+s.id]||st(it,s)==='same'; })?'checked':'')+'> ')+famTag(s)+
+        '<div class="muted" style="font-weight:400;font-size:10.5px;max-width:170px;white-space:normal;">'+esc(s.name)+'</div>'+(lk?'<div style="font-size:10.5px;color:#b7791f;">&#128274; '+FM('অনুমোদিত — বদলানো যাবে না','Approved — locked')+'</div>':'')+
+        (FAM.add.indexOf(s.id)>-1?'<div style="font-size:10.5px;color:var(--primary);">'+FM('নতুন যুক্ত হবে','Will be linked')+'</div>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
+    let lastG='';
+    items.forEach(function(it){
+      if(it.g!==lastG){ lastG=it.g; h+='<tr class="fam-g"><td colspan="'+(2+cols.length)+'">'+esc(FM(FAM_GRP[it.g][0],FAM_GRP[it.g][1]))+'</td></tr>'; }
+      const allT=cols.every(function(s){ return isLocked(s)||st(it,s)==='same'||FAM.tick[it.i+'|'+s.id]; });
+      h+='<tr><td><label style="display:flex;gap:7px;align-items:center;cursor:pointer;">'+(ed?'<input type="checkbox" '+(allT?'checked':'')+' onchange="famTickRow('+it.i+',this.checked)">':'')+'<span>'+esc(it.label)+
+        (it.kind==='line'?(FAM.prev&&it.from===null?' <span class="fam-new">'+FM('নতুন','new')+'</span>':(it.to===null?' <span class="fam-del">'+FM('বাদ','removed')+'</span>':'')):'')+'</span></label></td>'+
+        '<td class="fam-ch">'+(FAM.prev?('<span class="muted">'+famShow(it,it.from)+'</span> → <b>'+famShow(it,it.to)+'</b>'):('<b>'+famShow(it,it.to)+'</b>'))+'</td>'+
+        cols.map(function(s){ const t=st(it,s), lk=isLocked(s), k=it.i+'|'+s.id;
+          if(t==='same') return '<td class="fam-c same">&#10004; '+FM('আছে','same')+'</td>';
+          return '<td class="fam-c '+t+'"><label style="display:flex;gap:6px;align-items:center;cursor:'+(lk||!ed?'default':'pointer')+';"><input type="checkbox" '+(FAM.tick[k]&&!lk?'checked':'')+(lk||!ed?' disabled':'')+' onchange="famTick(\''+k+'\',this.checked)"><span>'+famShow(it,famValOf(it,s))+'</span></label></td>'; }).join('')+'</tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  const nT=famTickedCount(items,cols);
+  h+='</div><div class="modal-foot"><button class="btn btn-ghost" onclick="famManage(\''+cur.id+'\')">&#128279; '+FM('পরিবার সাজান','Manage family')+'</button><span style="flex:1"></span>'+
+    '<button class="btn" onclick="famClose()">'+FM('এখন না','Not now')+'</button> '+
+    (ed?'<button class="btn btn-primary" id="famGo" onclick="famGo()"'+(nT.c?'':' disabled')+'>'+(nT.c?FM('বসান — '+nT.c+' টা পরিবর্তন, '+nT.p+' টা Costing এ','Apply — '+nT.c+' change(s) to '+nT.p+' costing(s)'):(FAM.add.length?FM('শুধু যুক্ত করুন','Link only'):FM('কিছু টিক দেওয়া নেই','Nothing ticked')))+'</button>':'')+
+    '</div></div>';
+  ov.innerHTML=h; document.body.appendChild(ov);
+  if(!nT.c && FAM.add.length){ const b=document.getElementById('famGo'); if(b) b.disabled=false; }
+  FAM.items=items; FAM.cols=cols;
+}
+function famTickedCount(items,cols){ let c=0; const ps={};
+  items.forEach(function(it){ cols.forEach(function(s){ if(!isLocked(s) && FAM.tick[it.i+'|'+s.id] && !famEq(famValOf(it,s),it.to)){ c++; ps[s.id]=1; } }); });
+  return {c:c, p:Object.keys(ps).length}; }
+function famTick(k,v){ FAM.tick[k]=!!v; famRender(); }
+function famTickRow(i,v){ FAM.cols.forEach(function(s){ FAM.tick[i+'|'+s.id]=!!v; }); famRender(); }
+function famTickCol(id,v){ FAM.items.forEach(function(it){ FAM.tick[it.i+'|'+id]=!!v; }); famRender(); }
+function famAddCol(id){ if(FAM.add.indexOf(id)<0) FAM.add.push(id); famRender(); }
+function famNo(id){ const cur=famProd(FAM.pid), q=famProd(id); if(!cur||!q) return; famSkip(cur,q); saveDB(); famRender(); }
+function famClose(){ const m=document.getElementById('famModal'); if(m) m.remove(); FAM=null; }
+function famGo(){
+  if(!need('products','e','Costing বদলানো')) return;
+  const cur=famProd(FAM.pid); if(!cur) return;
+  FAM.add.forEach(function(id){ const q=famProd(id); if(q) famLink(cur,q); });
+  let nC=0; const done=[];
+  FAM.cols.forEach(function(s0){
+    if(isLocked(s0)) return;
+    const its=FAM.items.filter(function(it){ return FAM.tick[it.i+'|'+s0.id] && !famEq(famValOf(it,s0),it.to); });
+    if(!its.length) return;
+    const i=DB.products.findIndex(function(x){ return x.id===s0.id; }); if(i<0) return;
+    const sib=famApply(its,cur,JSON.parse(JSON.stringify(DB.products[i])));
+    sib.updatedAt=nowISO();
+    chgPush(sib, its.map(function(it){ return FM('মিলানো ← ','Matched ← ')+(cur.code||'')+': '+it.label+' → '+String(famShow(it,it.to)).replace(/<[^>]+>/g,''); }), true);
+    DB.products[i]=sib; try{ verSnap(sib, FM('পরিবার থেকে মিলানো ← ','Matched from family ← ')+(cur.code||'')); }catch(e){}
+    audit('update','product',sib.name,FM('পরিবার থেকে মিলানো ← ','Matched from family ← ')+(cur.code||'')+' · '+its.length+FM(' টা পরিবর্তন',' change(s)'));
+    nC+=its.length; done.push(sib.code||sib.name);
+  });
+  saveDB(); famClose(); render();
+  toast(nC?FM(done.length+' টা Costing এ '+nC+' টা পরিবর্তন বসানো হয়েছে: '+done.join(', '),nC+' change(s) applied to '+done.length+' costing(s): '+done.join(', ')):FM('পরিবারে যুক্ত হয়েছে','Linked to the family'));
+}
+
+/* ---------- পরিবার সাজান ---------- */
+function famManage(pid){
+  const cur=famProd(pid)||(CUR&&CUR.id===pid?CUR:null); if(!cur){ toast(FM('আগে Costing টা Save করুন','Save the costing first'),true); return; }
+  const mem=famMembers(cur), cands=famCands(cur), ed=can('products','e');
+  let old=document.getElementById('famMgr'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.className='modal-overlay open'; ov.id='famMgr'; ov.style.zIndex='9300';
+  const others=DB.products.filter(function(x){ return x.id!==cur.id && (!cur.famId||x.famId!==cur.famId); })
+    .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
+  ov.innerHTML='<div class="modal" style="max-width:720px;"><div class="modal-head"><h3>&#128279; '+FM('পরিবার সাজান','Manage family')+'</h3><button class="close-x" onclick="document.getElementById(\'famMgr\').remove()">&times;</button></div><div class="modal-body">'+
+    '<p class="hint" style="margin:0 0 10px;">'+FM('একই পণ্যের সব Section এর Costing এক পরিবারে রাখুন — একটায় বদলালে বাকিগুলোয় মেলানোর প্রস্তাব আসবে।','Keep one product\'s costings from every section in one family — changing one offers to match the rest.')+'</p>'+
+    '<div style="margin-bottom:8px;">'+famTag(cur)+' · '+esc(cur.name)+' <span class="muted">('+FM('এটা','this one')+')</span></div>'+
+    '<div class="fam-list">'+(mem.length?mem.map(function(p){ return '<div class="fam-row">'+famTag(p)+' <span>'+esc(p.name)+'</span><span style="flex:1"></span>'+(ed?'<button class="btn btn-sm btn-ghost" onclick="famMgrUn(\''+pid+'\',\''+p.id+'\')">'+FM('বাদ দিন','Remove')+'</button>':'')+'</div>'; }).join(''):'<div class="muted" style="padding:8px 0;">'+FM('এখনো কেউ যুক্ত নেই','No linked costings yet')+'</div>')+'</div>'+
+    (cands.length?'<div style="margin:12px 0 6px;font-weight:700;font-size:12.5px;">'+FM('নামে মিল আছে','Similar names')+'</div>'+cands.map(function(p){ return '<div class="fam-row">'+famTag(p)+' <span>'+esc(p.name)+'</span><span style="flex:1"></span>'+(ed?'<button class="btn btn-sm btn-primary" onclick="famMgrAdd(\''+pid+'\',\''+p.id+'\')">+ '+FM('যুক্ত','Link')+'</button> <button class="btn btn-sm btn-ghost" onclick="famMgrNo(\''+pid+'\',\''+p.id+'\')">'+FM('আলাদা','No')+'</button>':'')+'</div>'; }).join(''):'')+
+    (ed?'<div style="margin-top:12px;display:flex;gap:8px;"><select id="famAny" style="flex:1;"><option value="">'+FM('— অন্য যেকোনো Costing যোগ করুন —','— Add any other costing —')+'</option>'+others.map(function(p){ return '<option value="'+p.id+'">'+esc((p.code||'')+' · '+p.name)+'</option>'; }).join('')+'</select><button class="btn btn-sm btn-primary" onclick="const v=document.getElementById(\'famAny\').value; if(v) famMgrAdd(\''+pid+'\',v)">+ '+FM('যোগ','Add')+'</button></div>':'')+
+    '</div><div class="modal-foot"><span style="flex:1"></span>'+(mem.length?'<button class="btn btn-ghost" onclick="document.getElementById(\'famMgr\').remove();famOffer(null,famLatest(famProd(\''+pid+'\')).id)">&#8644; '+FM('পার্থক্য দেখুন','See differences')+'</button> ':'')+
+    '<button class="btn btn-primary" onclick="document.getElementById(\'famMgr\').remove()">'+FM('ঠিক আছে','Done')+'</button></div></div>';
+  document.body.appendChild(ov);
+}
+function famAfterMgr(pid){ saveDB(); famManage(pid); famChip(); if(FAM&&document.getElementById('famModal')) famRender(); }
+function famMgrAdd(pid,id){ if(!need('products','e','Costing বদলানো')) return; const a=famProd(pid)||CUR, b=famProd(id); if(!a||!b) return; famLink(a,b); famAfterMgr(pid); }
+function famMgrUn(pid,id){ if(!need('products','e','Costing বদলানো')) return; const b=famProd(id); if(!b) return; famUnlink(b); famAfterMgr(pid); }
+function famMgrNo(pid,id){ const a=famProd(pid)||CUR, b=famProd(id); if(!a||!b) return; famSkip(a,b); if(CUR&&CUR.id===a.id) CUR.famSkip=a.famSkip; famAfterMgr(pid); }
+
+/* ---------- Costing এর ভেতরে ছোট চিহ্ন (Product Name এর নিচে) ---------- */
+function famChip(){
+  const el=document.getElementById('famChip'); if(!el) return;
+  if(!CUR || !CUR.id){ el.innerHTML=''; return; }
+  const base=famProd(CUR.id)||CUR, mem=famMembers(base), cands=famCands(base);
+  if(mem.length) el.innerHTML='<span class="fam-pill">&#128279; '+FM('একই পণ্য: ','Same product: ')+mem.map(function(p){ return '<b>'+esc(p.code||'-')+'</b>'; }).join(', ')+
+    ' · <a href="javascript:void 0" onclick="famOffer(null,famLatest(famProd(\''+CUR.id+'\')).id)">'+FM('পার্থক্য দেখুন','compare')+'</a> · <a href="javascript:void 0" onclick="famManage(\''+CUR.id+'\')">'+FM('সাজান','manage')+'</a></span>';
+  else if(cands.length) el.innerHTML='<span class="fam-pill sug">&#128161; '+FM('নামে মিল আছে এমন ','')+cands.length+FM(' টা Costing — একই পণ্য হলে',' similar costing(s) — if it is the same product,')+' <a href="javascript:void 0" onclick="famManage(\''+CUR.id+'\')">'+FM('যুক্ত করুন','link them')+'</a></span>';
+  else el.innerHTML='';
+}
 /* ===================== v19.18 — অন্য ফরম্যাটে Print (মূল Costing Sheet যেমন আছে তেমনই থাকে) =====================
    যেকোনো Costing থেকে: Statement of Cost · Standard Cost Card · Export Price Build-up · Marginal Costing &amp; Break-even ·
    Multi-level Cost Sheet · Management Summary — সব একই calc() এর সংখ্যা, English Print / PDF। */
@@ -18109,6 +18416,18 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.25', d:'2026-11-11', t:'একই পণ্যের পরিবার — এক Costing এ বদলালে অন্য Section এ এক জায়গা থেকেই মেলান', li:[
+  '<b>নতুন:</b> একই পণ্যের Export, CM, Depot… Costing গুলো এক <b>পরিবারে</b> যুক্ত করা যায়। Software নামের মিল দেখে নিজেই প্রস্তাব দেয় (যেমন “Baby Toast (270 Gm X 12 Pack)” আর “Baby Toast 270gm x 12 Pcs - CM”; 270g/350g বা 12/24 Pack আলাদা ধরে)',
+  'পরিবারের কোনো Costing এ রেসিপি, Process Loss, Batch, কর্মঘণ্টা, Pkt/Ctn, Manpower, Power/Machine, Factory O/H, Head Office, Depreciation, Bank/Risk বদলে <b>Save করলেই একটা জানালা আসে</b>: প্রতিটা পরিবর্তন এক সারিতে, পাশে পরিবারের প্রতিটা Costing এর এখনকার মান। <b>সবুজ</b> = ওখানে আগে একই ছিল, তাই আগে থেকেই টিক; <b>হলুদ</b> = ওখানে আগে থেকেই আলাদা ছিল, দেখে টিক দিন; ধূসর = আগেই আছে। সারি বা কলাম ধরে একসাথে টিক দেওয়া যায়, তারপর এক চাপে “বসান”',
+  'বিক্রয়মূল্য, Forwarding, Freight, নাম, কোড Section ভেদে আলাদা — এগুলো কখনো মেলানো হয় না। অনুমোদিত (🔒) Costing বদলায় না। বসানোর পর প্রতিটা Costing এর বদলের ইতিহাসে “মিলানো ← EXP-001: …” লেখা থাকে, আর <b>Ctrl+Z</b> এ পুরোটা ফেরানো যায়',
+  '<b>ভিত্তি সবসময় সবশেষে বদলানো Costing</b> — Save এর পর যেটা বদলালেন সেটাই, আর “পার্থক্য দেখুন” এ পরিবারের যেটা সবশেষে বদলানো হয়েছে (তারিখ ও সময় দেখায়, চাইলে ভিত্তি বদলানো যায়)।', 
+  'Costing এর ১ নম্বর ট্যাবে Product Name এর নিচে পরিবারের Costing গুলো দেখায় — <b>“পার্থক্য দেখুন”</b> চাপলে কোন Costing এ কী আলাদা পাশাপাশি দেখা যায় ও টিক দিয়ে মেলানো যায়; <b>“সাজান”</b> থেকে যুক্ত করা, বাদ দেওয়া বা যেকোনো Costing যোগ করা যায়'
+ ]},
+ {v:'19.24', d:'2026-11-11', t:'Costing এ নাম ও সংখ্যা আর কাটা পড়ে না', li:[
+  '<b>Product Name</b> এর ঘর এখন পুরো চওড়া — “Master থেকে আনুন” ও “Master এর সাথে যুক্ত” নিচের লাইনে, তাই Product বাছার পর পুরো নাম দেখা যায়',
+  'Costing এর জানালা বড় স্ক্রিনে আরও চওড়া। <b>Raw / Packing Material এর নাম</b>, Machine এর নাম, Packing এর Value (যেমন 0.024948) আর Power এর Mode (যেমন Rate per Kg product) এর ঘর বড় করা হয়েছে',
+  'কোনো ঘরে লেখা পুরো না ধরলে <b>মাউস রাখলেই পুরো লেখাটা দেখায়</b>'
+ ]},
  {v:'19.23', d:'2026-11-11', t:'PDF এ ছক আর মাঝখানে ভাঙে না — Print এর মতো', li:[
   'PDF Download এ Man power Calculation এর মতো ছোট ছকগুলো পাতার শেষে না ধরলে আগে দুই পাতায় ভেঙে যেত। এখন Print এর মতোই <b>পুরো ছকটা পরের পাতায় চলে যায়</b>। শুধু পাতার চেয়ে বড় ছক (যেমন অনেক কাঁচামালের তালিকা) সারি ধরে ভাগ হয়, প্রতি পাতায় হেডার সহ'
  ]},
@@ -20756,6 +21075,18 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.25', d:'2026-11-11', t:'Product families — change one costing, match the other sections from one place', li:[
+  '<b>New:</b> the Export, CM, Depot… costings of the same product can be linked into a <b>family</b>. Similar names are suggested automatically (e.g. “Baby Toast (270 Gm X 12 Pack)” and “Baby Toast 270gm x 12 Pcs - CM”; 270g/350g or 12/24 pack are treated as different)',
+  'Change the recipe, process loss, batch, working hours, Pkt/Ctn, manpower, power/machines, factory O/H, head office, depreciation or bank/risk in one family costing and <b>a window opens when you save</b>: each change on one row, beside the current value in every family costing. <b>Green</b> = it was the same there, so it is pre-ticked; <b>amber</b> = it was already different there, check before ticking; grey = already there. Tick by row or column, then “Apply” in one click',
+  'Selling price, forwarding, freight, name and code differ by section and are never matched. Approved (🔒) costings are not changed. Each matched costing\'s change history shows “Matched ← EXP-001: …”, and <b>Ctrl+Z</b> undoes the whole apply',
+  '<b>The base is always the most recently changed costing</b> — after saving, the one you changed; in “compare”, the family member changed last (date and time shown; the base can be switched)',
+  'Tab 1 of the costing shows the family under Product Name — <b>“compare”</b> shows what differs side by side and lets you tick to match; <b>“manage”</b> links, removes or adds any costing'
+ ]},
+ {v:'19.24', d:'2026-11-11', t:'Names and numbers in the costing are no longer cut off', li:[
+  'The <b>Product Name</b> box now uses the full width — “Pull from Master” and the “linked to Master” badge sit on the line below, so the whole name shows after picking a product',
+  'The costing window is wider on large screens. The boxes for <b>raw / packing material names</b>, machine names, packing values (e.g. 0.024948) and the power mode (e.g. Rate per Kg product) are wider',
+  'If a box cannot show its whole text, <b>hovering over it shows the full text</b>'
+ ]},
  {v:'19.23', d:'2026-11-11', t:'PDF tables no longer split in the middle — same as print', li:[
   'In PDF downloads, small tables such as Man power Calculation used to split across two pages when they did not fit at the bottom. Now, as in print, <b>the whole table moves to the next page</b>. Only tables taller than a page (e.g. a long raw material list) are split by row, with the header repeated on each page'
  ]},
@@ -21158,6 +21489,7 @@ const NOCLOSE=['productModal','rmModal','pkModal','fgModal','importModal'];
 /* v19.22 — Popup বন্ধ করা সহজ: Esc বা বাইরে ক্লিক = শুধু সবার উপরের Popup বন্ধ (আগে Esc এ সব একসাথে বন্ধ হতো)।
    ফর্ম (Costing, কাঁচামাল, প্যাকিং, FG, Import) এ কিছু বদলালে তবেই জিজ্ঞেস করে; না বদলালে সাথে সাথে বন্ধ।
    নতুন বানানো Popup (ফরম্যাট, Price List …) ও এখন বাইরে ক্লিকে বন্ধ হয় — নিজের ✕ বোতামের কাজই চালায়। */
+let mdTipCv=null;
 function mdOpenList(){ return [].slice.call(document.querySelectorAll('.modal-overlay.open')).filter(function(o){ return o.offsetParent!==null||getComputedStyle(o).position==='fixed'; }); }
 function mdTop(){
   const L=mdOpenList(); if(!L.length) return null;
@@ -21193,7 +21525,15 @@ function mdClose(o){
     if(NOCLOSE.indexOf(o.id)>-1 && o.id!=='productModal' && o.classList.contains('open') && !o.__mdOpen){ o.__mdOpen=true; o.__mdSnap=undefined; setTimeout(function(){ o.__mdSnap=mdSnap(o); },120); }
     else if(!o.classList.contains('open')) o.__mdOpen=false; }); });
   NOCLOSE.forEach(function(id){ const o=document.getElementById(id); if(o) obs.observe(o,{attributes:true,attributeFilter:['class']}); });
-  document.addEventListener('mouseover',function(e){ const x=e.target&&e.target.closest&&e.target.closest('.close-x'); if(x&&!x.title) x.title=window.LANG==='en'?'Close (Esc)':'বন্ধ (Esc)'; });
+  document.addEventListener('mouseover',function(e){ const x=e.target&&e.target.closest&&e.target.closest('.close-x'); if(x&&!x.title) x.title=window.LANG==='en'?'Close (Esc)':'বন্ধ (Esc)';
+    /* v19.24 — ঘরে লেখা পুরো না দেখা গেলে মাউস রাখলেই পুরোটা দেখায় */
+    const t=e.target;
+    if(t && (t.tagName==='INPUT'||t.tagName==='SELECT') && t.type!=='checkbox' && t.type!=='radio'){
+      const v=t.tagName==='SELECT'?((t.options[t.selectedIndex]||{}).text||''):t.value;
+      if(t.__autoTip!==undefined && t.title===t.__autoTip) t.title='';
+      if(v && !t.title && t.scrollWidth>t.clientWidth+1){ t.title=v; t.__autoTip=v; }
+      else if(v && t.tagName==='SELECT' && !t.title){ const cv=mdTipCv||(mdTipCv=document.createElement('canvas').getContext('2d')); cv.font=getComputedStyle(t).font; if(cv.measureText(v).width>t.clientWidth-26){ t.title=v; t.__autoTip=v; } }
+    } });
 })();
 /* v18.87 — Costing এ সত্যিই কিছু বদলালে তবেই "সেভ না করে বন্ধ?" জিজ্ঞেস করে; পাশে "● সেভ হয়নি" চিহ্ন */
 let PM_FP=null, PM_T=0;
