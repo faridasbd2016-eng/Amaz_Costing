@@ -313,6 +313,28 @@ button,input,select,textarea{font-family:inherit;}
 .kpi.primary{border-left:4px solid var(--primary-2);}
 .panel{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);}
 select.fg-unit{padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;}
+.fam2{display:grid;grid-template-columns:250px minmax(0,1fr);gap:14px;align-items:start;}
+@media (max-width:900px){ .fam2{grid-template-columns:1fr;} }
+.fam2-left{border:1px solid var(--border);border-radius:12px;padding:8px;background:var(--panel);position:sticky;top:8px;}
+.fam2-left input{width:100%;margin-bottom:6px;}
+.fam2-list{max-height:62vh;overflow:auto;display:flex;flex-direction:column;gap:2px;}
+.fam2-item{display:flex;gap:6px;align-items:center;padding:7px 9px;border-radius:8px;cursor:pointer;font-size:13px;}
+.fam2-item:hover{background:var(--panel-2);} .fam2-item.on{background:var(--primary);color:#fff;}
+.fam2-item.on .fam2-cnt{background:rgba(255,255,255,.25);color:#fff;}
+.fam2-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
+.fam2-cnt{font-size:11px;background:var(--panel-2);border-radius:6px;padding:1px 7px;color:var(--text-dim);}
+.fam2-pend{font-size:10.5px;font-weight:800;background:#eab308;color:#fff;border-radius:999px;min-width:18px;text-align:center;padding:1px 6px;}
+.fam2-right{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--panel);min-width:0;}
+.fam2-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.fam2-wrap{overflow:auto;max-height:62vh;border:1px solid var(--border);border-radius:10px;}
+.fam2-tbl th{min-width:150px;} .fam2-tbl .fam2-item-h{min-width:190px;position:sticky;left:0;z-index:2;}
+.fam2-tbl td.fam2-lab{position:sticky;left:0;background:var(--panel);z-index:1;font-weight:600;}
+.fam2-tbl .fam2-base{background:rgba(37,99,235,.07);}
+.fam2-sub{font-weight:400;font-size:10.5px;color:var(--text-dim);max-width:180px;white-space:normal;margin-top:2px;}
+.fam2-basetag{font-size:10.5px;color:var(--primary);font-weight:700;margin-top:3px;}
+.fam2-acts{display:flex;gap:10px;align-items:center;font-size:11px;font-weight:600;margin-top:4px;}
+.fam2-foot{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.fam-dot{display:inline-block;width:11px;height:11px;border-radius:3px;background:rgba(234,179,8,.35);vertical-align:-1px;}
 .fam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(420px,100%),1fr));gap:12px;}
 .fam-card{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--panel);display:flex;flex-direction:column;gap:8px;}
 .fam-card.pend{border-color:rgba(234,179,8,.7);box-shadow:0 0 0 2px rgba(234,179,8,.15);}
@@ -16861,108 +16883,111 @@ function famSummary(g){
   return {base:base, sibs:sibs, prev:pv, safe:safe, warn:warn, all:all};
 }
 
-/* ---------- Analysis এর ট্যাব ---------- */
-let FAM_Q='';
+/* ---------- v19.28 — সহজ রূপ: বামে পণ্যের নাম, ডানে সেই নামের সব Costing পাশাপাশি ----------
+   দল = একই নাম (ওজন / প্যাক / Section বাদ দিয়ে) — যেমন সব "Dry Cake" এক দলে, সব "Baby Toast" এক দলে।
+   ভিত্তি = আপনি নিজে সবশেষে বদলানো Costing (প্রথম কলাম)। যেখানে অন্য Costing ভিত্তি থেকে আলাদা, সেই ঘর হলুদ —
+   টিক দিলে ভিত্তির মতো হবে। ভিত্তিতে সবশেষে যা বদলেছেন সেই সারিতে "নতুন বদল" লেখা, আর যেখানে আগে একই ছিল সেখানে আগে থেকেই টিক। */
+function famNameKey(name){ return famTokens(name).filter(function(t){ return !/\d/.test(t); }).join(' '); }
+function famNameTitle(p){ const k=famNameKey(p.name); return k.replace(/(^|\s)([a-z])/g,function(m,a,b){ return a+b.toUpperCase(); })||p.name; }
+function famNameGroups(){
+  const g={};
+  (DB.products||[]).forEach(function(p){ if(p.isDemo||!p.name) return; const k=famNameKey(p.name); if(!k) return; (g[k]=g[k]||[]).push(p); });
+  return Object.keys(g).filter(function(k){ return g[k].length>1; }).map(function(k){ return {key:k, list:g[k]}; });
+}
+/* পুরনো নামগুলো (অন্য জায়গা থেকে ডাকলে) — এখন নাম ধরে দল */
+famGroups=function(){ return famNameGroups().map(function(x){ return x.list; }); };
+function famRowKey(it){ return it.kind+'|'+(it.f&&it.f.join?it.f.join(','):(it.f||''))+'|'+(it.list||'')+'|'+(it.key||'')+'|'+(it.id||''); }
+let FAM_SEL='', FAM_BASE='', FAM_ONLY=true, FAM_TICK={}, FAM_Q='', FAM_V=null;
+function famView(){
+  const G=famNameGroups(); if(!G.length) return null;
+  if(!G.some(function(x){ return x.key===FAM_SEL; })){ FAM_SEL=''; FAM_BASE=''; FAM_TICK={}; }
+  const pend={};
+  G.forEach(function(x){ const b=famLatest(x.list), pv=famPrevOf(b); let c=0;
+    if(pv) famItems(pv.snap,b,[]).forEach(function(it){ x.list.forEach(function(s){ if(s.id!==b.id&&!isLocked(s)&&famEq(famValOf(it,s),it.from)) c++; }); });
+    pend[x.key]=c; });
+  if(!FAM_SEL){ const first=G.slice().sort(function(a,b){ return (pend[b.key]>0)-(pend[a.key]>0) || String(famEditTime(famLatest(b.list))).localeCompare(String(famEditTime(famLatest(a.list)))); })[0]; FAM_SEL=first.key; }
+  const grp=G.find(function(x){ return x.key===FAM_SEL; });
+  const base=(FAM_BASE&&grp.list.find(function(p){ return p.id===FAM_BASE; }))||famLatest(grp.list);
+  const sibs=grp.list.filter(function(p){ return p.id!==base.id; }).sort(function(a,b){ return String(famEditTime(b)).localeCompare(String(famEditTime(a))); });
+  const pv=famPrevOf(base), recent={};
+  if(pv) famItems(pv.snap,base,[]).forEach(function(it){ recent[famRowKey(it)]=it.from; });
+  const items=famItems(null,base,sibs);
+  /* ভিত্তিতে নতুন বদল কিন্তু সবার মধ্যে আগেই আছে — সেগুলো তালিকায় লাগবে না */
+  items.forEach(function(it){ const rk=famRowKey(it); it.rk=rk; it.recent=Object.prototype.hasOwnProperty.call(recent,rk); it.from=it.recent?recent[rk]:null;
+    sibs.forEach(function(s){ const k=rk+'|'+s.id; if(FAM_TICK[k]===undefined) FAM_TICK[k]=!!(it.recent && !isLocked(s) && famEq(famValOf(it,s),it.from)); }); });
+  items.sort(function(a,b){ return (b.recent?1:0)-(a.recent?1:0); });
+  return {G:G, pend:pend, grp:grp, base:base, sibs:sibs, items:items, pv:pv};
+}
 function renderFamily(){
+  const V=famView(); FAM_V=V;
+  let h='<p class="hint" style="margin:0 0 10px;line-height:1.6;">'+FM('বামে পণ্যের নাম বাছুন — ডানে সেই নামের সব Costing পাশাপাশি দেখাবে। প্রথম কলাম <b>ভিত্তি</b> (আপনি সবশেষে যেটা বদলেছেন)। <span class="fam-dot"></span> হলুদ ঘর = ভিত্তি থেকে আলাদা — টিক দিয়ে “মেলান” চাপলে ভিত্তির মতো হয়ে যাবে।',
+    'Pick a product name on the left — all its costings show side by side on the right. The first column is the <b>base</b> (the one you changed last). <span class="fam-dot"></span> Amber cell = different from the base — tick and press “Match” to make it the same as the base.')+'</p>';
+  if(!V) return h+anaWarn(FM('একই নামের একাধিক Costing পাওয়া যায়নি।','No product name has more than one costing.'));
   const q=FAM_Q.trim().toLowerCase();
-  const G=famGroups().map(famSummary).filter(function(S){ return !q || [S.base].concat(S.sibs).some(function(p){ return ((p.code||'')+' '+p.name).toLowerCase().indexOf(q)>-1; }); })
-    .sort(function(a,b){ return (b.safe+b.warn>0)-(a.safe+a.warn>0) || String(famEditTime(b.base)).localeCompare(String(famEditTime(a.base))); });
-  let h='<p class="hint" style="margin:0 0 10px;line-height:1.6;">'+FM('নামের মিল দেখে একই পণ্যের Costing গুলো (Export, CM, Depot …) নিজে থেকেই দল বাঁধা হয় — কিছু যোগ করতে হয় না। প্রতিটা দলে <b>সবশেষে বদলানো Costing</b> ই ভিত্তি। ভিত্তিতে শেষবার যা বদলেছেন তা অন্যগুলোয় বসানো বাকি থাকলে এখানে দেখায় — “মেলান” চেপে দেখে এক চাপে বসান।',
-    'Costings of the same product (Export, CM, Depot …) are grouped automatically by name — nothing to add. In each group the <b>most recently changed costing</b> is the base. If its last change is not yet in the others, it shows here — press “Match” to review and apply.')+'</p>'+
-    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;"><input type="text" id="famQ" placeholder="'+FM('পণ্য খুঁজুন','Search product')+'" value="'+esc(FAM_Q)+'" oninput="FAM_Q=this.value;famRefresh()" style="max-width:260px;">'+
-    '<span class="muted" style="font-size:12px;">'+G.length+FM(' টা দল',' group(s)')+'</span></div>';
-  if(!G.length) return h+anaWarn(FM('একই পণ্যের একাধিক Section এর Costing পাওয়া যায়নি।','No product has costings in more than one section.'));
-  h+='<div class="fam-grid">'+G.map(function(S){
-    const pend=S.safe+S.warn;
-    return '<div class="fam-card'+(pend?' pend':'')+'"><div class="fam-card-h"><div><div style="font-weight:700;font-size:13.5px;">'+esc(S.base.name)+'</div>'+
-      '<div class="muted" style="font-size:11.5px;">'+FM('ভিত্তি: ','Base: ')+esc(S.base.code||'')+' · '+FM('সবশেষে বদলানো ','changed ')+esc(famWhen(S.base))+'</div></div>'+
-      (pend?'<span class="fam-badge">'+(S.safe?S.safe+FM(' টা বসানো বাকি',' to apply'):'')+(S.safe&&S.warn?' · ':'')+(S.warn?S.warn+FM(' টা দেখার মতো',' to check'):'')+'</span>':(S.all?'<span class="fam-badge soft">'+S.all+FM(' টা পার্থক্য',' difference(s)')+'</span>':'<span class="fam-badge ok">&#10004; '+FM('সব মিলে আছে','all matched')+'</span>'))+'</div>'+
-      '<div class="fam-mem">'+[S.base].concat(S.sibs).map(function(p){ return '<div class="fam-row">'+famTag(p)+'<span class="fam-nm">'+esc(p.name)+'</span>'+(isLocked(p)?'<span title="'+FM('অনুমোদিত','Approved')+'">&#128274;</span>':'')+'<span class="muted" style="font-size:11px;white-space:nowrap;">'+esc(famWhen(p))+'</span></div>'; }).join('')+'</div>'+
-      '<div class="fam-card-f">'+(S.prev?'<button class="btn btn-sm '+(pend?'btn-primary':'btn-ghost')+'" onclick="famOpen(\''+S.base.id+'\',\'last\')">&#8635; '+FM('শেষ বদল মেলান','Match last change')+'</button>':'')+
-      '<button class="btn btn-sm btn-ghost" onclick="famOpen(\''+S.base.id+'\',\'all\')">&#8644; '+FM('সব পার্থক্য','All differences')+'</button></div></div>'; }).join('')+'</div>';
+  const L=V.G.filter(function(x){ return !q || x.key.indexOf(q)>-1 || x.list.some(function(p){ return (p.name+' '+(p.code||'')).toLowerCase().indexOf(q)>-1; }); })
+    .sort(function(a,b){ return (V.pend[b.key]>0)-(V.pend[a.key]>0) || a.key.localeCompare(b.key); });
+  h+='<div class="fam2"><div class="fam2-left"><input type="text" id="famQ" placeholder="'+FM('নাম খুঁজুন','Search name')+'" value="'+esc(FAM_Q)+'" oninput="FAM_Q=this.value;famRefresh(\'famQ\')">'+
+    '<div class="fam2-list">'+L.map(function(x){ const t=famNameTitle(x.list[0]);
+      return '<div class="fam2-item'+(x.key===FAM_SEL?' on':'')+'" onclick="famPick(\''+esc(x.key).replace(/'/g,"\\'")+'\')"><span class="fam2-nm">'+esc(t)+'</span>'+
+        (V.pend[x.key]?'<span class="fam2-pend" title="'+FM('নতুন বদল বসানো বাকি','New change to apply')+'">'+V.pend[x.key]+'</span>':'')+'<span class="fam2-cnt">'+x.list.length+'</span></div>'; }).join('')+'</div></div>';
+  h+='<div class="fam2-right">'+famRightHTML(V)+'</div></div>';
   return h;
 }
-function famRefresh(){ const p=document.querySelector('.fam-grid'); render(); const e=document.getElementById('famQ'); if(e){ e.focus(); e.setSelectionRange(e.value.length,e.value.length); } }
-
-/* ---------- মেলানোর জানালা ---------- */
-let FAM=null;
-function famOpen(baseId,mode){
-  const cur=famProd(baseId); if(!cur) return;
-  const pv=mode==='last'?famPrevOf(cur):null;
-  FAM={pid:baseId, mode:pv?'last':'all', prev:pv?pv.snap:null, prevAt:pv?pv.at:0, tick:{}};
-  famRender();
+function famRightHTML(V){
+  const b=V.base, sibs=V.sibs, ed=can('products','e');
+  const shown=V.items.filter(function(it){ return !FAM_ONLY || sibs.some(function(s){ return !famEq(famValOf(it,s),it.to); }); });
+  let h='<div class="fam2-head"><div><div style="font-weight:800;font-size:15px;">'+esc(famNameTitle(b))+' <span class="muted" style="font-weight:600;font-size:12px;">· '+(sibs.length+1)+FM(' টা Costing',' costings')+'</span></div>'+
+    (V.pv?'<div class="muted" style="font-size:11.5px;">'+FM('ভিত্তিতে শেষ বদল: ','Last change in base: ')+esc(famWhen(b))+'</div>':'')+'</div>'+
+    '<label style="display:flex;gap:6px;align-items:center;font-size:12px;cursor:pointer;"><input type="checkbox" '+(FAM_ONLY?'checked':'')+' onchange="FAM_ONLY=this.checked;famRefresh()"> '+FM('শুধু পার্থক্য','Differences only')+'</label></div>';
+  if(!shown.length) return h+'<div class="empty" style="padding:30px;text-align:center;">&#10004; '+FM('সব Costing ভিত্তির মতোই আছে — কিছু মেলানোর নেই।','Every costing matches the base — nothing to do.')+'</div>';
+  h+='<div class="fam2-wrap"><table class="fam-tbl fam2-tbl"><thead><tr><th class="fam2-item-h">'+FM('জিনিস','Item')+'</th>'+
+    '<th class="fam2-base">'+famTag(b)+'<div class="fam2-sub">'+esc(b.name)+'</div><div class="fam2-basetag">&#9733; '+FM('ভিত্তি — সবশেষে বদলানো','Base — changed last')+'</div></th>'+
+    sibs.map(function(s){ const lk=isLocked(s), all=shown.every(function(it){ return famEq(famValOf(it,s),it.to)||FAM_TICK[it.rk+'|'+s.id]; });
+      return '<th>'+famTag(s)+(lk?' &#128274;':'')+'<div class="fam2-sub">'+esc(s.name)+'</div><div class="fam2-acts">'+
+        (ed&&!lk?'<label title="'+FM('এই Costing এর সব আলাদা ঘর','All different cells of this costing')+'"><input type="checkbox" '+(all?'checked':'')+' onchange="famTickCol(\''+s.id+'\',this.checked)"> '+FM('সব','all')+'</label>':'')+
+        (lk?'<span style="color:#b7791f;">'+FM('অনুমোদিত','Approved')+'</span>':'<a href="javascript:void 0" onclick="FAM_BASE=\''+s.id+'\';FAM_TICK={};famRefresh()">'+FM('ভিত্তি করুন','make base')+'</a>')+'</div></th>'; }).join('')+'</tr></thead><tbody>';
+  let lastG='';
+  shown.forEach(function(it){
+    if(it.g!==lastG){ lastG=it.g; h+='<tr class="fam-g"><td colspan="'+(2+sibs.length)+'">'+esc(FM(FAM_GRP[it.g][0],FAM_GRP[it.g][1]))+'</td></tr>'; }
+    h+='<tr><td class="fam2-lab">'+esc(it.label)+(it.recent?' <span class="fam-new" title="'+FM('আগে ছিল: ','Was: ')+String(famShow(it,it.from)).replace(/<[^>]+>/g,'').replace(/"/g,'')+'">'+FM('নতুন বদল','new change')+'</span>':'')+'</td>'+
+      '<td class="fam2-base"><b>'+famShow(it,it.to)+'</b></td>'+
+      sibs.map(function(s){ const v=famValOf(it,s), k=it.rk+'|'+s.id, lk=isLocked(s);
+        if(famEq(v,it.to)) return '<td class="fam-c same">'+famShow(it,v)+'</td>';
+        return '<td class="fam-c diff"><label style="display:flex;gap:6px;align-items:center;cursor:'+(lk||!ed?'default':'pointer')+';">'+(ed&&!lk?'<input type="checkbox" '+(FAM_TICK[k]?'checked':'')+' onchange="famTick2(\''+k+'\',this.checked)">':'')+'<span>'+famShow(it,v)+'</span></label></td>'; }).join('')+'</tr>';
+  });
+  h+='</tbody></table></div>';
+  let c=0; const ps={};
+  shown.forEach(function(it){ sibs.forEach(function(s){ if(!isLocked(s)&&FAM_TICK[it.rk+'|'+s.id]&&!famEq(famValOf(it,s),it.to)){ c++; ps[s.id]=1; } }); });
+  if(ed) h+='<div class="fam2-foot"><span class="muted" style="font-size:12px;">'+FM('দাম, Forwarding, Freight, নাম, কোড মেলানো হয় না · Ctrl+Z এ ফেরানো যায়','Price, forwarding, freight, name and code are never matched · Ctrl+Z undoes')+'</span><span style="flex:1"></span>'+
+    '<button class="btn btn-primary" '+(c?'':'disabled')+' onclick="famGo2()">&#8644; '+(c?FM('মেলান — '+c+' টা ঘর, '+Object.keys(ps).length+' টা Costing এ','Match — '+c+' cell(s) in '+Object.keys(ps).length+' costing(s)'):FM('যে ঘর মেলাবেন টিক দিন','Tick the cells to match'))+'</button></div>';
+  return h;
 }
-function famRender(){
-  const cur=famProd(FAM.pid); if(!cur) return;
-  const cols=famMembers(cur), items=famItems(FAM.prev,cur,cols), ed=can('products','e'), hp=!!FAM.prev;
-  items.forEach(function(it,i){ it.i=i; cols.forEach(function(s){ const k=i+'|'+s.id; if(FAM.tick[k]===undefined) FAM.tick[k]=(famState(it,s,hp)==='sync'); }); });
-  let old=document.getElementById('famModal'); if(old) old.remove();
-  const ov=document.createElement('div'); ov.className='modal-overlay open'; ov.id='famModal';
-  const all=[cur].concat(cols).sort(function(a,b){ return String(famEditTime(b)).localeCompare(String(famEditTime(a))); }), lat=all[0];
-  const hasPrev=!!famPrevOf(cur);
-  let h='<div class="modal" style="max-width:min(1250px,97vw);"><div class="modal-head"><h3>&#8644; '+FM('একই পণ্য — মিলিয়ে দেখুন','Same product — match costings')+'</h3><button class="close-x" onclick="famClose()">&times;</button></div><div class="modal-body">';
-  h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:12.5px;"><b>'+FM('ভিত্তি:','Base:')+'</b>'+
-    '<select style="font-size:12.5px;padding:3px 6px;max-width:420px;" onchange="FAM.pid=this.value;famOpen(this.value,FAM.mode)">'+all.map(function(p){ return '<option value="'+p.id+'"'+(p.id===cur.id?' selected':'')+'>'+esc((p.code||'')+' · '+p.name+' · '+famWhen(p))+(p.id===lat.id?FM(' (সবশেষে বদলানো)',' (latest)'):'')+'</option>'; }).join('')+'</select>'+
-    '<div class="sec-tabs" style="position:static;padding:0;margin:0;">'+
-      '<button class="sec-tab'+(FAM.mode==='last'?' on':'')+'"'+(hasPrev?'':' disabled title="'+FM('এই Costing এর আগের Save এর ইতিহাস নেই','No earlier save in history')+'"')+' onclick="famOpen(FAM.pid,\'last\')">&#8635; '+FM('শেষ বদল','Last change')+(FAM.prevAt?' <span class="muted" style="font-size:10.5px;">('+FM('আগের Save ','since ')+esc(fmtDate(new Date(FAM.prevAt).toISOString()))+')</span>':'')+'</button>'+
-      '<button class="sec-tab'+(FAM.mode==='all'?' on':'')+'" onclick="famOpen(FAM.pid,\'all\')">&#8644; '+FM('সব পার্থক্য','All differences')+'</button></div></div>';
-  if(lat.id!==cur.id) h+='<div style="color:#b7791f;font-size:12px;margin-bottom:6px;">⚠ '+esc(lat.code||lat.name)+FM(' পরে বদলানো হয়েছে — সাধারণত সেটাকেই ভিত্তি ধরা উচিত',' was changed later — it is usually the right base')+'</div>';
-  h+='<p class="muted" style="font-size:12px;margin:0 0 8px;">'+(hp?FM('ভিত্তিতে শেষবার যা বদলেছেন নিচে আছে। দাম, Forwarding, Freight Section ভেদে আলাদা — ধরা হয় না।','What changed in the base at its last save is below. Price, forwarding and freight differ by section and are left out.')
-     :FM('ভিত্তি থেকে যা যা আলাদা নিচে আছে — যেটা ভিত্তির মতো করতে চান টিক দিন।','Everything that differs from the base is below — tick what should be made the same.'))+'</p>';
-  h+='<div class="fam-legend">'+(hp?'<span class="fl sync">'+FM('আগে একই ছিল — বসানো নিরাপদ','Was the same — safe to apply')+'</span><span class="fl diff">'+FM('ওখানে আগে থেকেই আলাদা — দেখে টিক দিন','Already different there — check first')+'</span>':
-    '<span class="fl diff">'+FM('ভিত্তি থেকে আলাদা — টিক দিলে ভিত্তির মতো হবে','Different from base — tick to make it the same')+'</span>')+'<span class="fl same">'+FM('ভিত্তির মতোই আছে','Same as base')+'</span></div>';
-  if(!items.length){
-    h+='<div class="empty" style="padding:22px;text-align:center;">&#10004; '+(hp?FM('শেষ বদলের সব জিনিস অন্যগুলোতেও আছে — কিছু মেলানোর নেই।','The last change is already in the others — nothing to match.'):FM('সব Costing এ এগুলো একই আছে।','These are the same in every costing.'))+'</div>';
-  } else {
-    h+='<div style="overflow:auto;max-height:56vh;border:1px solid var(--border);border-radius:10px;"><table class="fam-tbl"><thead><tr><th style="min-width:220px;">'+(hp?FM('কী বদলেছে','What changed'):FM('কোন জিনিস','Item'))+'</th><th style="min-width:150px;">'+(hp?FM('আগে → এখন','Before → now'):FM('ভিত্তিতে','In base'))+'</th>'+
-      cols.map(function(s){ const lk=isLocked(s); return '<th class="fam-col">'+(lk||!ed?'':'<input type="checkbox" title="'+FM('এই Costing এ সব','All for this costing')+'" onchange="famTickCol(\''+s.id+'\',this.checked)" '+(items.every(function(it){ return FAM.tick[it.i+'|'+s.id]||famState(it,s,hp)==='same'; })?'checked':'')+'> ')+famTag(s)+
-        '<div class="muted" style="font-weight:400;font-size:10.5px;max-width:170px;white-space:normal;">'+esc(s.name)+'</div>'+(lk?'<div style="font-size:10.5px;color:#b7791f;">&#128274; '+FM('অনুমোদিত — বদলানো যাবে না','Approved — locked')+'</div>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
-    let lastG='';
-    items.forEach(function(it){
-      if(it.g!==lastG){ lastG=it.g; h+='<tr class="fam-g"><td colspan="'+(2+cols.length)+'">'+esc(FM(FAM_GRP[it.g][0],FAM_GRP[it.g][1]))+'</td></tr>'; }
-      const allT=cols.every(function(s){ return isLocked(s)||famState(it,s,hp)==='same'||FAM.tick[it.i+'|'+s.id]; });
-      h+='<tr><td><label style="display:flex;gap:7px;align-items:center;cursor:pointer;">'+(ed?'<input type="checkbox" '+(allT?'checked':'')+' onchange="famTickRow('+it.i+',this.checked)">':'')+'<span>'+esc(it.label)+
-        (it.kind==='line'&&hp?(it.from===null?' <span class="fam-new">'+FM('নতুন','new')+'</span>':(it.to===null?' <span class="fam-del">'+FM('বাদ','removed')+'</span>':'')):'')+'</span></label></td>'+
-        '<td class="fam-ch">'+(hp?('<span class="muted">'+famShow(it,it.from)+'</span> → <b>'+famShow(it,it.to)+'</b>'):('<b>'+famShow(it,it.to)+'</b>'))+'</td>'+
-        cols.map(function(s){ const t=famState(it,s,hp), lk=isLocked(s), k=it.i+'|'+s.id;
-          if(t==='same') return '<td class="fam-c same">&#10004; '+FM('আছে','same')+'</td>';
-          return '<td class="fam-c '+t+'"><label style="display:flex;gap:6px;align-items:center;cursor:'+(lk||!ed?'default':'pointer')+';"><input type="checkbox" '+(FAM.tick[k]&&!lk?'checked':'')+(lk||!ed?' disabled':'')+' onchange="famTick(\''+k+'\',this.checked)"><span>'+famShow(it,famValOf(it,s))+'</span></label></td>'; }).join('')+'</tr>';
-    });
-    h+='</tbody></table></div>';
-  }
-  const nT=famTickedCount(items,cols);
-  h+='</div><div class="modal-foot"><span style="flex:1"></span><button class="btn" onclick="famClose()">'+FM('বন্ধ','Close')+'</button> '+
-    (ed&&items.length?'<button class="btn btn-primary" id="famGo" onclick="famGo()"'+(nT.c?'':' disabled')+'>'+(nT.c?FM('বসান — '+nT.c+' টা পরিবর্তন, '+nT.p+' টা Costing এ','Apply — '+nT.c+' change(s) to '+nT.p+' costing(s)'):FM('কিছু টিক দেওয়া নেই','Nothing ticked'))+'</button>':'')+
-    '</div></div>';
-  ov.innerHTML=h; document.body.appendChild(ov);
-  FAM.items=items; FAM.cols=cols;
-}
-function famTickedCount(items,cols){ let c=0; const ps={};
-  items.forEach(function(it){ cols.forEach(function(s){ if(!isLocked(s) && FAM.tick[it.i+'|'+s.id] && !famEq(famValOf(it,s),it.to)){ c++; ps[s.id]=1; } }); });
-  return {c:c, p:Object.keys(ps).length}; }
-function famTick(k,v){ FAM.tick[k]=!!v; famRender(); }
-function famTickRow(i,v){ FAM.cols.forEach(function(s){ FAM.tick[i+'|'+s.id]=!!v; }); famRender(); }
-function famTickCol(id,v){ FAM.items.forEach(function(it){ FAM.tick[it.i+'|'+id]=!!v; }); famRender(); }
-function famClose(){ const m=document.getElementById('famModal'); if(m) m.remove(); FAM=null; }
-function famGo(){
+function famRefresh(focusId){ const sc=document.querySelector('.fam2-wrap'), st=sc?sc.scrollTop:0, sl=sc?sc.scrollLeft:0; render();
+  const s2=document.querySelector('.fam2-wrap'); if(s2){ s2.scrollTop=st; s2.scrollLeft=sl; }
+  if(focusId){ const e=document.getElementById(focusId); if(e){ e.focus(); e.setSelectionRange(e.value.length,e.value.length); } } }
+function famPick(k){ FAM_SEL=k; FAM_BASE=''; FAM_TICK={}; famRefresh(); }
+function famTick2(k,v){ FAM_TICK[k]=!!v; famRefresh(); }
+function famTickCol(id,v){ if(!FAM_V) return; FAM_V.items.forEach(function(it){ FAM_TICK[it.rk+'|'+id]=!!v; }); famRefresh(); }
+function famGo2(){
   if(!need('products','e','Costing বদলানো')) return;
-  const cur=famProd(FAM.pid); if(!cur) return;
+  const V=famView(); if(!V) return; const cur=V.base;
   let nC=0; const done=[];
-  FAM.cols.forEach(function(s0){
+  V.sibs.forEach(function(s0){
     if(isLocked(s0)) return;
-    const its=FAM.items.filter(function(it){ return FAM.tick[it.i+'|'+s0.id] && !famEq(famValOf(it,s0),it.to); });
+    const its=V.items.filter(function(it){ return FAM_TICK[it.rk+'|'+s0.id] && !famEq(famValOf(it,s0),it.to); });
     if(!its.length) return;
     const i=DB.products.findIndex(function(x){ return x.id===s0.id; }); if(i<0) return;
+    const keepEdit=famEditTime(DB.products[i]);
     const sib=famApply(its,cur,JSON.parse(JSON.stringify(DB.products[i])));
-    sib.updatedAt=nowISO(); const keepEdit=famEditTime(DB.products[i]);
+    sib.updatedAt=nowISO();
     chgPush(sib, its.map(function(it){ return FM('মিলানো ← ','Matched ← ')+(cur.code||'')+': '+it.label+' → '+String(famShow(it,it.to)).replace(/<[^>]+>/g,''); }), true);
     sib.famEditAt=keepEdit; sib.famMatchAt=sib.changedAt;
     DB.products[i]=sib; try{ verSnap(sib, FM('মিলানো ← ','Matched ← ')+(cur.code||'')); }catch(e){}
-    audit('update','product',sib.name,FM('মিলানো ← ','Matched ← ')+(cur.code||'')+' · '+its.length+FM(' টা পরিবর্তন',' change(s)'));
+    audit('update','product',sib.name,FM('মিলানো ← ','Matched ← ')+(cur.code||'')+' · '+its.length+FM(' টা ঘর',' cell(s)'));
     nC+=its.length; done.push(sib.code||sib.name);
   });
-  saveDB(); famClose(); render();
-  toast(FM(done.length+' টা Costing এ '+nC+' টা পরিবর্তন বসানো হয়েছে: '+done.join(', '),nC+' change(s) applied to '+done.length+' costing(s): '+done.join(', ')));
+  FAM_TICK={}; saveDB(); famRefresh();
+  toast(FM(done.length+' টা Costing এ '+nC+' টা ঘর মেলানো হয়েছে: '+done.join(', '),nC+' cell(s) matched in '+done.length+' costing(s): '+done.join(', ')));
 }
 /* ===================== v19.18 — অন্য ফরম্যাটে Print (মূল Costing Sheet যেমন আছে তেমনই থাকে) =====================
    যেকোনো Costing থেকে: Statement of Cost · Standard Cost Card · Export Price Build-up · Marginal Costing &amp; Break-even ·
@@ -18416,6 +18441,11 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.28', d:'2026-11-16', t:'একই পণ্য মেলানো আরও সহজ — নাম ধরে দল, বামে তালিকা ডানে পাশাপাশি', li:[
+  'Analysis → “একই পণ্য — মিলিয়ে দেখুন” এখন <b>শুধু নাম ধরে দল</b> বাঁধে — ওজন, প্যাক বা Section যাই হোক, সব “Dry Cake” এক দলে, সব “Baby Toast” এক দলে',
+  '<b>বামে পণ্যের নামের তালিকা</b> (হলুদ সংখ্যা = নতুন বদল বসানো বাকি), <b>ডানে সেই নামের সব Costing পাশাপাশি</b> — আলাদা জানালা খুলতে হয় না। প্রথম কলাম <b>ভিত্তি</b> = আপনি নিজে সবশেষে বদলানো Costing (চাইলে অন্য কলামে “ভিত্তি করুন”)',
+  'ভিত্তি থেকে আলাদা ঘর হলুদ — টিক দিয়ে “মেলান” চাপলে ভিত্তির মতো হয়ে যায়। ভিত্তিতে সবশেষে যা বদলেছেন সেই সারিতে “নতুন বদল” লেখা, আর যেখানে আগে একই ছিল সেখানে আগে থেকেই টিক। “শুধু পার্থক্য” বন্ধ করলে সব জিনিস দেখায়। দাম, Forwarding, Freight, নাম, কোড মেলানো হয় না; অনুমোদিত (🔒) Costing বদলায় না; Ctrl+Z এ ফেরানো যায়'
+ ]},
  {v:'19.27', d:'2026-11-11', t:'Unit Dropdown এখন FG Product Master এ', li:[
   '<b>FG Product Master</b> এ Unit এখন Dropdown থেকে বাছা যায় — নতুন Product যোগের সারিতে, তালিকার প্রতিটা সারিতে আর বদলানোর জানালায়। তালিকায় Ctn, Pkt, Bag, CS, Box, Jar, Drum… আর আগে ব্যবহার করা একক গুলো থাকে; না থাকলে “+ অন্য…” বেছে নতুন একক লেখা যায়',
   'Costing এ Product বাছলে Unit আগের মতোই FG Product Master থেকে নিজে আসে — Costing এর Unit ঘর আগের মতো (v19.26 এর Costing এর Dropdown সরানো হয়েছে)'
@@ -21084,6 +21114,11 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.28', d:'2026-11-16', t:'Simpler same-product matching — grouped by name, list on the left, side by side on the right', li:[
+  'Analysis → “Same product — match” now groups <b>by name only</b> — whatever the weight, pack or section, every “Dry Cake” is one group and every “Baby Toast” another',
+  '<b>Product names on the left</b> (amber number = new change to apply), <b>all costings of that name side by side on the right</b> — no separate window. The first column is the <b>base</b> = the costing you changed last yourself (“make base” on another column to switch)',
+  'Cells that differ from the base are amber — tick and press “Match” to make them the same as the base. Rows changed in the base\'s last save say “new change”, pre-ticked where the value was the same before. Untick “Differences only” to see every item. Price, forwarding, freight, name and code are never matched; approved (🔒) costings are not changed; Ctrl+Z undoes'
+ ]},
  {v:'19.27', d:'2026-11-11', t:'Unit dropdown is now in FG Product Master', li:[
   'In <b>FG Product Master</b> the unit is now picked from a dropdown — in the new-product row, in every row of the list and in the edit window. The list has Ctn, Pkt, Bag, CS, Box, Jar, Drum… plus units already used; otherwise choose “+ Other…” to type a new one',
   'When a product is picked in a costing, its unit still comes from FG Product Master — the costing unit box is back as before (the v19.26 costing dropdown was removed)'
