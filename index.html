@@ -1270,7 +1270,19 @@ tr.sel{background:var(--ok-bg) !important;}
 .as-leg{display:flex;flex-wrap:wrap;gap:3px 9px;font-size:10.5px;color:var(--text-dim);}
 .as-leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px;vertical-align:-1px;}
 .as-tip{margin-top:7px;background:var(--warn-bg);color:var(--text);border-radius:8px;padding:6px 8px;font-size:11.5px;line-height:1.4;}
-.as-help{line-height:1.5;}.as-hl{font-weight:800;margin-bottom:3px;}
+.as-row{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border);}
+.as-row:last-of-type{border-bottom:0;}
+.as-rl{color:var(--text-dim);display:flex;flex-direction:column;line-height:1.3;}
+.as-rl small{font-size:10.5px;opacity:.85;}
+.as-rv{text-align:right;display:flex;flex-direction:column;align-items:flex-end;line-height:1.3;font-variant-numeric:tabular-nums;}
+.as-rv small{font-size:10.5px;color:var(--text-dim);}
+.as-row.big .as-rl{color:var(--text);font-weight:700;}
+.as-row.big .as-rv b{font-size:14px;}
+.as-pc{font-size:10.5px;color:var(--ok);}
+.as-sub{margin:9px 0 3px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;font-weight:800;color:var(--primary-2);}
+.as-note{font-size:10.5px;color:var(--text-dim);line-height:1.4;margin:4px 0 2px;}
+.as-help{line-height:1.5;}
+.as-act{margin:5px 0 2px;padding:5px 8px;border-radius:8px;background:var(--panel-2);font-size:11.5px;line-height:1.45;color:var(--text-dim);}.as-hl{font-weight:800;margin-bottom:3px;}
 @media (max-width:1100px){ #asstWrap{flex-direction:column;} .asst{width:auto;flex:none;max-height:none;border-left:0;border-top:1px solid var(--border);} }
 @media print{ .asst,.asst-tog{display:none !important;} }
 
@@ -6869,6 +6881,8 @@ function openProductModal(id, forceType){
   CUR.assets=CUR.assets||[];
   if(!CUR.assets.length && n(CUR.depAsset)>0) CUR.assets=[{name:'Existing Asset',value:CUR.depAsset}];
   CUR.rmLines=CUR.rmLines||[]; CUR.pkLines=CUR.pkLines||[];
+  /* v19.40 — পুরনো / ভাঙা ডেটায় ফাঁকা (null) লাইন থাকলে Costing খোলাই আটকে যেত */
+  ['rmLines','pkLines','manpower','powerLines','commonCosts','assets'].forEach(function(k){ CUR[k]=(CUR[k]||[]).filter(function(x){ return x && typeof x==='object'; }); });
   document.getElementById('productModalTitle').textContent = id?'Costing Sheet Edit':'নতুন FG Product Costing';
   document.getElementById('prodId').value=CUR.id||'';
   setV('p_code',CUR.code); setV('p_name',CUR.name); setV('p_unitLabel',CUR.unitLabel||'');
@@ -19048,6 +19062,13 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.40', d:'2026-11-16', t:'Costing সহকারী — মূল শিটের হুবহু সারাংশ, সাথে সাথে বদলায়', li:[
+  '<b>Costing সারাংশ:</b> সহকারীর “দামের ছবি” এর জায়গায় এখন মূল Top Sheet এর একই শিরোনাম ও হুবহু একই সংখ্যা — Mfg. Expense · মোট খরচ (zero profit) · বিক্রয়মূল্য · Gross Profit · Net Profit · Suggested @ লক্ষ্য %। প্রকৃত বিক্রয়মূল্য থাকলে নিচে আলাদা ভাগে — প্রকৃত দাম · Gross Profit · প্রকৃত Net Profit · Break-even এর চেয়ে',
+  '<b>টাকার পাশে US$</b> (Export এ) আর <b>প্রতি Pcs / Pkt</b> এর দাম — মূল শিটের মতোই',
+  '<b>ঠিক করা:</b> আগে সহকারীর “মোট খরচ” প্রকৃত দামে খরচ দেখাত (TT charge দামের উপর নির্ভর করে বলে মূল শিটের মোট খরচ থেকে একটু আলাদা হতো, যেমন ৮৩৯.৮৫ বনাম ৮৩৮.৮৯) — এখন মোট খরচ মূল শিটের সাথে মেলে, প্রকৃত দামে খরচ আলাদা লেখায় ব্যাখ্যা সহ',
+  '<b>ঠিক করা:</b> বিক্রয়মূল্য বা Margin বদলালে সহকারী সাথে সাথে বদলায় (প্রকৃত দাম বসানো Costing এও)। Margin এর সতর্কতায় লেখা থাকে কোন দামে (“প্রকৃত দামে Margin …”)',
+  '<b>ঠিক করা:</b> খুব পুরনো বা ভাঙা ডেটায় কোনো লাইন ফাঁকা থাকলে Costing খোলাই আটকে যেত — এখন খোলে'
+ ]},
  {v:'19.39', d:'2026-11-16', t:'আধুনিক চেহারা নতুন করে — নতুন রং, Login পাতাও', li:[
   '<b>এখন ক্লাসিক থেকে স্পষ্ট আলাদা:</b> সাদা sidebar · teal / নীল-সবুজ রং (জরুরি বোতাম coral) · গোল pill বোতাম · ট্যাব চিপের মতো · ঘরগুলো ভরাট · কার্ডে বর্ডার নেই, বড় কোণ · বড় শিরোনাম · নতুন popup। Dark mode এ গাঢ় নীল-সবুজ',
   '<b>Login পাতাও বাছা চেহারায়:</b> Settings ▸ চেহারা তে যেটা বাছবেন — আধুনিক বা ক্লাসিক — Login পাতাও সেরকম দেখাবে (এই কম্পিউটারে মনে থাকে)',
@@ -21778,6 +21799,13 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.40', d:'2026-11-16', t:'Costing assistant — exact summary of the main sheet, updates straight away', li:[
+  '<b>Costing summary:</b> the assistant’s “price picture” is replaced by the same headings and exactly the same figures as the main top sheet — Mfg. Expense · Total Cost (zero profit) · Selling Price · Gross Profit · Net Profit · Suggested @ target %. With an actual selling price, a separate part below — Actual Price · Gross Profit · Actual Net Profit · Than Break-even',
+  '<b>US$ next to taka</b> (export) and <b>per Pcs / Pkt</b> prices — just like the main sheet',
+  '<b>Fixed:</b> the assistant’s “total cost” used to be the cost at the actual price (slightly different from the main sheet because TT charge depends on the price, e.g. 839.85 vs 838.89) — total cost now matches the main sheet; the cost at the actual price is shown separately with an explanation',
+  '<b>Fixed:</b> changing the selling price or margin updates the assistant straight away (also on costings with an actual price). Margin warnings say which price they refer to (“At actual price: margin …”)',
+  '<b>Fixed:</b> very old or damaged data with an empty line could stop a costing from opening — it now opens'
+ ]},
  {v:'19.39', d:'2026-11-16', t:'Modern look redone — new colours, login page too', li:[
   '<b>Now clearly different from Classic:</b> white sidebar · teal / blue-green colours (coral for key buttons) · round pill buttons · chip-style tabs · filled fields · borderless cards with large corners · bigger titles · new popups. Dark mode in deep blue-green',
   '<b>Login page follows the chosen look:</b> whatever you pick in Settings ▸ Look — Modern or Classic — the login page looks the same (remembered on this computer)',
@@ -22762,10 +22790,11 @@ function anaBasis(r){
 }
 const HEALTH_STALE_DAYS=90;
 /* ---- Costing স্বাস্থ্য — একই নিয়ম Analysis এর তালিকা আর Costing এর পাশের সহকারীতে ---- */
-function costHealth(p, r){
+function costHealth(p, r, saleBasis){
   r=r||calc(p); const out=[];
   const add=function(lv,tab,fld,b,e){ out.push({lv:lv,tab:tab,fld:fld,t:TT(b,e)}); };
-  const B=anaBasis(r), tgt=n(p.targetMargin)>0?n(p.targetMargin):15;
+  /* v19.40 — Costing জানালার সহকারী: যে বিক্রয়মূল্য বদলাচ্ছেন সেটাই ধরে (প্রকৃত দাম আলাদা দেখায়) */
+  const B=saleBasis?{sale:r.sellBdt, net:r.netCtn, cost:r.totalCostCtn, act:false}:anaBasis(r), tgt=n(p.targetMargin)>0?n(p.targetMargin):15;
   if(!String(p.name||'').trim()) add('bad',0,'p_name','পণ্যের নাম নেই','Product name is missing');
   const rmL=(p.rmLines||[]).filter(function(l){ return l.matId||n(l.qty)>0; });
   if(!rmL.length) add('bad',1,'','কোনো কাঁচামাল (RM) বসানো নেই','No raw materials added');
@@ -22784,8 +22813,8 @@ function costHealth(p, r){
   if(!(n(p.batchDay)>0)) add('bad',0,'p_batchDay','Batch / Day বসানো নেই — মজুরি ও O/H ভাগ হবে না','Batch / Day is empty — labour and overhead cannot be shared');
   const sf=r.isExport?'p_sellUsd':'p_sellBdt';
   if(!(B.sale>0)) add('bad',0,sf,'বিক্রয়মূল্য বসানো নেই','No selling price');
-  else if(B.net<0) add('bad',0,sf,'লোকসান — প্রতি '+r.uLab+' ৳'+money(-B.net,2),'Loss — ৳'+money(-B.net,2)+' per '+r.uLab);
-  else if(B.net/B.sale*100<tgt) add('warn',5,'p_targetMargin','Margin '+money(B.net/B.sale*100,1)+'% — লক্ষ্য '+money(tgt,0)+'% এর নিচে','Margin '+money(B.net/B.sale*100,1)+'% — below the '+money(tgt,0)+'% target');
+  else if(B.net<0) add('bad',0,B.act?'p_sellNoVat':sf,(B.act?'প্রকৃত দামে ':'')+'লোকসান — প্রতি '+r.uLab+' ৳'+money(-B.net,2),(B.act?'At actual price: ':'')+'Loss — ৳'+money(-B.net,2)+' per '+r.uLab);
+  else if(B.net/B.sale*100<tgt) add('warn',5,'p_targetMargin',(B.act?'প্রকৃত দামে ':'')+'Margin '+money(B.net/B.sale*100,1)+'% — লক্ষ্য '+money(tgt,0)+'% এর নিচে',(B.act?'At actual price: ':'')+'margin '+money(B.net/B.sale*100,1)+'% — below the '+money(tgt,0)+'% target');
   if(r.isExport && !(r.usd>0)) add('bad',0,'p_usd','USD Rate নেই','USD rate is missing');
   if(n(p.loss)<0) add('bad',0,'p_loss','Process Loss ঋণাত্মক','Process loss is negative');
   else if(n(p.loss)>30) add('warn',0,'p_loss','Process Loss '+money(n(p.loss),1)+'% — বেশি মনে হচ্ছে','Process loss '+money(n(p.loss),1)+'% looks high');
@@ -23038,7 +23067,8 @@ function asstGo(tab,fld){ try{ switchTab(n(tab)); }catch(e){}
   if(fld) setTimeout(function(){ const e=document.getElementById(fld); if(e){ e.scrollIntoView({block:'center',behavior:'smooth'}); e.focus(); e.classList.add('asst-flash'); setTimeout(function(){ e.classList.remove('asst-flash'); },1600); } },120); }
 function asstRender(r){
   ASST_LAST=r; const a=asstMount(); if(!a||!CUR) return;
-  const issues=costHealth(CUR,r), sc=healthScore(issues), B=anaBasis(r), tgt=n(CUR.targetMargin)>0?n(CUR.targetMargin):15;
+  const issues=costHealth(CUR,r), sc=healthScore(issues), B={sale:r.sellBdt, net:r.netCtn, cost:r.totalCostCtn, act:false}, tgt=n(CUR.targetMargin)>0?n(CUR.targetMargin):15;
+  const A=(r.hasAct&&r.actBdt>0)?{sale:r.actBdt, net:r.actNetCtn}:null;
   const urgent=issues.filter(function(i){ return i.lv!=='info'; }).length;
   const tog=document.getElementById('asstTog');
   if(tog) tog.innerHTML='🧭 '+TT('সহকারী','Assistant')+(urgent?' <span class="asst-cnt">'+urgent+'</span>':' <span class="asst-ok">✓</span>');
@@ -23053,7 +23083,7 @@ function asstRender(r){
     [TT('প্যাকিং (PM)','Packing'), st(2, pkN>0), pkN+' '+TT('টি','items')+' · ৳'+money(r.pkAmtCtn,2)+'/'+u],
     [TT('মজুরি ও Factory O/H','Labour & factory O/H'), st(3, r.laborCtn+r.otherLaborCtn>0), TT('মজুরি','Wages')+' ৳'+money(r.laborCtn+r.otherLaborCtn,2)+' · O/H ৳'+money(r.factoryOhCtn,2)],
     [TT('Indirect O/H ও Forwarding','Indirect O/H & forwarding'), st(4, true), 'Indirect ৳'+money(r.indirectCtn,2)+(r.isExport?' · Fwd ৳'+money(r.fwdCtn+r.freightCtn,2):'')],
-    [TT('Top Sheet ও দাম','Top sheet & price'), (!(B.sale>0)||B.net<0)?'bad':(B.net/B.sale*100<tgt?'warn':'ok'), B.sale>0?('Net ৳'+money(B.net,2)+' ('+money(B.net/B.sale*100,1)+'%)'):TT('দাম নেই','No price')]
+    (function(){ const X=A?{sale:A.sale,net:A.net}:B; return [TT('Top Sheet ও দাম','Top sheet & price'), (!(X.sale>0)||X.net<0)?'bad':(X.net/X.sale*100<tgt?'warn':'ok'), X.sale>0?((A?TT('প্রকৃত Net ','Actual net '):'Net ')+'৳'+money(X.net,2)+' ('+money(X.net/X.sale*100,1)+'%)'):TT('দাম নেই','No price')]; })()
   ];
   const ic={ok:'✓',warn:'!',bad:'✕',todo:'○'};
   const parts=[['RM',r.rmAmtCtn,'#2563eb'],['PM',r.pkAmtCtn,'#7c3aed'],[TT('মজুরি','Wages'),r.laborCtn+r.otherLaborCtn,'#0891b2'],['F-O/H',r.factoryOhCtn,'#d97706'],['Indirect',r.indirectCtn,'#64748b'],[TT('ফরওয়ার্ড/বিক্রয়','Fwd/selling'),(B.cost-r.mfgCtn-r.indirectCtn),'#94a3b8']];
@@ -23069,16 +23099,38 @@ function asstRender(r){
     '<div class="as-sec"><div class="as-h">'+TT('যা দেখতে হবে','What to check')+(issues.length?' <span class="as-n">'+issues.length+'</span>':'')+'</div>'+
       (issues.length?issues.map(function(i){ return '<button class="as-iss '+i.lv+'" onclick="asstGo('+i.tab+',\''+(i.fld||'')+'\')"><span class="as-dot"></span><span>'+esc(i.t)+'</span></button>'; }).join(''):
        '<div class="as-good">✓ '+TT('সব ঠিক আছে — Save করতে পারেন','All good — ready to save')+'</div>')+'</div>'+
-    '<div class="as-sec"><div class="as-h">'+TT('দামের ছবি','Price picture')+' <span class="as-dim">/ '+u+'</span></div>'+
-      '<div class="as-kv"><span>'+TT('মোট খরচ','Total cost')+'</span><b>৳'+money(B.cost,2)+'</b></div>'+
-      '<div class="as-kv"><span>'+TT('বিক্রয়মূল্য','Selling price')+(B.act?' ('+TT('প্রকৃত','actual')+')':'')+'</span><b>'+(B.sale>0?'৳'+money(B.sale,2):'—')+'</b></div>'+
-      '<div class="as-kv"><span>Net</span><b style="color:'+(B.net<0?'var(--danger)':'var(--ok)')+'">'+(B.sale>0?'৳'+money(B.net,2):'—')+'</b></div>'+
-      (mPct!==null?'<div class="as-mg"><div class="as-mg-t"><span>Margin '+money(mPct,1)+'%</span><span class="as-dim">'+TT('লক্ষ্য','target')+' '+money(tgt,0)+'%</span></div><div class="as-mg-b"><span style="width:'+Math.max(0,Math.min(100,mPct/Math.max(tgt*2,1)*100)).toFixed(1)+'%;background:'+(mPct<0?'var(--danger)':(mPct<tgt?'#d97706':'var(--ok)'))+'"></span><i style="left:50%"></i></div></div>':'')+
-      (B.sale>0||B.cost>0?bar:'')+
-      (B.cost>0&&tgt<95?'<div class="as-tip">💡 '+TT('লক্ষ্য Margin পেতে দাম হওয়া উচিত প্রায়','To hit the target margin the price should be about')+' <b>৳'+money(B.cost/(1-tgt/100),2)+'</b>'+(r.isExport&&r.usd>0?' (≈ $'+money(B.cost/(1-tgt/100)/r.usd,3)+')':'')+'</div>':'')+
-    '</div>'+
+    asstSummaryHTML(r,B,A,tgt,bar,u)+
     '<div class="as-sec"><div class="as-h">'+TT('এই ঘর সম্পর্কে','About this field')+'</div><div id="asstHelp" class="as-help"></div></div>';
   asstHelpPaint();
+}
+/* v19.40 — সহকারীর “Costing সারাংশ”: Top Sheet এর হুবহু একই শিরোনাম ও সংখ্যা, টাকার পাশে US$ (Export), প্রতি Pcs */
+function asstSummaryHTML(r,B,A,tgt,bar,u){
+  const ex=r.isExport&&r.usd>0, pcN=(r.uKey==='ctn'&&!r.isDemo&&n(r.pktCtn)>1)?n(r.pktCtn):0, sl=esc(r.sLab||'Pkt');
+  const pc=function(v,usd){ return pcN?'<div class="as-pc">'+TT('প্রতি ','Per ')+sl+' ৳'+money(v/pcN,2)+(usd&&ex?' · $'+money(usd/pcN,4):'')+'</div>':''; };
+  const row=function(lbl,v,usd,opt){ opt=opt||{}; const col=opt.pn?(v<0?'var(--danger)':(v>0?'var(--ok)':'')):'';
+    return '<div class="as-row'+(opt.big?' big':'')+'"><span class="as-rl">'+lbl+(opt.sub?'<small>'+opt.sub+'</small>':'')+'</span><span class="as-rv"><b'+(col?' style="color:'+col+'"':'')+'>'+(opt.sign&&v>0?'+':'')+(v<0?'−':'')+'৳'+money(Math.abs(v),2)+'</b>'+
+      (usd!==undefined&&usd!==null&&ex?'<small>$'+money(usd,4)+'</small>':'')+(opt.pc?pc(v,usd):'')+'</span></div>'; };
+  const sh=function(v){ return r.sellBdt>0?money(v/r.sellBdt*100,2)+'% on sale':''; };
+  let h='<div class="as-sec"><div class="as-h">'+TT('Costing সারাংশ','Costing summary')+' <span class="as-dim">/ '+u+(ex?' · USD '+money(r.usd,2):'')+'</span></div>'+
+    row('Mfg. Expense',r.mfgCtn,ex?r.mfgCtn/r.usd:null)+
+    row(TT('মোট খরচ','Total Cost'),r.totalCostCtn,r.zeroBeUsd,{sub:'zero profit',pc:1})+
+    row(TT('বিক্রয়মূল্য','Selling Price'),r.sellBdt,r.sellUsd,{sub:CUR.beAuto?TT('Break-even অনুযায়ী নিজে','auto from break-even'):'',pc:1,big:1})+
+    row('Gross Profit',r.grossCtn,null,{pn:1,sub:sh(r.grossCtn)})+
+    row('Net Profit',r.netCtn,null,{pn:1,sub:sh(r.netCtn),pc:1,big:1})+
+    (r.suggestUsd>0?row('Suggested @ '+money(r.marginPct,0)+'%',r.suggestUsd*r.usd,r.suggestUsd):'');
+  if(A){
+    h+='<div class="as-sub">'+TT('প্রকৃত বিক্রয়মূল্য (VAT ছাড়া) ধরে হিসাব','Calculated on actual selling price (excl. VAT)')+'</div>'+
+      row(TT('প্রকৃত দাম','Actual Price'),r.actBdt,r.actUsd,{pc:1,big:1})+
+      row('Gross Profit',r.actGrossCtn,null,{pn:1,sub:money(r.actShare(r.actGrossCtn)*100,2)+'% on sale'})+
+      row(TT('প্রকৃত Net Profit','Actual Net Profit'),r.actNetCtn,null,{pn:1,sub:money(r.actMargin*100,2)+'% margin',pc:1,big:1})+
+      row(TT('Break-even এর চেয়ে','Than Break-even'),r.actVsBe,null,{pn:1,sign:1})+
+      '<div class="as-note">'+TT('এই দামে মোট খরচ ৳','Total cost at this price ৳')+money(r.actCostCtn,2)+(Math.abs(r.actCostCtn-r.totalCostCtn)>0.005?TT(' — দামের উপর নির্ভর করা খরচ (যেমন TT charge) এর জন্য উপরের মোট খরচ থেকে একটু আলাদা',' — differs slightly from Total Cost above because some costs (e.g. TT charge) depend on the price'):'')+'</div>';
+  }
+  const M=A?{n:A.net,s:A.sale,l:TT('প্রকৃত Margin','Actual margin')}:{n:B.net,s:B.sale,l:'Net margin'};
+  const mp=M.s>0?M.n/M.s*100:null;
+  if(mp!==null) h+='<div class="as-mg"><div class="as-mg-t"><span>'+M.l+' '+money(mp,2)+'%</span><span class="as-dim">'+TT('লক্ষ্য','target')+' '+money(tgt,0)+'%</span></div><div class="as-mg-b"><span style="width:'+Math.max(0,Math.min(100,mp/Math.max(tgt*2,1)*100)).toFixed(1)+'%;background:'+(mp<0?'var(--danger)':(mp<tgt?'#d97706':'var(--ok)'))+'"></span><i style="left:50%"></i></div></div>';
+  if(B.sale>0||B.cost>0) h+=bar;
+  return h+'</div>';
 }
 const ANA_TABS=[
   {v:'health', l:'Costing স্বাস্থ্য'},
