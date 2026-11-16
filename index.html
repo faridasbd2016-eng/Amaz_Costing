@@ -833,6 +833,8 @@ td.mancell input{flex:1; min-width:0;}
 .nav-item.nav-kid svg{width:16px !important; height:16px !important;}
 /* ---- Sync indicator ---- */
 .sync-wrap{position:relative;}
+.sync-new{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:800;line-height:1;background:#eab308;color:#fff;border-radius:6px;padding:2px 5px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none;}
+body.sy-quiet *,body.sy-quiet *::before,body.sy-quiet *::after{animation:none !important;transition:none !important;}
 .sync-btn{position:relative;}
 .sync-btn.ok{color:var(--ok);}
 .sync-btn.err{color:var(--danger);}
@@ -3934,6 +3936,7 @@ function ntfOpen(id){ closeNtf(); if(currentPage!=='products') goTo('products');
 document.addEventListener('click',function(e){ const w=document.getElementById('ntfWrap'); if(w && !w.contains(e.target)) closeNtf(); });
 setInterval(function(){ try{ ntfUpdate(); }catch(e){} },15000);
 function render(){
+  if(typeof SYNC_NEED_RENDER!=='undefined' && SYNC_NEED_RENDER){ try{ syncNewMark(false); }catch(e){} }
   setTimeout(function(){ try{ ntfUpdate(); }catch(e){} },0);
   const c=document.getElementById('content');
   if(currentPage==='dashboard') c.innerHTML=renderDashboard();
@@ -15266,12 +15269,8 @@ async function cloudSync(silent){
     if(!silent) toast('Sync শেষ — '+msg);
     /* v18.65 — নীরব (auto) sync এ কিছু না বদলালে বা কেউ লিখছে হলে পাতা আর নতুন করে আঁকি না (কাজ বন্ধ হয়ে যাচ্ছিল) */
     const changed=(r1.added+r1.updated+r1.removed+rejected)>0;
-    const ae=document.activeElement, typing=ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
-    if(!anyModalOpen() && (!silent || (changed && !typing))){
-      const sy=window.scrollY, mc=document.querySelector('.main,#main,#content'), sm=mc?mc.scrollTop:0;
-      buildNav(); render();
-      try{ window.scrollTo(0,sy); if(mc) mc.scrollTop=sm; }catch(e){}
-    }
+    if(!silent){ if(!anyModalOpen()){ buildNav(); quietRender(); } }
+    else if(changed){ if(userBusy()) syncNewMark(true); else quietRender(); }
   }catch(err){
     syncLog('err',String(err.message||err));
     syncStatus('❌ '+(err.message||err),'err');
@@ -15280,9 +15279,38 @@ async function cloudSync(silent){
   }finally{ SYNC_BUSY=false; renderSyncPanel(); updateSyncIndicator(); }
 }
 function anyModalOpen(){
+  /* v19.30 — আগে শুধু পুরনো 'show' class দেখত, তাই Costing/Material এর জানালা খোলা থাকলেও Auto Sync চলে যেত */
+  if(document.querySelector('.uc-ov')) return true;
   return Array.prototype.some.call(document.querySelectorAll('.modal-overlay'),function(m){
-    return m.classList.contains('show')||m.style.display==='flex'; });
+    return m.classList.contains('open')||m.classList.contains('show')||m.style.display==='flex'; });
 }
+/* v19.30 — কাজের মাঝে Auto Sync পাতা নতুন করে আঁকবে না (তাতেই ঝাঁকুনি আর কিছুক্ষণ আটকে থাকা)।
+   নতুন ডাটা এলে Sync বোতামে ছোট “নতুন” চিহ্ন দেখায়; চাপলে বা ২০ সেকেন্ড কিছু না করলে চুপচাপ (animation ছাড়া) পাতা হালনাগাদ হয়। */
+let SYNC_NEED_RENDER=false, USER_ACT=Date.now();
+['keydown','mousedown','input','wheel','touchstart'].forEach(function(ev){ document.addEventListener(ev,function(){ USER_ACT=Date.now(); },{capture:true,passive:true}); });
+function userBusy(){
+  const ae=document.activeElement, typing=ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.id!=='gsInput';
+  return typing || anyModalOpen() || (Date.now()-USER_ACT)<20000;
+}
+function syncNewMark(on){
+  SYNC_NEED_RENDER=!!on;
+  const b=document.getElementById('syncBtn'); if(!b) return;
+  let t=document.getElementById('syncNew');
+  if(on && !t){ t=document.createElement('span'); t.id='syncNew'; t.className='sync-new'; t.textContent=window.LANG==='en'?'new':'নতুন'; b.appendChild(t); }
+  if(t) t.style.display=on?'':'none';
+  if(on) b.title=(window.LANG==='en'?'New data from another device — click to refresh the page':'অন্য ডিভাইস থেকে নতুন ডাটা এসেছে — চাপলে পাতা হালনাগাদ হবে');
+}
+function quietRender(){
+  const b=document.body; b.classList.add('sy-quiet');
+  const sy=window.scrollY, mc=document.querySelector('.main,#main,#content'), sm=mc?mc.scrollTop:0;
+  const keep=[].slice.call(document.querySelectorAll('#content [class*="wrap"],#content .fam2-list,#content .table-wrap')).map(function(e,i){ return [i,e.scrollTop,e.scrollLeft]; });
+  render();
+  try{ window.scrollTo(0,sy); if(mc) mc.scrollTop=sm;
+    const now=document.querySelectorAll('#content [class*="wrap"],#content .fam2-list,#content .table-wrap'); keep.forEach(function(k){ const e=now[k[0]]; if(e){ e.scrollTop=k[1]; e.scrollLeft=k[2]; } }); }catch(e){}
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ b.classList.remove('sy-quiet'); }); });
+  syncNewMark(false);
+}
+setInterval(function(){ try{ if(SYNC_NEED_RENDER && ME && !userBusy()) quietRender(); }catch(e){} },5000);
 async function cloudTest(){
   try{
     syncStatus('পরীক্ষা চলছে…','busy');
@@ -15362,6 +15390,7 @@ function updateSyncIndicator(st){
 }
 function toggleSyncMenu(ev){
   if(ev) ev.stopPropagation();
+  if(SYNC_NEED_RENDER && !anyModalOpen()){ quietRender(); return; }
   const m=document.getElementById('syncMenu');
   if(m.classList.contains('open')){ m.classList.remove('open'); return; }
   const S=ensureSync(), n=dirtyCount();
@@ -16931,6 +16960,7 @@ function renderFamily(){
       return '<div class="fam2-item'+(x.key===FAM_SEL?' on':'')+'" onclick="famPick(\''+esc(x.key).replace(/'/g,"\\'")+'\')"><span class="fam2-nm">'+esc(t)+'</span>'+
         (V.pend[x.key]?'<span class="fam2-pend" title="'+FM('নতুন বদল বসানো বাকি','New change to apply')+'">'+V.pend[x.key]+'</span>':'')+'<span class="fam2-cnt">'+x.list.length+'</span></div>'; }).join('')+'</div></div>';
   h+='<div class="fam2-right">'+famRightHTML(V)+'</div></div>';
+  setTimeout(function(){ famKeepSel(document.querySelector('.fam2-list')); },0);
   return h;
 }
 function famRightHTML(V){
@@ -16962,10 +16992,24 @@ function famRightHTML(V){
     '<button class="btn btn-primary" '+(c?'':'disabled')+' onclick="famGo2()">&#8644; '+(c?FM('মেলান — '+c+' টা ঘর, '+Object.keys(ps).length+' টা Costing এ','Match — '+c+' cell(s) in '+Object.keys(ps).length+' costing(s)'):FM('যে ঘর মেলাবেন টিক দিন','Tick the cells to match'))+'</button></div>';
   return h;
 }
-function famRefresh(focusId){ const sc=document.querySelector('.fam2-wrap'), st=sc?sc.scrollTop:0, sl=sc?sc.scrollLeft:0; render();
-  const s2=document.querySelector('.fam2-wrap'); if(s2){ s2.scrollTop=st; s2.scrollLeft=sl; }
-  if(focusId){ const e=document.getElementById(focusId); if(e){ e.focus(); e.setSelectionRange(e.value.length,e.value.length); } } }
-function famPick(k){ FAM_SEL=k; FAM_BASE=''; FAM_TICK={}; famRefresh(); }
+function famRefresh(focusId){
+  /* v19.29 — নতুন করে আঁকার সময় বামের তালিকা, ডানের ছক আর পাতার জায়গা যেখানে ছিল সেখানেই থাকে */
+  const keep=[], grab=function(el){ if(el) keep.push([el.className||el.tagName, el.scrollTop, el.scrollLeft]); };
+  const lst=document.querySelector('.fam2-list'), wr=document.querySelector('.fam2-wrap');
+  const lt=lst?lst.scrollTop:0, wt=wr?wr.scrollTop:0, wl=wr?wr.scrollLeft:0;
+  const anc=[]; let p=document.getElementById('content'); while(p){ if(p.scrollHeight>p.clientHeight+2) anc.push([p,p.scrollTop]); p=p.parentElement; }
+  const wy=window.scrollY;
+  render();
+  anc.forEach(function(a){ a[0].scrollTop=a[1]; }); if(window.scrollY!==wy) window.scrollTo(0,wy);
+  const l2=document.querySelector('.fam2-list'); if(l2){ l2.scrollTop=lt; famKeepSel(l2); }
+  const w2=document.querySelector('.fam2-wrap'); if(w2){ w2.scrollTop=wt; w2.scrollLeft=wl; }
+  if(focusId){ const e=document.getElementById(focusId); if(e){ e.focus({preventScroll:true}); e.setSelectionRange(e.value.length,e.value.length); } }
+}
+/* বাছা নামটা তালিকায় চোখের সামনে রাখা (পুরো পাতা না সরিয়ে) */
+function famKeepSel(l){ const on=l&&l.querySelector('.fam2-item.on'); if(!on) return;
+  const top=on.offsetTop-l.offsetTop, bot=top+on.offsetHeight;
+  if(top<l.scrollTop) l.scrollTop=top-6; else if(bot>l.scrollTop+l.clientHeight) l.scrollTop=bot-l.clientHeight+6; }
+function famPick(k){ FAM_SEL=k; FAM_BASE=''; FAM_TICK={}; famRefresh(); const w=document.querySelector('.fam2-wrap'); if(w){ w.scrollTop=0; w.scrollLeft=0; } }
 function famTick2(k,v){ FAM_TICK[k]=!!v; famRefresh(); }
 function famTickCol(id,v){ if(!FAM_V) return; FAM_V.items.forEach(function(it){ FAM_TICK[it.rk+'|'+id]=!!v; }); famRefresh(); }
 function famGo2(){
@@ -18441,6 +18485,14 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.30', d:'2026-11-16', t:'Auto Sync এ কাজের মাঝে পাতা আর ঝাঁকুনি দেয় না, আটকেও যায় না', li:[
+  'আগে Auto Sync এ অন্য PC থেকে কিছু এলে পুরো পাতা animation সহ নতুন করে আঁকা হতো — অনেক Costing থাকলে তাতে প্রায় ¼ সেকেন্ড কাজ আটকে যেত আর পাতা ঝাঁকুনি দিত। এখন <b>আপনি কাজ করতে থাকলে</b> (লেখা, ক্লিক, স্ক্রল — গত ২০ সেকেন্ডের মধ্যে) পাতা আর আঁকা হয় না; ডাটা পেছনে চুপচাপ আসে আর Sync বোতামের নিচে ছোট হলুদ <b>“নতুন”</b> চিহ্ন দেখায়',
+  '“নতুন” চিহ্নসহ Sync বোতাম চাপলে, বা ২০ সেকেন্ড কিছু না করলে, পাতা <b>animation ছাড়া</b> চুপচাপ হালনাগাদ হয় — স্ক্রল যেখানে ছিল সেখানেই থাকে',
+  'ঠিক করা হয়েছে: “কোনো জানালা (Costing, Material…) খোলা থাকলে Auto Sync হবে না” নিয়মটা আসলে কাজ করছিল না — এখন করে'
+ ]},
+ {v:'19.29', d:'2026-11-16', t:'“একই পণ্য” তালিকা আর উপরে লাফ দেয় না', li:[
+  'Analysis → “একই পণ্য — মিলিয়ে দেখুন” এ বামের তালিকা থেকে নিচের দিকের কোনো পণ্য বাছলে তালিকা আর উপরে ফিরে যায় না — যেখানে ছিল সেখানেই থাকে, বাছা নামটা চোখের সামনে থাকে। টিক দিলে বা খুঁজলেও তালিকা ও ছক সরে না'
+ ]},
  {v:'19.28', d:'2026-11-16', t:'একই পণ্য মেলানো আরও সহজ — নাম ধরে দল, বামে তালিকা ডানে পাশাপাশি', li:[
   'Analysis → “একই পণ্য — মিলিয়ে দেখুন” এখন <b>শুধু নাম ধরে দল</b> বাঁধে — ওজন, প্যাক বা Section যাই হোক, সব “Dry Cake” এক দলে, সব “Baby Toast” এক দলে',
   '<b>বামে পণ্যের নামের তালিকা</b> (হলুদ সংখ্যা = নতুন বদল বসানো বাকি), <b>ডানে সেই নামের সব Costing পাশাপাশি</b> — আলাদা জানালা খুলতে হয় না। প্রথম কলাম <b>ভিত্তি</b> = আপনি নিজে সবশেষে বদলানো Costing (চাইলে অন্য কলামে “ভিত্তি করুন”)',
@@ -21114,6 +21166,14 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.30', d:'2026-11-16', t:'Auto sync no longer jolts or freezes the screen while you work', li:[
+  'Auto sync used to redraw the whole page with animation whenever data came from another PC — with many costings that froze work for about ¼ second and made the page jolt. Now, <b>while you are working</b> (typing, clicking or scrolling in the last 20 seconds) the page is not redrawn; data arrives quietly in the background and a small amber <b>“new”</b> mark appears under the sync button',
+  'Click the sync button with the “new” mark, or stay idle for 20 seconds, and the page refreshes quietly <b>without animation</b>, keeping your scroll position',
+  'Fixed: the rule “no auto sync while a window (costing, material…) is open” was not actually working — now it is'
+ ]},
+ {v:'19.29', d:'2026-11-16', t:'The “Same product” list no longer jumps to the top', li:[
+  'In Analysis → “Same product — match”, picking a product lower in the left list no longer sends the list back to the top — it stays where it was with the chosen name in view. Ticking cells or searching does not move the list or the table either'
+ ]},
  {v:'19.28', d:'2026-11-16', t:'Simpler same-product matching — grouped by name, list on the left, side by side on the right', li:[
   'Analysis → “Same product — match” now groups <b>by name only</b> — whatever the weight, pack or section, every “Dry Cake” is one group and every “Baby Toast” another',
   '<b>Product names on the left</b> (amber number = new change to apply), <b>all costings of that name side by side on the right</b> — no separate window. The first column is the <b>base</b> = the costing you changed last yourself (“make base” on another column to switch)',
