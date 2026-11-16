@@ -3197,6 +3197,8 @@ function pdfFromPrintArea(name, land){
   const meas=document.createElement('div'); meas.className='pdfbox';
   meas.style.cssText='position:absolute;left:-30000px;top:0;background:#fff;color:#000;box-sizing:border-box;padding:0 7px;width:'+wpx+'px;';
   meas.innerHTML=CSS+(zero?src.innerHTML.replace(/297mm/g,'296.3mm'):src.innerHTML); document.body.appendChild(meas);
+  /* v19.35 — Letterhead PDF: লাইনটা footer ছবির উপরে, লেখার শেষে (পাতার কিনারায় নয়) */
+  const lhStamp = zero && stampOn() && !!meas.querySelector('.lh-body') && stampInline(meas,true);
   /* ছক চওড়া হলে সেই অনুযায়ী চওড়া করে (পরে ছোট হয়ে বসবে) — কিছু কাটা পড়বে না */
   const W=Math.max(wpx, Math.ceil(meas.scrollWidth)+2);
   meas.style.width=W+'px';
@@ -3219,7 +3221,7 @@ function pdfFromPrintArea(name, land){
         if(this.opt&&this.opt.html2canvas){ this.opt.html2canvas.windowWidth=Math.max(W+40, 1280); this.opt.html2canvas.windowHeight=900; }
       }).toCanvas().toPdf().get('pdf').then(function(pdf){
         /* v18.91 — প্রতি পাতার নিচে Printed by / Printed on / Page / Powered by */
-        if(!stampOn() || !pdf || !pdf.internal) return;
+        if(!stampOn() || lhStamp || !pdf || !pdf.internal) return;
         try{
           const N=pdf.internal.getNumberOfPages(), W=pdf.internal.pageSize.getWidth(), H=pdf.internal.pageSize.getHeight();
           const y=H-Math.max(3.2, Math.min(mv,12)/2-0.6), L=stampLeft(true);
@@ -10343,7 +10345,7 @@ function orProductSheetHTML(d, pageBreak){
     '<tr><td style="'+cl+'width:60%;"><b>Product:</b> '+esc(d.p.name)+(d.p.code?' ['+esc(d.p.code)+']':'')+'</td>'+
     '<td style="'+cl+'"><b>Section:</b> '+ctypeLabel(d.r.ctype)+'</td></tr>'+
     '<tr><td style="'+cl+'"><b>Buyer:</b> '+esc(pl.buyer||'-')+' &nbsp; <b>Ref:</b> '+esc(pl.ref||'-')+'</td>'+
-    '<td style="'+cl+'"><b>Printed By:</b> '+esc(meName())+' &nbsp;·&nbsp; '+fmtDate(nowISO())+'</td></tr>'+
+    '<td style="'+cl+'">'+(stampOn()?'<b>Date:</b> '+fmtDate(nowISO()):'<b>Printed By:</b> '+esc(meName())+' &nbsp;·&nbsp; '+fmtDate(nowISO()))+'</td></tr>'+
     '<tr><td style="'+cl+'"><b>Order Qty:</b> '+money(d.ctn,0)+' '+d.r.uLab+' &nbsp; <b>Std Output:</b> '+money(d.r.stdOut,4)+' '+d.r.uLab+'/Batch</td>'+
     '<td style="'+cl+'"><b>Batch লাগবে:</b> '+money(d.batches,2)+' (≈'+money(d.days,2)+' days)</td></tr></table>'+
     sec('RAW MATERIALS', d.rm, d.rmVal)+sec('PACKING MATERIALS', d.pk, d.pkVal)+
@@ -11188,8 +11190,8 @@ function orderStatementHTML(d, challan){
            '<div style="font-weight:800;">Approved By</div>'+
            '<div style="font-size:10px;color:#555;margin-top:2px;">For '+esc(DB.settings.companyName||'')+'</div></div></td></tr></table>';
   /* footer */
-  h+='<div style="margin-top:14px;border-top:2px solid '+GREEN+';padding-top:5px;text-align:center;font-size:9px;color:#777;">'+
-       'Printed By: '+esc(meName())+' · '+fmtDate(nowISO())+' · Powered By AMAZ ERP Solution</div>';
+  if(!stampOn()) h+='<div style="margin-top:14px;border-top:2px solid '+GREEN+';padding-top:5px;text-align:center;font-size:9px;color:#777;">'+
+       'Printed By: '+esc(meName())+' · '+fmtDate(nowISO())+' · Powered By AMAZ ERP Solution</div>';   /* v19.35 — পাতার নিচের লাইনে আছে, দুইবার নয় */
   h+='</div>';
   return h;
 }
@@ -11292,7 +11294,7 @@ function orderReqHTML(d, pageBreak){
     '<tr><td style="'+cl+'width:50%;"><b>Buyer:</b> '+esc(pl.buyer||'-')+'</td>'+
     '<td style="'+cl+'"><b>Order Ref:</b> '+esc(pl.ref||'-')+'</td></tr>'+
     '<tr><td style="'+cl+'"><b>Order Date:</b> '+esc(showDate(pl.date)||'-')+'</td>'+
-    '<td style="'+cl+'"><b>Printed By:</b> '+esc(meName())+' &nbsp;·&nbsp; '+fmtDate(nowISO())+'</td></tr></table>'+
+    '<td style="'+cl+'">'+(stampOn()?'<b>Date:</b> '+fmtDate(nowISO()):'<b>Printed By:</b> '+esc(meName())+' &nbsp;·&nbsp; '+fmtDate(nowISO()))+'</td></tr></table>'+
     '<div style="font-weight:bold;margin:10px 0 4px;border-bottom:1.5px solid #000;">ORDER SUMMARY</div>'+
     '<table style="width:100%;border-collapse:collapse;'+S+'font-size:11px;">'+
     '<thead><tr style="font-weight:bold;border-bottom:1px solid #000;"><td style="'+cl+'width:38%;">Product</td>'+
@@ -12917,11 +12919,11 @@ function quoteInnerHTML(){
   /* ---- footer ---- (Letter Head/ছবি মোডে কোম্পানির তথ্য বাদ — কাগজে/ছবিতেই থাকে) */
   if(QUOTE.lhMode==='image' || QUOTE.lhMode==='blank'){
     h+='<div style="margin-top:6px;text-align:center;font-size:8.5px;color:#777;">'+
-         'This is a computer-generated '+(QDOC==='pi'?'proforma invoice':(QDOC==='ci'?'commercial invoice':'quotation'))+' and is valid without physical signature. · Prepared by '+esc(meName())+'</div>';
+         'This is a computer-generated '+(QDOC==='pi'?'proforma invoice':(QDOC==='ci'?'commercial invoice':'quotation'))+' and is valid without physical signature.</div>';
   } else {
     h+='<div style="margin-top:6px;border-top:2px solid '+GREEN+';padding-top:3px;text-align:center;font-size:8.5px;color:#777;">'+
          esc(DB.settings.companyName||'')+(DB.settings.address?(' · '+esc(DB.settings.address)):'')+
-         '<br>This is a computer-generated '+(QDOC==='pi'?'proforma invoice':(QDOC==='ci'?'commercial invoice':'quotation'))+' and is valid without physical signature. · Prepared by '+esc(meName())+'</div>';
+         '<br>This is a computer-generated '+(QDOC==='pi'?'proforma invoice':(QDOC==='ci'?'commercial invoice':'quotation'))+' and is valid without physical signature.</div>';
   }
 
   h+='</div>';
@@ -12983,6 +12985,67 @@ function invSave(kind,pdf){
   const ov=document.getElementById('invModal'); if(ov) ov.remove();
   qDocPrint(kind,pdf);
 }
+/* v19.35 — Letterhead এ লম্বা দরপত্র: প্রতি পাতায় Letterhead ছবি, লেখা footer এর আগে থামে,
+   বাকিটা পরের পাতায় (ছকের মাথা আবার বসে)। আগে প্রথম পাতার লেখা footer ছবির উপর দিয়ে চলে যেত,
+   আর দ্বিতীয় পাতায় Letterhead থাকত না। */
+function lhPaginate(pa, topMm, botMm){
+  const page=pa.querySelector('.lh-page'); if(!page) return;
+  const box=document.createElement('div');
+  box.style.cssText='position:absolute;left:-30000px;top:0;width:210mm;background:#fff;visibility:hidden;';
+  box.innerHTML=pa.innerHTML; document.body.appendChild(box);
+  try{
+    const pg=box.querySelector('.lh-page'), body=pg.querySelector('.lh-body'), root=body.firstElementChild;
+    if(!root) return;
+    const mm=box.getBoundingClientRect().width/210;
+    const avail=(297-topMm-botMm-7)*mm;                     /* ৭mm — নিচের Printed by লাইনের জায়গা */
+    const bTop=body.getBoundingClientRect().top;
+    /* টুকরো: সরাসরি ছক হলে প্রতিটা সারি, নাহলে পুরো ব্লক */
+    const units=[];
+    [].slice.call(root.children).forEach(function(c){
+      if(c.tagName==='TABLE' && c.tBodies.length && c.tHead){
+        [].slice.call(c.tBodies[0].rows).forEach(function(tr){ units.push({el:tr,table:c}); });
+      } else units.push({el:c,table:null});
+    });
+    units.forEach(function(u){ const r=u.el.getBoundingClientRect(); u.top=r.top-bTop; u.bot=r.bottom-bTop; });
+    if(!units.length || units[units.length-1].bot<=avail) return;   /* এক পাতাতেই আঁটে */
+    /* কোথায় ভাঙবে */
+    let start=0, first=true; const brk=new Set();
+    /* ছকের পণ্যের সারি (প্রথম ঘরে ক্রমিক নম্বর) — মোট / Subtotal / Grand Total এর সারি একসাথে রাখি */
+    const isItem=function(u){ return u.table && u.el.cells && u.el.cells.length && /^\s*\d+\s*$/.test(u.el.cells[0].textContent); };
+    let lastBrk=0;
+    units.forEach(function(u,i){
+      if(!first && u.bot-start>avail){
+        let j=i;
+        if(u.table && !isItem(u)){ while(j-1>lastBrk && units[j-1].table===u.table && !isItem(units[j-1])) j--; if(j-1>lastBrk && isItem(units[j-1])) j--; }
+        brk.add(j); lastBrk=j;
+        const th=units[j].table&&units[j].table.tHead?units[j].table.tHead.getBoundingClientRect().height:0; start=units[j].top-th;
+      }
+      first=false;
+    });
+    if(!brk.size) return;
+    /* নতুন পাতা বানানো */
+    const pages=[]; let curRoot=null, curTable=null, curSrcTable=null;
+    const newPage=function(){
+      const p=pg.cloneNode(false); [].slice.call(pg.children).forEach(function(ch){ if(ch!==body) p.appendChild(ch.cloneNode(true)); });
+      const b=body.cloneNode(false); curRoot=root.cloneNode(false); b.appendChild(curRoot); p.appendChild(b);
+      pages.push(p); curTable=null; curSrcTable=null;
+    };
+    newPage();
+    units.forEach(function(u,i){
+      if(brk.has(i)) newPage();
+      if(u.table){
+        if(curSrcTable!==u.table){ curTable=u.table.cloneNode(false); [].slice.call(u.table.children).forEach(function(ch){ if(ch.tagName!=='TBODY' && ch.tagName!=='TFOOT') curTable.appendChild(ch.cloneNode(true)); }); curTable.appendChild(u.table.tBodies[0].cloneNode(false));   /* colgroup + thead — কলামের মাপ একই থাকে */ curRoot.appendChild(curTable); curSrcTable=u.table; }
+        curTable.tBodies[0].appendChild(u.el);
+      } else { curRoot.appendChild(u.el); curTable=null; curSrcTable=null; }
+    });
+    pa.innerHTML='';
+    pages.forEach(function(p,i){
+      p.style.minHeight=''; p.style.height='297mm'; p.style.overflow='hidden';
+      if(i<pages.length-1){ p.style.pageBreakAfter='always'; p.style.breakAfter='page'; }
+      pa.appendChild(p);
+    });
+  } finally { if(box.parentNode) box.parentNode.removeChild(box); }
+}
 function printQuote(){
   if(!needTool('print','Print')) return;
   if(!QUOTE || !QUOTE.lines.length){ toast('আগে অন্তত একটি পণ্য যোগ করুন',true); return; }
@@ -12995,10 +13058,11 @@ function printQuote(){
     const bg = img ? ('<img src="'+img+'" alt="" style="position:absolute;top:0;left:0;width:100%;height:297mm;object-fit:fill;">') : '';
     const top=(n(QUOTE.lhTop)>0?n(QUOTE.lhTop):46), bot=(n(QUOTE.lhBot)>0?n(QUOTE.lhBot):30);
     document.getElementById('printArea').innerHTML=
-      '<div style="position:relative;isolation:isolate;width:100%;min-height:297mm;box-sizing:border-box;padding:'+top+'mm 10mm '+bot+'mm 10mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;">'
+      '<div class="lh-page" style="position:relative;isolation:isolate;width:100%;min-height:297mm;box-sizing:border-box;padding:'+top+'mm 10mm '+bot+'mm 10mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;">'
       + bg
-      + '<div style="position:relative;z-index:1;">'+quoteInnerHTML()+'</div>'
+      + '<div class="lh-body" style="position:relative;z-index:1;">'+quoteInnerHTML()+'</div>'
       + '</div>';
+    try{ lhPaginate(document.getElementById('printArea'), top, bot); }catch(e){ console.error(e); }
     setPrintOrientation('portrait','0mm');
   } else {
     document.getElementById('printArea').innerHTML=
@@ -13528,10 +13592,17 @@ function stampApply(){
   document.head.appendChild(st);
   /* margin 0 (Letterhead) হলে পাতার কিনারায় জায়গা নেই — লেখার একদম শেষে একবার বসাই */
   const pa=document.getElementById('printArea');
-  if(zero && pa && !pa.querySelector('.pr-stamp')){
-    const d=document.createElement('div'); d.className='pr-stamp';
-    d.style.cssText="font-family:'Times New Roman',serif;font-size:8px;color:#555;display:flex;justify-content:space-between;gap:10px;padding:4px 10mm;";
-    d.innerHTML='<span>'+esc(stampLeft(false))+'</span><span>'+STAMP_RIGHT+'</span>'; pa.appendChild(d); }
+  if(zero && pa) stampInline(pa,false);
+}
+/* v19.35 — Letterhead (margin 0): লাইনটা Letterhead এর লেখার ঘরের ভেতরে, একদম শেষে — footer ছবির ঠিক উপরে।
+   আগে পাতার বাইরে যোগ হতো, তাই পরের পাতায় / footer এর নিচে চলে যেত */
+function stampInline(root, ascii){
+  if(!root || root.querySelector('.pr-stamp')) return false;
+  const bodies=root.querySelectorAll('.lh-body'), host=bodies.length?bodies[bodies.length-1]:root;
+  const d=document.createElement('div'); d.className='pr-stamp';
+  d.style.cssText="font-family:'Times New Roman',serif;font-size:7.5px;color:#666;display:flex;justify-content:space-between;gap:10px;margin-top:8px;padding:3px "+(bodies.length?'0':'10mm')+" 0;border-top:0.5px solid #ccc;page-break-inside:avoid;break-inside:avoid;";
+  d.innerHTML='<span>'+esc(stampLeft(ascii))+'</span><span>'+STAMP_RIGHT+'</span>';
+  host.appendChild(d); return true;
 }
 function safePrint(){
   try{ if(window.printToEN) printToEN(); }catch(e){ console.error(e); }
@@ -18619,6 +18690,11 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.35', d:'2026-11-16', t:'Letterhead এ Print — Printed by / Powered by লাইন footer এর উপরে, একবারই', li:[
+  '<b>Letterhead এ লাইনের জায়গা:</b> দরপত্র / PI / CI Letterhead এ Print বা PDF করলে “Printed by … | Powered by AMAZ ERP Solution” লাইনটা পাতার একদম নিচে, Letterhead এর footer ছবির উপর / নিচে চলে যেত — এখন লেখার শেষে, footer এর ঠিক উপরে বসে',
+  '<b>Printed By একবারই:</b> দরপত্রের নিচের “This is a computer-generated…” লাইনে আলাদা “Prepared by নাম” আর বসে না; Order Statement আর Material Requirement Sheet এর ভেতরের “Printed By” ও বাদ (তারিখ থাকে) — পাতার নিচের লাইনেই নাম আছে। সই এর ঘরের “Prepared By” আগের মতোই',
+  '<b>লম্বা দরপত্র Letterhead এ:</b> এক পাতায় না আঁটলে প্রথম পাতার লেখা footer ছবির উপর দিয়ে চলে যেত আর দ্বিতীয় পাতায় Letterhead থাকত না — এখন প্রতি পাতায় Letterhead, লেখা footer এর আগে থামে, পরের পাতায় ছকের মাথা আবার বসে, আর Subtotal / Grand Total শেষ পণ্যের সাথে একসাথে থাকে'
+ ]},
  {v:'19.34', d:'2026-11-16', t:'পুরো সফটওয়্যারের Master Scan — A থেকে Z', li:[
   '<b>যা পরীক্ষা হলো:</b> সব ২১টা পেজ ও Analysis এর ৮টা ট্যাব · Admin / Manager / Operator / Viewer — ৪টা Role এ প্রায় ৭,০০০ বোতাম চেপে দেখা (বাংলা ও English, Light ও Dark) · মোবাইল সাইজ · ৪০টা এলোমেলো Costing (খালি, শূন্য, ভুল মান সহ) × ৬টা Format × Costing জানালা · ৩২৭টা আসল Print · সব Excel Download · Backup → Restore (Replace ও Merge) · ৫০০টা Costing থাকলে গতি — কোথাও ভুল, NaN / undefined বা আটকে যাওয়া পাওয়া যায়নি',
   '<b>ঠিক করা ১ — Quotation (৳):</b> নতুন দরপত্রের নিচের শর্তে Payment আর Validity বাংলায় বসত (“৫০% অগ্রিম…”, “৩০ দিন”) — Buyer এর কাছে যাওয়া Print এ এখন সবসময় English',
@@ -21320,6 +21396,11 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.35', d:'2026-11-16', t:'Letterhead printing — Printed by / Powered by line above the footer, only once', li:[
+  '<b>Line position on letterhead:</b> when a quotation / PI / CI was printed or saved as PDF on the letterhead, the “Printed by … | Powered by AMAZ ERP Solution” line fell to the very bottom, over or under the letterhead footer image — it now sits at the end of the content, just above the footer',
+  '<b>Printed by only once:</b> the quotation’s “This is a computer-generated…” line no longer adds “Prepared by name”; the “Printed By” inside the Order Statement and Material Requirement sheets is also removed (the date stays) — the name is already in the page footer line. The “Prepared By” signature box is unchanged',
+  '<b>Long quotations on letterhead:</b> when a quotation did not fit on one page, page 1 ran over the footer image and page 2 had no letterhead — now every page has the letterhead, content stops before the footer, the table header repeats on the next page, and Subtotal / Grand Total stay together with the last item'
+ ]},
  {v:'19.34', d:'2026-11-16', t:'Master scan of the whole software — A to Z', li:[
   '<b>What was checked:</b> all 21 pages and the 8 Analysis tabs · about 7,000 button clicks across 4 roles — Admin / Manager / Operator / Viewer (Bangla and English, light and dark) · phone size · 40 random costings (with blank, zero and wrong values) × 6 formats × the costing window · 327 real prints · every Excel download · Backup → Restore (replace and merge) · speed with 500 costings — no errors, NaN / undefined or hangs were found',
   '<b>Fix 1 — Quotation (৳):</b> the default terms of a new BDT quotation put Payment and Validity in Bangla — the print that goes to the buyer is now always English',
