@@ -501,8 +501,7 @@ td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
 .grid-products{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(385px,100%),1fr)); gap:14px;}
 /* v19.45 — Standard কার্ড */
 .product-card.pc-std{gap:10px; padding:14px 14px 12px; border:1px solid var(--border); border-radius:12px; background:var(--panel); box-shadow:0 1px 2px rgba(15,23,42,.05);}
-.product-card.pc-std::before, .product-card.pc-std::after{display:none!important;}
-.product-card.pc-std:hover{border-color:color-mix(in srgb,var(--primary-2) 45%,var(--border)); box-shadow:0 4px 14px rgba(15,23,42,.08);}
+/* v19.48 — হোভারে Dashboard কার্ডের মতোই আলো (কার্সরের সাথে চলা আলো + উপরের রেখা + একটু উপরে ওঠা) — মূল .product-card/.kpi নিয়ম থেকেই আসে */
 .pcs-hd{display:flex; gap:12px; align-items:stretch; min-height:58px;}
 .pcs-img{width:58px; height:58px; flex:0 0 58px; border-radius:9px; object-fit:contain; border:1px solid var(--border); background:#fff; padding:2px; align-self:flex-start;}
 .pcs-r2{display:flex; justify-content:space-between; align-items:flex-end; gap:10px; margin-top:4px;}
@@ -549,7 +548,7 @@ td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
 .pcs-foot{display:flex; justify-content:space-between; gap:8px; font-size:11.5px; color:var(--text-dim); padding-top:8px; border-top:1px solid var(--border);}
 .product-card.pc-std .pc-actions.pca{margin-top:auto; padding-top:2px; border-top:0;}
 html.ui-modern .product-card.pc-std:not(#printArea *):not(.pdfbox *){border:1px solid var(--border); border-radius:14px; box-shadow:0 1px 3px rgba(15,23,42,.06);}
-html.ui-modern .product-card.pc-std:hover:not(#printArea *):not(.pdfbox *){transform:translateY(-2px); box-shadow:0 8px 22px rgba(15,23,42,.10); border-color:color-mix(in srgb,var(--primary-2) 40%,var(--border));}
+html.ui-modern .product-card.pc-std:hover:not(#printArea *):not(.pdfbox *){transform:translateY(-3px); box-shadow:var(--lift); border-color:var(--glow-b);}
 @media (max-width:460px){ .pcs-strip{grid-template-columns:1fr 1fr;} .pcs-c:nth-child(3){border-left:0;} .pcs-c:nth-child(n+3){border-top:1px solid var(--border);} .pcs-img{width:48px;height:48px;flex-basis:48px;} }
 .product-card{cursor:pointer;}
 .product-card .pc-actions{flex-wrap:wrap;}
@@ -19480,6 +19479,8 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.48', d:'2026-11-17', t:'Costing কার্ডে Dashboard এর মতো হোভার আলো', li:[
+  '<b>Costing কার্ডে মাউস রাখলে</b> এখন Dashboard এর কার্ডের মতোই আলো জ্বলে — কার্সরের সাথে সাথে নরম আলো সরে, উপরে রঙিন রেখা ফোটে, কার্ড একটু উপরে ওঠে আর ছায়া গাঢ় হয়, নামের রং বদলায়। Modern ও Classic দুই নকশাতেই। মোবাইলে (হোভার নেই) আগের মতো স্থির']},
  {v:'19.47', d:'2026-11-17', t:'ছবির Cloud Sync আরও নিরাপদ', li:[
   '<b>অনেক ছবি একসাথে Sync:</b> পাঠানোর সময় এখন প্রতি ভাগে সর্বোচ্চ ~১.৫ MB (আগে ১৫০ সারি ধরে — ছবি থাকলে এক ধাক্কায় ৩–৫ MB যেত)। শত শত ছবিও ধাপে ধাপে যায়, মাঝে “পাঠানো হচ্ছে… ২/৫” দেখায়',
   'যাচাই: অ্যাপের নিজের Google Apps Script কোড চালিয়ে দুই PC এর মধ্যে পরীক্ষা — ছবি যোগ, বদল, মুছে ফেলা, আর একসাথে ১২০টা ছবি — সব হুবহু অন্য PC তে পৌঁছেছে; Google Sheet এর এক ঘরে সবচেয়ে বড় ছবিটাও ৫০,০০০ অক্ষরের সীমার অনেক নিচে']},
@@ -22251,6 +22252,8 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.48', d:'2026-11-17', t:'Dashboard-style hover glow on costing cards', li:[
+  '<b>Hovering a costing card</b> now lights it up like the dashboard cards — a soft glow follows the cursor, a coloured line appears on top, the card lifts slightly with a deeper shadow and the name changes colour. In both Modern and Classic. On phones (no hover) it stays still as before']},
  {v:'19.47', d:'2026-11-17', t:'Safer cloud sync for pictures', li:[
   '<b>Syncing many pictures:</b> uploads now go in parts of at most ~1.5 MB (before it was 150 rows — with pictures one request could be 3–5 MB). Hundreds of pictures go step by step, showing “Sending… 2/5”',
   'Checked by running the app’s own Google Apps Script code between two PCs — adding, changing and deleting pictures, and 120 pictures at once — all arrived exactly on the other PC; the largest picture is well under the 50,000-character Google Sheet cell limit']},
