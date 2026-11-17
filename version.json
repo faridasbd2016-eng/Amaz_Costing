@@ -1,1 +1,1 @@
-{"version": "19.43", "date": "2026-11-16", "notes": "প্রিমিয়াম Costing কার্ড — মূল সংখ্যা আলাদা ঘরে, খরচের রঙিন বার; Mix কার্ডে টিক বক্স ও PDF", "notes_en": "Premium costing cards — key-figure tiles and a cost bar; checkbox and PDF on mix cards"}
+{"version": "19.44", "date": "2026-11-17", "notes": "O/H Divisor — Factory O/H, Depreciation, Head Office ও Selling O/H এর আলাদা ভাগ; Settings এ Default, Costing এ নিজস্ব মান", "notes_en": "Separate O/H divisors for factory O/H, depreciation, head office and selling O/H; defaults in Settings, own values per costing"}

@@ -478,6 +478,9 @@ td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
 [data-theme="dark"] .product-card .pc-cost{color:var(--accent-2);}
 .product-card .pc-row{display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); gap:8px;}
 .product-card .pc-actions{display:flex; gap:6px; margin-top:8px;}
+.ohd-f.ohd-own input{border-color:var(--warning,#D97706)!important; background:color-mix(in srgb,#F59E0B 10%,var(--panel))!important; font-weight:700;}
+.ohd-f.ohd-bad input{border-color:var(--danger)!important;}
+.ohd-def{font-weight:600; color:#B45309;} [data-theme="dark"] .ohd-def{color:#FBBF24;}
 .grid-products{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(385px,100%),1fr)); gap:14px;}
 /* v19.43 — প্রিমিয়াম কার্ড */
 .product-card.pc-pm{gap:10px; padding:16px 16px 14px 19px; --ct:var(--primary-2);}
@@ -1933,7 +1936,6 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
       </div>
       <div class="field-row cols-4">
         <div class="field"><label>Working Days / Month</label><input type="text" id="p_workDays" oninput="recalc()"></div>
-        <div class="field"><label>O/H Divisor (ভাগ)</label><input type="text" id="p_shift" oninput="recalc()"><div class="hint">এই Costing Factory/HO O/H ও Depreciation এর কত ভাগ নেবে — পুরোটা = 1, অর্ধেক = 2</div></div>
         <div class="field" id="wrapUsdRate"><label>USD Rate (৳)</label><input type="text" id="p_usd" oninput="recalc()"></div>
         <div class="field" id="wrapSellUsd"><label id="lblSellUsd">Sales / Break-even (USD per Ctn) *</label><input type="text" id="p_sellUsd" oninput="recalc()"></div>
         <div class="field" id="wrapSellBdt" style="display:none;"><label id="lblSellBdt">Sales / Break-even (৳ per Ctn) *</label><input type="text" id="p_sellBdt" oninput="recalc()"></div>
@@ -2002,7 +2004,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
 
       <div class="sec-title" id="fohTitle">Factory Overhead</div>
       <div id="blk_otherFOH">
-        <div class="field-row cols-2">
+        <div class="field-row cols-3">
           <div class="field"><label>Others Factory O/H &mdash; হিসাবের ধরন</label>
             <select id="p_otherFohMode" onchange="fohModeUI();recalc()">
               <option value="monthly">মাসিক টাকা (উৎপাদন সংখ্যায় ভাগ হবে)</option>
@@ -2010,6 +2012,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
             </select>
           </div>
           <div class="field" id="fohMonthlyWrap"><label>Amount / Month (৳)</label><input type="text" id="p_otherFOH" oninput="recalc()" placeholder="যেমন: (200000+161000)/3.5"><div class="hint" id="h_otherFOH"></div></div>
+          <div class="field ohd-f" id="ohdWrap_Foh"><label>÷ O/H Divisor <span class="ohd-def" id="ohdDef_Foh"></span></label><input type="text" id="p_divFoh" oninput="ohDivUI();recalc()" placeholder="Default"><div class="hint" id="ohdHint_Foh"></div></div>
         </div>
         <div class="field-row cols-3" id="fohValueWrap" style="display:none;">
           <div class="field"><label>খরচ / মাস (৳)</label><input type="text" id="p_otherFohCost" oninput="fohModeUI();recalc()" placeholder="যেমন: 420000"></div>
@@ -2022,6 +2025,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
       <div id="blk_dep">
       <div class="field-row cols-2">
         <div class="field"><label>Depreciation Rate (% / year)</label><input type="text" id="p_depRate" oninput="recalc()"></div>
+        <div class="field ohd-f" id="ohdWrap_Dep"><label>÷ O/H Divisor <span class="ohd-def" id="ohdDef_Dep"></span></label><input type="text" id="p_divDep" oninput="ohDivUI();recalc()" placeholder="Default"><div class="hint" id="ohdHint_Dep"></div></div>
       </div>
       <div style="display:flex; align-items:center; margin-bottom:6px;">
         <span class="hint" style="flex:1; margin:0;"><b>Depreciable Assets</b> &mdash; মেশিন/বিল্ডিং এর তালিকা দিন, মোট মূল্যের উপর depreciation হবে</span>
@@ -2058,7 +2062,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
           title="Export Setting এ গিয়ে দেশভিত্তিক সাধারণ খরচ বদলে আবার এখানেই ফিরে আসুন">&#8599; Export Setting এ যান</button>
       </div>
       <div id="blk_ho">
-        <div class="field-row cols-2">
+        <div class="field-row cols-3">
           <div class="field"><label>Head Office O/H &mdash; হিসাবের ধরন</label>
             <select id="p_hoMode" onchange="hoModeUI();recalc()">
               <option value="monthly">মাসিক টাকা (উৎপাদন সংখ্যায় ভাগ হবে)</option>
@@ -2066,6 +2070,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
             </select>
           </div>
           <div class="field" id="hoMonthlyWrap"><label>Amount / Month (৳)</label><input type="text" id="p_hoOH" oninput="recalc()" placeholder="যেমন: 13362000/3/11"><div class="hint" id="h_hoOH"></div></div>
+          <div class="field ohd-f" id="ohdWrap_Ho"><label>÷ O/H Divisor <span class="ohd-def" id="ohdDef_Ho"></span></label><input type="text" id="p_divHo" oninput="ohDivUI();recalc()" placeholder="Default"><div class="hint" id="ohdHint_Ho"></div></div>
         </div>
         <div class="field-row cols-3" id="hoValueWrap" style="display:none;">
           <div class="field"><label>খরচ / মাস (৳)</label><input type="text" id="p_hoCost" oninput="hoModeUI();recalc()" placeholder="যেমন: 340000"></div>
@@ -2093,6 +2098,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
           <th style="width:100px" class="num">হার / টাকা</th><th style="width:110px" class="num">ভিত্তি (Qty)</th>
           <th style="width:110px" class="num">Cost / Unit</th><th style="width:38px" class="mid"></th></tr></thead>
           <tbody id="sohBody"></tbody></table></div>
+        <div class="field-row cols-3" style="margin-top:8px;"><div class="field ohd-f" id="ohdWrap_Soh"><label>÷ O/H Divisor <span class="ohd-def" id="ohdDef_Soh"></span></label><input type="text" id="p_divSoh" oninput="ohDivUI();recalc()" placeholder="Default"><div class="hint" id="ohdHint_Soh"></div></div></div>
         <p class="hint" style="margin-top:7px;">
           <b>বিক্রয়ের %</b> — যেমন Transport ১১.৫% &nbsp;·&nbsp;
           <b>প্রতি এককে নির্দিষ্ট ৳</b> &nbsp;·&nbsp;
@@ -2605,6 +2611,7 @@ function normDB(d){
   d.sections = d.sections||[];      /* v18.41 — ব্যবহারকারীর বানানো কাস্টম Section */
   d.mixes = d.mixes||[];        /* v18.50 — Mix Carton Costing */
   d.users = d.users||[]; d.roles = d.roles||[]; d.versions = d.versions||[]; d.audit = d.audit||[];
+  try{ migrateOhDiv(d); }catch(e){ console.error(e); }
   return d;
 }
 const TS_KEY = 'amaz_costing_v2_ts', IDBONLY_KEY='amaz_costing_idb_only';
@@ -2707,6 +2714,7 @@ let STORAGE_WARNED=false;
 function saveDB(){
   clearTimeout(window._stampT);              /* ভারী fingerprint কাজ debounce — প্রতি সেভে নয়, থামলে একবার */
   window._stampT=setTimeout(function(){ try{ if(!SYNC_APPLYING && (supAuto()|fgAuto())) saveDB(); }catch(e){} try{ stampChanges(); updateSyncIndicator(); }catch(e){} try{ syncSoon(); }catch(e){} }, 500);
+  try{ migrateOhDiv(DB); }catch(e){}     /* v19.44 — Restore / Sync এ আসা পুরোনো Costing ও নতুন নিয়মে */
   let saved=false, freed=false;
   if(window.__NOSAVE) return;
   try{ abTick(); }catch(e){}
@@ -3098,6 +3106,56 @@ function effProduct(p){
   return applyFgLink(c);
 }
 
+/* ===== v19.44 — O/H Divisor: চারটা মাসিক খরচের আলাদা ভাগ =====
+   Settings এ চারটার Default — সব Costing এ বসে। কোনো Costing এ নিজে সংখ্যা দিলে সেটাই থাকে,
+   Settings বদলালেও সেটা আর বদলায় না। ঘর খালি = Settings এর Default।
+   পুরোনো Costing (ohDivV নেই) — আগের একটাই "O/H Divisor" (p.shift) চারটাতেই বসে, যাতে হিসাব একটুও না বদলায়। */
+const OHD_KEYS=[['foh','divFoh','Others Factory O/H'],['dep','divDep','Depreciation'],['ho','divHo','Head Office O/H'],['soh','divSoh','Selling / Distribution O/H (monthly)']];
+function ohDivDefOf(st,k){ const o=(st&&st.ohDiv)||{}; const v=n(o[k]); return v>0?v:1; }
+function ohDivDef(k){ return ohDivDefOf(DB.settings,k); }
+function ohDivRaw(p,f){ const v=p[f]; return (v===undefined||v===null)?'':String(v).trim(); }
+function ohDivOf(p,k){
+  if(!p.ohDivV){ const sh=n(p.shift); return {v:sh>0?sh:1, own:true, legacy:true}; }
+  const f=OHD_KEYS.find(function(x){ return x[0]===k; })[1], raw=ohDivRaw(p,f);
+  if(raw!=='' && n(raw)>0) return {v:n(raw), own:true};
+  return {v:ohDivDef(k), own:false};
+}
+/* পুরোনো Costing কে নতুন নিয়মে আনা — Default এর সাথে না মিললে আগের মানটা নিজস্ব হিসেবে বসে, তাই সংখ্যা একই থাকে */
+function ohDivUpgrade(p,st){
+  if(!p || p.ohDivV) return false;
+  st=st||DB.settings;
+  const sh=n(p.shift)>0?n(p.shift):1;
+  OHD_KEYS.forEach(function(k){ if(ohDivRaw(p,k[1])==='' && sh!==ohDivDefOf(st,k[0])) p[k[1]]=String(sh); });
+  p.ohDivV=1; return true;
+}
+function migrateOhDiv(d){
+  if(!d || !d.settings) return false;
+  const prods=(d.products||[]);
+  let ch=false;
+  if(!d.settings.ohDiv){
+    /* প্রথমবার: সবচেয়ে বেশি Costing এ যে Divisor ছিল সেটাই Default — তাহলে বেশির ভাগে নিজস্ব মান লাগে না */
+    const cnt={}; prods.forEach(function(p){ if(p.ohDivV) return; const sh=n(p.shift)>0?n(p.shift):1; cnt[sh]=(cnt[sh]||0)+1; });
+    let best=1, bc=-1; Object.keys(cnt).forEach(function(k){ if(cnt[k]>bc || (cnt[k]===bc && +k<best)){ bc=cnt[k]; best=+k; } });
+    d.settings.ohDiv={foh:best, dep:best, ho:best, soh:best}; ch=true;
+  }
+  prods.forEach(function(p){ if(ohDivUpgrade(p,d.settings)) ch=true; });
+  return ch;
+}
+/* Costing ফর্মে: খালি ঘরে Default দেখায়; নিজস্ব মান দিলে ঘর রঙিন */
+function ohDivUI(){
+  const L=window.LANG==='en';
+  OHD_KEYS.forEach(function(k){
+    const K=k[1].slice(3), el=document.getElementById('p_'+k[1]); if(!el) return;
+    const def=ohDivDef(k[0]), raw=String(el.value||'').trim(), own=raw!=='' && n(raw)>0, bad=raw!=='' && !(n(raw)>0);
+    el.placeholder=(L?'Default ':'Default ')+trimNum(def,4);
+    const w=document.getElementById('ohdWrap_'+K); if(w){ w.classList.toggle('ohd-own',own); w.classList.toggle('ohd-bad',bad); }
+    const d=document.getElementById('ohdDef_'+K); if(d) d.textContent=own?(L?'· own':'· নিজস্ব'):'';
+    const h=document.getElementById('ohdHint_'+K);
+    if(h) h.innerHTML = bad ? (L?'Must be more than 0 — using default '+trimNum(def,4):'০ এর বেশি দিন — এখন Default '+trimNum(def,4)+' ধরা হচ্ছে')
+      : own ? (L?'Own value — stays even if Settings change. Clear it to use the default ('+trimNum(def,4)+')':'নিজস্ব মান — Settings বদলালেও এটা থাকবে। মুছে দিলে Default ('+trimNum(def,4)+') নেবে')
+      : (L?'Using the Settings default ('+trimNum(def,4)+')':'Settings এর Default ('+trimNum(def,4)+') নিচ্ছে');
+  });
+}
 function calc(p0){
   const p = effProduct(p0);
   const ctype = p.ctype || 'export';
@@ -3105,7 +3163,9 @@ function calc(p0){
   const isDemo = (ctype==='demo');
   const isExport = isExportCt(ctype) || (isDemo && !!p.demoExport);
   const pktCtn=n(p.pktCtn)||1, packKg=n(p.packKg)||1, loss=n(p.loss);
-  const batchDay=n(p.batchDay)||1, workDays=n(p.workDays)||26, shift=n(p.shift)||1;
+  const batchDay=n(p.batchDay)||1, workDays=n(p.workDays)||26;
+  /* v19.44 — চারটা মাসিক খরচের আলাদা O/H Divisor (Settings এর Default, অথবা এই Costing এ নিজের দেওয়া) */
+  const dvF=ohDivOf(p,'foh'), dvD=ohDivOf(p,'dep'), dvH=ohDivOf(p,'ho'), dvS=ohDivOf(p,'soh');
   const usd = isExport ? (n(p.usd)||1) : 1;
 
   const rmRaw=(p.rmLines||[]);
@@ -3193,9 +3253,9 @@ function calc(p0){
   const otherLaborCtn = (dOn('otherLabor') && stdOut>0) ? n(p.otherLabor)/stdOut : 0;
   const primeCtn = materialCtn + laborCtn + otherLaborCtn;
 
-  function allocate(monthly){
-    if(workDays<=0||batchDay<=0||stdOut<=0||shift<=0) return 0;
-    return monthly/workDays/shift/batchDay/stdOut;
+  function allocate(monthly,dv){
+    if(workDays<=0||batchDay<=0||stdOut<=0||!(dv>0)) return 0;
+    return monthly/workDays/dv/batchDay/stdOut;
   }
   /* v18.20 — Others Factory O/H ও Head Office O/H দুই ভাবে বসানো যায়:
      'monthly'  = আগের মতো মাসিক টাকা ÷ (কর্মদিবস × শিফট × ব্যাচ/দিন × Std Output)
@@ -3203,11 +3263,11 @@ function calc(p0){
      value-মোড দামের উপর নির্ভর করে, তাই Break-even/Auto হিসাবের সাথে মিলিয়ে (converge) আনা হয়। */
   const fohMode = (p.otherFohMode==='valuePct')?'valuePct':'monthly';
   const fohRate = n(p.otherFohProdVal)>0 ? n(p.otherFohCost)/n(p.otherFohProdVal) : n(p.otherFohPct)/100;
-  const otherFohFixed = (dOn('otherFOH') && fohMode==='monthly') ? allocate(n(p.otherFOH)) : 0;
+  const otherFohFixed = (dOn('otherFOH') && fohMode==='monthly') ? allocate(n(p.otherFOH),dvF.v) : 0;
   const assets=(p.assets||[]).map(function(a){ return {name:a.name||'', value:n(a.value), rawValue:a.value}; });
   const assetTotal = assets.length ? assets.reduce(function(s,x){return s+x.value;},0) : n(p.depAsset);
   const depMonthly=assetTotal*n(p.depRate)/100/12;
-  const depCtn=dOn('dep')?allocate(depMonthly):0;
+  const depCtn=dOn('dep')?allocate(depMonthly,dvD.v):0;
 
   const workHours = n(p.workHours)>0 ? n(p.workHours) : 8;      /* কর্মঘণ্টা / দিন */
   const autoProdHr = workHours>0 ? (stdOut*batchDay)/workHours : 0;  /* Excel: (StdOut × Batch/Day) ÷ ঘণ্টা */
@@ -3242,7 +3302,7 @@ function calc(p0){
 
   const hoMode = (p.hoMode==='valuePct')?'valuePct':'monthly';
   const hoRate = n(p.hoProdVal)>0 ? n(p.hoCost)/n(p.hoProdVal) : n(p.hoPct)/100;
-  const hoFixed = (dOn('ho') && hoMode==='monthly') ? allocate(n(p.hoOH)) : 0;
+  const hoFixed = (dOn('ho') && hoMode==='monthly') ? allocate(n(p.hoOH),dvH.v) : 0;
   const hoCtn = hoFixed + ((dOn('ho') && hoMode==='valuePct') ? hoRate*prodCostBase : 0);
   const bankCtn=dOn('bank')?materialCtn*n(p.bank)/100:0;
   const riskCtn=dOn('risk')?materialCtn*n(p.risk)/100:0;
@@ -3296,7 +3356,7 @@ function calc(p0){
       const md=r.mode||'pctSale', rt=n(r.rate);
       if(md==='pctSale')  return s + price*rt/100;
       if(md==='perUnit')  return s + rt;
-      if(md==='monthly')  return s + allocate(rt);
+      if(md==='monthly')  return s + allocate(rt,dvS.v);
       if(md==='perTrip'){ const q=n(r.basis); return s + (q>0 ? rt/q : 0); }
       return s;
     },0);
@@ -3378,7 +3438,7 @@ function calc(p0){
 
   return {ctype:ctype, isDemo:isDemo, manualOut:manualOut, dOn:dOn, isExport:isExport, uKey:uKey, uLab:uLab, mLab:mLab, sLab:smallName, bLab:bigName, upc:upc,
     stdOutCtn:stdOutCtn, outPerDay:outPerDay,
-    pktCtn:pktCtn, packKg:packKg, loss:loss, batchDay:batchDay, workDays:workDays, shift:shift, usd:usd, stdOut:stdOut,
+    pktCtn:pktCtn, packKg:packKg, loss:loss, batchDay:batchDay, workDays:workDays, divFoh:dvF.v, divDep:dvD.v, divHo:dvH.v, divSoh:dvS.v, divOwn:{foh:dvF.own,dep:dvD.own,ho:dvH.own,soh:dvS.own}, usd:usd, stdOut:stdOut,
     rm:rm, rmQtyTotal:rmQtyTotal, rmAmtTotal:rmAmtTotal, rmQtyCtn:rmQtyCtn, rmAmtCtn:rmAmtCtn,
     pk:pk, pkAmtCtn:pkAmtCtn, pkAmtTotal:pkAmtTotal, materialCtn:materialCtn,
     mp:mp, mpTot:mpTot, laborCtn:laborCtn, otherLaborCtn:otherLaborCtn, primeCtn:primeCtn,
@@ -4810,6 +4870,7 @@ function fohModeUI(){
   if(mo) mo.style.display = mode==='valuePct'?'none':'';
   if(va) va.style.display = mode==='valuePct'?'':'none';
   if(hp) hp.style.display = mode==='valuePct'?'':'none';
+  { const dw=document.getElementById('ohdWrap_Foh'); if(dw) dw.style.display = mode==='valuePct'?'none':''; }
   const cost=n(gv('p_otherFohCost')), pv=n(gv('p_otherFohProdVal'));
   const pctEl=document.getElementById('p_otherFohPct');
   if(pctEl){
@@ -4825,6 +4886,7 @@ function hoModeUI(){
   const mode=gv('p_hoMode')||'monthly';
   const mo=document.getElementById('hoMonthlyWrap'), va=document.getElementById('hoValueWrap'), hp=document.getElementById('hoValueHelp');
   if(mo) mo.style.display = mode==='valuePct'?'none':'';
+  { const dw=document.getElementById('ohdWrap_Ho'); if(dw) dw.style.display = (gv('p_hoMode')||'monthly')==='valuePct'?'none':''; }
   if(va) va.style.display = mode==='valuePct'?'':'none';
   if(hp) hp.style.display = mode==='valuePct'?'':'none';
   const cost=n(gv('p_hoCost')), pv=n(gv('p_hoProdVal'));
@@ -6602,7 +6664,7 @@ function pwTip(t){
 const PM_BASIS=[{v:'ctn',l:'Per Carton'},{v:'pkt',l:'Per Packet (x Pkt/Ctn)'},
   {v:'kg',l:'Per Kg (x PackSize x Pkt/Ctn)'},{v:'batch',l:'Per Batch (/ Std Output)'}];
 const CC_MODES=[{v:'fixed',l:'Fixed Amount'},{v:'phyto',l:'Auto: Shipment Kg x Rate'},{v:'tt',l:'Auto: Invoice USD x %'}];
-function blankProduct(){ return {id:'',code:'',createdAt:'',name:'',unitLabel:'',smallLabel:'',measure:'kg',prodCap:'',workHours:8,pktCtn:24,packKg:0.28,loss:3,batchDay:6.58,workDays:26,shift:2,usd:118,
+function blankProduct(){ return {id:'',code:'',createdAt:'',name:'',unitLabel:'',smallLabel:'',measure:'kg',prodCap:'',workHours:8,pktCtn:24,packKg:0.28,loss:3,batchDay:6.58,workDays:26,ohDivV:1,divFoh:'',divDep:'',divHo:'',divSoh:'',usd:118,
   ctype:'export',presetId:'',presetLock:false,
   outUnit:'', fgLinkId:'',
   demoUnit:'ctn',demoExport:false,demoOutMode:'auto',demoStdOut:'',demoOn:{mp:1},
@@ -6877,7 +6939,7 @@ function startCosting(ct){ closeModal('newProdModal'); openProductModal(null, ct
    একটা Costing থেকে Recipe ছাড়া বাকি সব (Manpower, Overhead, Power, Packing, Indirect, CBM/Freight, সাধারণ খরচ)
    Template হিসেবে রাখা যায়; নতুন Costing খোলার সময় Template বাছলে সেগুলো আগে থেকেই বসানো থাকে। (Settings এর ভেতরে থাকে — Sync হয়) */
 var NEW_TPL='';
-const TPL_KEYS=['pktCtn','packKg','loss','batchDay','workDays','shift','workHours','prodCap','usd','measure','outUnit','unitLabel','smallLabel',
+const TPL_KEYS=['pktCtn','packKg','loss','batchDay','workDays','ohDivV','divFoh','divDep','divHo','divSoh','workHours','prodCap','usd','measure','outUnit','unitLabel','smallLabel',
   'manpower','otherLabor','otherFOH','otherFohMode','otherFohCost','otherFohProdVal','otherFohPct','assets','depAsset','depRate','powerLines',
   'hoOH','hoMode','hoCost','hoProdVal','hoPct','bank','risk','pkLines','cbmMode','containerCbm','totalCbm','ctnL','ctnW','ctnH',
   'freightMode','freightTotal','freight','commonCosts','sellingOH','presetId','targetMargin','folder'];
@@ -6914,7 +6976,9 @@ function tplPickRender(){
 }
 function tplApply(cur){
   const t=tplList().find(function(x){return x.id===NEW_TPL;}); NEW_TPL=''; if(!t) return cur;
-  const d=JSON.parse(JSON.stringify(t.data||{})); Object.keys(d).forEach(function(k){ cur[k]=d[k]; });
+  const d=JSON.parse(JSON.stringify(t.data||{}));
+  if(!d.ohDivV && d.shift!==undefined){ ohDivUpgrade(d); delete d.shift; }   /* v19.44 — পুরোনো Template */
+  Object.keys(d).forEach(function(k){ cur[k]=d[k]; });
   setTimeout(function(){ toast('"'+t.name+'" Template থেকে বসানো হয়েছে — Raw Material ও নাম দিন'); },300);
   return cur;
 }
@@ -6942,7 +7006,7 @@ function openProductModal(id, forceType){
   setV('p_measure', measureOf(CUR));
   setV('p_outUnit', UNITS[CUR.outUnit]?CUR.outUnit:'');
   setTimeout(applyFgLinkUI,0);      /* যুক্ত অবস্থা দেখানো ও ঘর লক করা */ setV('p_prodCap',CUR.prodCap||''); setV('p_workHours',CUR.workHours||''); setV('p_pktCtn',CUR.pktCtn); setV('p_packKg',CUR.packKg);
-  setV('p_loss',CUR.loss); setV('p_batchDay',CUR.batchDay); setV('p_workDays',CUR.workDays); setV('p_shift',CUR.shift); try{ permPriceUI(); }catch(e){}
+  setV('p_loss',CUR.loss); setV('p_batchDay',CUR.batchDay); setV('p_workDays',CUR.workDays); ohDivUpgrade(CUR); OHD_KEYS.forEach(function(k){ setV('p_'+k[1],CUR[k[1]]===undefined?'':CUR[k[1]]); }); try{ ohDivUI(); }catch(e){} try{ permPriceUI(); }catch(e){}
   setV('p_usd',CUR.usd); setV('p_sellUsd',CUR.sellUsd); setV('p_sellBdt',CUR.sellBdt);
   setV('p_sellNoVat',CUR.sellNoVat); setV('p_note',CUR.note);
   renderCtypePick(); applyTypeUI(); refreshCodePreview();
@@ -7058,7 +7122,7 @@ function pullForm(){
   CUR.prodCap=gv('p_prodCap');
   CUR.workHours=gv('p_workHours');
   CUR.pktCtn=gv('p_pktCtn'); CUR.packKg=gv('p_packKg'); CUR.loss=gv('p_loss'); CUR.batchDay=gv('p_batchDay');
-  CUR.workDays=gv('p_workDays'); CUR.shift=gv('p_shift'); CUR.usd=gv('p_usd');
+  CUR.workDays=gv('p_workDays'); OHD_KEYS.forEach(function(k){ const el=document.getElementById('p_'+k[1]); if(el) CUR[k[1]]=gv('p_'+k[1]); }); CUR.ohDivV=1; CUR.usd=gv('p_usd');
   CUR.sellUsd=gv('p_sellUsd'); CUR.sellBdt=gv('p_sellBdt');
   CUR.sellNoVat=gv('p_sellNoVat'); CUR.note=gv('p_note');
   CUR.targetMargin=gv('p_targetMargin');
@@ -7814,7 +7878,7 @@ function faCollect(){
   add('Tab 1','Process Loss %', CUR.loss);
   add('Tab 1','Batch / Day', CUR.batchDay);
   add('Tab 1','Work Days / Month', CUR.workDays);
-  add('Tab 1','Shift', CUR.shift);
+  OHD_KEYS.forEach(function(k){ add('O/H Divisor', k[2], CUR[k[1]]); });
   add('Tab 1','USD Rate', CUR.usd);
   (CUR.rmLines||[]).forEach(function(l,i){
     add('Tab 2','RM সারি '+(i+1)+' — Qty', l.qty); });
@@ -8067,7 +8131,7 @@ function liveCalc(r){
   const row=function(title,formula,res){ return '<div class="lc"><span class="lt">'+title+'</span><span class="lf">'+formula+'</span>'+
     '<span class="lr">= ৳ '+m(res)+' / '+u+'</span></div>'; };
   const tot=function(label,v){ return '<div class="lc"><span class="lt">'+label+'</span><span class="lr">= ৳ '+m(v)+' / '+u+'</span></div>'; };
-  const alloc=function(amt){ return '৳ '+m(amt,2)+' '+T('/মাস','/month')+' ÷ '+m(r.workDays,0)+' '+T('কর্মদিবস','work days')+' ÷ '+m(r.shift,0)+' '+T('শিফট','shift')+
+  const alloc=function(amt,dv){ return '৳ '+m(amt,2)+' '+T('/মাস','/month')+' ÷ '+m(r.workDays,0)+' '+T('কর্মদিবস','work days')+' ÷ '+trimNum(dv,4)+' '+T('Divisor','divisor')+
     ' ÷ '+m(r.batchDay,2)+' '+T('ব্যাচ/দিন','batch/day')+' ÷ '+m(r.stdOut,4)+' '+u+'/'+T('ব্যাচ','batch'); };
   const set=function(id,h,sum){ const e=document.getElementById(id); if(!e) return;
     if(!h){ e.innerHTML=''; return; }
@@ -8078,11 +8142,11 @@ function liveCalc(r){
   let h='';
   if(r.fohMode==='valuePct') h=row(T('Others Factory O/H — % পদ্ধতি','Others Factory O/H — % method'),
       m(r.fohRate*100,3)+'% × Prime Cost ৳ '+m(r.primeCtn),r.otherFohCtn);
-  else if(n(CUR.otherFOH)>0 || r.otherFohCtn>0) h=row(T('Others Factory O/H — মাসিক পদ্ধতি','Others Factory O/H — monthly method'),alloc(n(CUR.otherFOH)),r.otherFohCtn);
+  else if(n(CUR.otherFOH)>0 || r.otherFohCtn>0) h=row(T('Others Factory O/H — মাসিক পদ্ধতি','Others Factory O/H — monthly method'),alloc(n(CUR.otherFOH),r.divFoh),r.otherFohCtn);
   set('liveFoh',h,r.otherFohCtn);
   /* Depreciation */
   h='';
-  if(r.assetTotal>0 || r.depCtn>0) h=row('Depreciation',T('মোট Asset','Total assets')+' ৳ '+m(r.assetTotal,0)+' × '+m(n(CUR.depRate),2)+'% ÷ 12 = ৳ '+m(r.depMonthly,2)+' '+T('/মাস','/month')+' → '+alloc(r.depMonthly),r.depCtn);
+  if(r.assetTotal>0 || r.depCtn>0) h=row('Depreciation',T('মোট Asset','Total assets')+' ৳ '+m(r.assetTotal,0)+' × '+m(n(CUR.depRate),2)+'% ÷ 12 = ৳ '+m(r.depMonthly,2)+' '+T('/মাস','/month')+' → '+alloc(r.depMonthly,r.divDep),r.depCtn);
   set('liveDep',h,r.depCtn);
   /* Power */
   h='';
@@ -8113,7 +8177,7 @@ function liveCalc(r){
   /* Indirect O/H */
   h='';
   if(r.hoMode==='valuePct'){ if(r.hoCtn>0||r.hoRate>0) h+=row('Head Office O/H — % '+T('পদ্ধতি','method'),m(r.hoRate*100,3)+'% × Prime Cost ৳ '+m(r.primeCtn),r.hoCtn); }
-  else if(n(CUR.hoOH)>0||r.hoCtn>0) h+=row('Head Office O/H',alloc(n(CUR.hoOH)),r.hoCtn);
+  else if(n(CUR.hoOH)>0||r.hoCtn>0) h+=row('Head Office O/H',alloc(n(CUR.hoOH),r.divHo),r.hoCtn);
   if(n(CUR.bank)>0||r.bankCtn>0) h+=row('Bank Interest',T('Material Cost','Material Cost')+' ৳ '+m(r.materialCtn)+' × '+m(n(CUR.bank),2)+'%',r.bankCtn);
   if(n(CUR.risk)>0||r.riskCtn>0) h+=row('Risk Factor','Material Cost ৳ '+m(r.materialCtn)+' × '+m(n(CUR.risk),2)+'%',r.riskCtn);
   if(h) h+=tot(T('মোট Indirect O/H','Total Indirect O/H'),r.indirectCtn);
@@ -9199,7 +9263,7 @@ function chgNorm(v){
 }
 function chgFp(p){ return JSON.stringify(p,function(k,v){ if(CHG_SKIP[k]) return undefined; return chgNorm(v); }); }
 const CHG_LBL={name:'পণ্যের নাম',unitLabel:'একক',smallLabel:'ছোট একক',measure:'পরিমাপ',outUnit:'আউটপুট একক',prodCap:'Production Capacity',
-  workHours:'কাজের ঘণ্টা',pktCtn:'Pkt/Ctn',packKg:'Pack Size',loss:'Process Loss %',batchDay:'Batch/Day',workDays:'Working Days',shift:'O/H Divisor',
+  workHours:'কাজের ঘণ্টা',pktCtn:'Pkt/Ctn',packKg:'Pack Size',loss:'Process Loss %',batchDay:'Batch/Day',workDays:'Working Days',shift:'O/H Divisor (পুরোনো)',divFoh:'O/H Divisor — Factory O/H',divDep:'O/H Divisor — Depreciation',divHo:'O/H Divisor — Head Office',divSoh:'O/H Divisor — Selling O/H',
   usd:'ডলার রেট',sellUsd:'Sales/Break-even (USD)',sellBdt:'Sales/Break-even (৳)',sellNoVat:'আসল বিক্রয়মূল্য',note:'নোট',targetMargin:'Target Margin %',
   beAuto:'Break-even নিজে থেকে হালনাগাদ',otherLabor:'Other Labor',otherFOH:'Others Factory O/H',otherFohMode:'Others F.O/H পদ্ধতি',otherFohCost:'Others F.O/H খরচ',
   otherFohProdVal:'Others F.O/H উৎপাদন মূল্য',otherFohPct:'Others F.O/H %',depAsset:'Depreciable Asset',depRate:'Depreciation %',
@@ -12538,7 +12602,7 @@ function renderWhatIf(){
   h+='<div class="sec-title">Break-even Quantity — মাসে কত '+U+' বেচলে খরচ উঠবে</div>'+
    '<div class="ts-grid" style="margin-bottom:10px;">'+
    '<div class="ts-card"><div class="l">মাসিক স্থির খরচ</div><div class="v">৳'+money(fixedMonth,0)+'</div>'+
-     '<div class="s">'+(base.shift>1?('Divisor '+base.shift+' — ১/'+base.shift+' ভাগ'):'এই পণ্যের ভাগ')+'</div></div>'+
+     '<div class="s">'+((base.divFoh>1||base.divDep>1||base.divHo>1)?('Divisor — FOH '+trimNum(base.divFoh,3)+' · Dep '+trimNum(base.divDep,3)+' · HO '+trimNum(base.divHo,3)):'এই পণ্যের ভাগ')+'</div></div>'+
    '<div class="ts-card"><div class="l">প্রতি '+U+' এ অবদান</div><div class="v '+(contrib>0?'profit-pos':'profit-neg')+'">৳'+money(contrib)+'</div>'+
      '<div class="s">দাম ৳'+money(base.sellBdt)+' − চলতি খরচ ৳'+money(varCtn)+'</div></div>'+
    '<div class="ts-card"><div class="l">Break-even</div><div class="v">'+(contrib>0?(money(beq,0)+' '+U):'—')+'</div>'+
@@ -13933,7 +13997,8 @@ function costSheetHTML(id){
     '<td style="'+HC+'text-align:right;">'+num(r.mpTot.month)+'</td><td style="'+HC+'text-align:right;">'+num(r.mpTot.day)+'</td>'+
     '<td style="'+HC+'text-align:right;">'+num(r.mpTot.batch)+'</td><td style="'+HC+'text-align:right;">'+num(r.mpTot.ctn,6)+'</td></tr></tbody></table>';
 
-  const wdShift = r.workDays*r.shift;
+  const wdF=r.workDays*r.divFoh, wdD=r.workDays*r.divDep, wdH=r.workDays*r.divHo;
+  const dvTxt=function(v){ return v!==1?('O/H divisor '+trimNum(v,3)):''; };
   h+='<table style="width:100%;border-collapse:collapse;page-break-inside:avoid;'+S+'font-size:11px;margin-top:10px;">'+
     '<thead><tr style="font-weight:bold;border-bottom:1px solid #000;"><td style="'+cl+'width:30%;">Factory O/H:</td>'+
     '<td style="'+cl+'text-align:right;">Rate/Basis</td><td style="'+cl+'text-align:right;">Asset Total</td>'+
@@ -13941,17 +14006,17 @@ function costSheetHTML(id){
     '<td style="'+cl+'text-align:right;">Per Batch</td><td style="'+cl+'text-align:right;">Per '+r.uLab+'</td></tr></thead><tbody>'+
     (r.fohMode==='valuePct'
       ? ('<tr><td style="'+cl+'width:30%;">Others Factory O/H:</td><td style="'+cl+'text-align:right;">'+num(r.fohRate*100,2)+'% of Prime Cost</td><td style="'+cl+'"></td>'+
-         '<td style="'+cl+'text-align:right;">'+num(r.otherFohCtn*r.stdOut*r.batchDay*wdShift)+'</td><td style="'+cl+'text-align:right;">'+num(r.otherFohCtn*r.stdOut*r.batchDay)+'</td><td style="'+cl+'text-align:right;">'+num(r.otherFohCtn*r.stdOut)+'</td>'+
+         '<td style="'+cl+'text-align:right;">'+num(r.otherFohCtn*r.stdOut*r.batchDay*wdF)+'</td><td style="'+cl+'text-align:right;">'+num(r.otherFohCtn*r.stdOut*r.batchDay)+'</td><td style="'+cl+'text-align:right;">'+num(r.otherFohCtn*r.stdOut)+'</td>'+
          '<td style="'+cl+'text-align:right;">'+num(r.otherFohCtn,6)+'</td></tr>')
-      : ('<tr><td style="'+cl+'width:30%;">Others Factory O/H:</td><td style="'+cl+'"></td><td style="'+cl+'"></td>'+
+      : ('<tr><td style="'+cl+'width:30%;">Others Factory O/H:</td><td style="'+cl+'text-align:right;">'+dvTxt(r.divFoh)+'</td><td style="'+cl+'"></td>'+
          '<td style="'+cl+'text-align:right;">'+num(n(p.otherFOH))+'</td>'+
-         '<td style="'+cl+'text-align:right;">'+num(wdShift>0?n(p.otherFOH)/wdShift:0)+'</td>'+
-         '<td style="'+cl+'text-align:right;">'+num((wdShift*r.batchDay)>0?n(p.otherFOH)/(wdShift*r.batchDay):0)+'</td>'+
+         '<td style="'+cl+'text-align:right;">'+num(wdF>0?n(p.otherFOH)/wdF:0)+'</td>'+
+         '<td style="'+cl+'text-align:right;">'+num((wdF*r.batchDay)>0?n(p.otherFOH)/(wdF*r.batchDay):0)+'</td>'+
          '<td style="'+cl+'text-align:right;">'+num(r.otherFohCtn,6)+'</td></tr>'))+
-    '<tr><td style="'+cl+'">Depreciation cost</td><td style="'+cl+'text-align:right;">'+num(n(p.depRate),1)+'%</td>'+
+    '<tr><td style="'+cl+'">Depreciation cost</td><td style="'+cl+'text-align:right;">'+num(n(p.depRate),1)+'%'+(r.divDep!==1?(' ÷ '+trimNum(r.divDep,3)):'')+'</td>'+
     '<td style="'+cl+'text-align:right;">'+num(r.assetTotal,0)+'</td><td style="'+cl+'text-align:right;">'+num(r.depMonthly)+'</td>'+
-    '<td style="'+cl+'text-align:right;">'+num(wdShift>0?r.depMonthly/wdShift:0)+'</td>'+
-    '<td style="'+cl+'text-align:right;">'+num((wdShift*r.batchDay)>0?r.depMonthly/(wdShift*r.batchDay):0)+'</td>'+
+    '<td style="'+cl+'text-align:right;">'+num(wdD>0?r.depMonthly/wdD:0)+'</td>'+
+    '<td style="'+cl+'text-align:right;">'+num((wdD*r.batchDay)>0?r.depMonthly/(wdD*r.batchDay):0)+'</td>'+
     '<td style="'+cl+'text-align:right;">'+num(r.depCtn,6)+'</td></tr>'+
     '<tr style="font-weight:bold;"><td style="'+cl+'" colspan="7">Power cost:</td></tr>'+
     '<tr style="font-weight:bold;border-bottom:1px solid #000;"><td style="'+cl+'">Particulars</td>'+
@@ -13975,12 +14040,12 @@ function costSheetHTML(id){
     '<td style="'+cl+'text-align:right;">Per '+r.uLab+'</td></tr>'+
     (r.hoMode==='valuePct'
       ? ('<tr><td style="'+cl+'">Head office over head</td><td style="'+cl+'text-align:right;">'+num(r.hoRate*100,2)+'% of Prime Cost</td>'+
-         '<td style="'+cl+'text-align:right;">'+num(r.hoCtn*r.stdOut*r.batchDay*wdShift)+'</td><td style="'+cl+'text-align:right;">'+num(r.hoCtn*r.stdOut*r.batchDay)+'</td><td style="'+cl+'text-align:right;">'+num(r.hoCtn*r.stdOut)+'</td>'+
+         '<td style="'+cl+'text-align:right;">'+num(r.hoCtn*r.stdOut*r.batchDay*wdH)+'</td><td style="'+cl+'text-align:right;">'+num(r.hoCtn*r.stdOut*r.batchDay)+'</td><td style="'+cl+'text-align:right;">'+num(r.hoCtn*r.stdOut)+'</td>'+
          '<td style="'+cl+'text-align:right;">'+num(r.hoCtn,6)+'</td></tr>')
-      : ('<tr><td style="'+cl+'">Head office over head</td><td style="'+cl+'"></td>'+
+      : ('<tr><td style="'+cl+'">Head office over head</td><td style="'+cl+'text-align:right;">'+dvTxt(r.divHo)+'</td>'+
          '<td style="'+cl+'text-align:right;">'+num(n(p.hoOH))+'</td>'+
-         '<td style="'+cl+'text-align:right;">'+num(wdShift>0?n(p.hoOH)/wdShift:0)+'</td>'+
-         '<td style="'+cl+'text-align:right;">'+num((wdShift*r.batchDay)>0?n(p.hoOH)/(wdShift*r.batchDay):0)+'</td>'+
+         '<td style="'+cl+'text-align:right;">'+num(wdH>0?n(p.hoOH)/wdH:0)+'</td>'+
+         '<td style="'+cl+'text-align:right;">'+num((wdH*r.batchDay)>0?n(p.hoOH)/(wdH*r.batchDay):0)+'</td>'+
          '<td style="'+cl+'text-align:right;">'+num(r.hoCtn,6)+'</td></tr>'))+
     '<tr><td style="'+cl+'">Bank Interest</td><td style="'+cl+'text-align:right;">'+num(n(p.bank),2)+'% of RM+PM</td>'+
     '<td style="'+cl+'"></td><td style="'+cl+'"></td><td style="'+cl+'"></td>'+
@@ -14366,12 +14431,17 @@ function buildCostingWS(wb, p, sheetName, refs){
 
   const rWd=++R; hdrRows.push(rWd);
   put(rWd,1,'Working Days / Month'); put(rWd,3,RAW(p.workDays,n(p.workDays)),{z:N,a:rightA});
-  put(rWd,6,'O/H Divisor:',{a:rightA}); put(rWd,7,RAW(p.shift,n(p.shift)),{z:N,f:bold,a:rightA});
   /* v16.6 — Power এর auto Basis এর সূত্র এই ঘরটা ধরে, তাই এটা শিটে থাকা দরকার */
   /* r.workHours — অ্যাপ যেটা আসলে ব্যবহার করে (ঘর খালি থাকলে ৮)। কাঁচা ঘরটা
      লিখলে খালি হলে Excel এ ০ দিয়ে ভাগ হয়ে #DIV/0! আসত। */
   put(rWd,9,'Hours / Day:',{a:rightA}); put(rWd,10,RAW(n(p.workHours)>0?p.workHours:r.workHours, r.workHours),{z:N,f:bold,a:rightA});
 
+  /* v19.44 — চারটা মাসিক খরচের আলাদা O/H Divisor — নিচের সূত্রগুলো এই ঘরগুলো ধরে */
+  const rDiv=++R; hdrRows.push(rDiv);
+  put(rDiv,1,'O/H Divisor — Factory O/H'); put(rDiv,3,r.divFoh,{z:N,f:bold,a:rightA});
+  put(rDiv,4,'Dep.',{a:rightA}); put(rDiv,5,r.divDep,{z:N,f:bold,a:rightA});
+  put(rDiv,6,'Head Office:',{a:rightA}); put(rDiv,7,r.divHo,{z:N,f:bold,a:rightA});
+  put(rDiv,9,'Selling O/H:',{a:rightA}); put(rDiv,10,r.divSoh,{z:N,f:bold,a:rightA});
   const rRate=++R; hdrRows.push(rRate);
   if(ex){
     put(rRate,1,'USD Rate (৳ per $)'); put(rRate,3,RAW(p.usd,n(p.usd)),{z:M,a:rightA});
@@ -14385,7 +14455,8 @@ function buildCostingWS(wb, p, sheetName, refs){
   hdrRows.forEach(function(rw){ box(rw,1,11); });
 
   const STD='$C$'+rStd, PKT='$D$'+rPack, PKG='$G$'+rPack, LOSS='$G$'+rLoss;
-  const BDAY='$G$'+rStd, WD='$C$'+rWd, SHIFT='$G$'+rWd, WHRS='$J$'+rWd;
+  const BDAY='$G$'+rStd, WD='$C$'+rWd, WHRS='$J$'+rWd;
+  const DVF='$C$'+rDiv, DVD='$E$'+rDiv, DVH='$G$'+rDiv, DVS='$J$'+rDiv;
   /* v10.8 — এই দুটো আলাদা করে রাখা হলো, কারণ TT charge ও Break-even এর সূত্রে
      আগে '$C$'/'$G$' সরাসরি লেখা ছিল। সেটাই v10.7 এ #VALUE! এর কারণ হয়েছিল। */
   const USDR='$C$'+rRate;
@@ -14519,7 +14590,7 @@ function buildCostingWS(wb, p, sheetName, refs){
     return (r.soh||[]).map(function(x){
       if(x.mode==='pctSale') return priceRef+'*'+n(x.rate)+'/100';
       if(x.mode==='perUnit') return ''+n(x.rate);
-      if(x.mode==='monthly') return n(x.rate)+'/'+WD+'/'+SHIFT+'/'+BDAY+'/'+STD;
+      if(x.mode==='monthly') return n(x.rate)+'/'+WD+'/'+DVS+'/'+BDAY+'/'+STD;
       if(x.mode==='perTrip') return n(x.basis)>0 ? (n(x.rate)+'/'+n(x.basis)) : '0';
       return '0';
     }).join('+') || '0';
@@ -14598,8 +14669,8 @@ function buildCostingWS(wb, p, sheetName, refs){
     put(rOth2,3, ohRateXL(p.otherFohCost, p.otherFohProdVal, p.otherFohPct, r.fohRate), {z:P});
   } else {
     put(rOth2,6,RAW(p.otherFOH,n(p.otherFOH)),{z:M});
-    put(rOth2,7,F('F'+rOth2+'/'+WD+'/'+SHIFT, r.workDays*r.shift>0?n(p.otherFOH)/(r.workDays*r.shift):0),{z:M});
-    put(rOth2,9,F('G'+rOth2+'/'+BDAY, (r.workDays*r.shift*r.batchDay)>0?n(p.otherFOH)/(r.workDays*r.shift*r.batchDay):0),{z:M});
+    put(rOth2,7,F('F'+rOth2+'/'+WD+'/'+DVF, r.workDays*r.divFoh>0?n(p.otherFOH)/(r.workDays*r.divFoh):0),{z:M});
+    put(rOth2,9,F('G'+rOth2+'/'+BDAY, (r.workDays*r.divFoh*r.batchDay)>0?n(p.otherFOH)/(r.workDays*r.divFoh*r.batchDay):0),{z:M});
     put(rOth2,10,F('I'+rOth2+'/'+STD, r.otherFohCtn),{z:Q6});
   }
   box(rOth2,1,11);
@@ -14609,8 +14680,8 @@ function buildCostingWS(wb, p, sheetName, refs){
   put(rDep,1,'Depreciation cost'); put(rDep,3,RAW(isExpr(p.depRate)?('('+String(p.depRate).replace(/^=+/,'')+')/100'):null, n(p.depRate)/100),{z:'0.0%'});
   put(rDep,4,F(rAsT_ref, r.assetTotal),{z:'#,##0'});
   put(rDep,6,F('D'+rDep+'*C'+rDep+'/12', r.depMonthly),{z:M});
-  put(rDep,7,F('F'+rDep+'/'+WD+'/'+SHIFT, (r.workDays*r.shift)>0?r.depMonthly/(r.workDays*r.shift):0),{z:M});
-  put(rDep,9,F('G'+rDep+'/'+BDAY, (r.workDays*r.shift*r.batchDay)>0?r.depMonthly/(r.workDays*r.shift*r.batchDay):0),{z:M});
+  put(rDep,7,F('F'+rDep+'/'+WD+'/'+DVD, (r.workDays*r.divDep)>0?r.depMonthly/(r.workDays*r.divDep):0),{z:M});
+  put(rDep,9,F('G'+rDep+'/'+BDAY, (r.workDays*r.divDep*r.batchDay)>0?r.depMonthly/(r.workDays*r.divDep*r.batchDay):0),{z:M});
   put(rDep,10,F('I'+rDep+'/'+STD, r.depCtn),{z:Q6});
   box(rDep,1,11);
   const rPwH=++R;
@@ -14654,7 +14725,7 @@ function buildCostingWS(wb, p, sheetName, refs){
     put(rOth2,10, F('C'+rOth2+'*'+PC_BASE, r.otherFohCtn), {z:Q6});                                   /* Per unit */
     put(rOth2,9,  F('J'+rOth2+'*'+STD, r.otherFohCtn*r.stdOut), {z:M});                               /* Per Batch */
     put(rOth2,7,  F('I'+rOth2+'*'+BDAY, r.otherFohCtn*r.stdOut*r.batchDay), {z:M});                   /* Per day */
-    put(rOth2,6,  F('G'+rOth2+'*'+WD+'*'+SHIFT, r.otherFohCtn*r.stdOut*r.batchDay*r.workDays*r.shift), {z:M}); /* Per Month */
+    put(rOth2,6,  F('G'+rOth2+'*'+WD+'*'+DVF, r.otherFohCtn*r.stdOut*r.batchDay*r.workDays*r.divFoh), {z:M}); /* Per Month */
   }
   const rFohT=++R;
   put(rFohT,1,'Total Factory O/H:',{f:bold});
@@ -14678,11 +14749,11 @@ function buildCostingWS(wb, p, sheetName, refs){
     put(rHo,10, F('C'+rHo+'*'+HO_BASE, r.hoCtn), {z:Q6});                                              /* Per unit */
     put(rHo,7,  F('J'+rHo+'*'+STD, r.hoCtn*r.stdOut), {z:M});                                          /* Per Batch */
     put(rHo,6,  F('G'+rHo+'*'+BDAY, r.hoCtn*r.stdOut*r.batchDay), {z:M});                              /* Per day */
-    put(rHo,4,  F('F'+rHo+'*'+WD+'*'+SHIFT, r.hoCtn*r.stdOut*r.batchDay*r.workDays*r.shift), {z:M});   /* Per Month */
+    put(rHo,4,  F('F'+rHo+'*'+WD+'*'+DVH, r.hoCtn*r.stdOut*r.batchDay*r.workDays*r.divHo), {z:M});   /* Per Month */
   } else {
     put(rHo,4,RAW(p.hoOH,n(p.hoOH)),{z:M});
-    put(rHo,6,F('D'+rHo+'/'+WD+'/'+SHIFT, (r.workDays*r.shift)>0?n(p.hoOH)/(r.workDays*r.shift):0),{z:M});
-    put(rHo,7,F('F'+rHo+'/'+BDAY, (r.workDays*r.shift*r.batchDay)>0?n(p.hoOH)/(r.workDays*r.shift*r.batchDay):0),{z:M});
+    put(rHo,6,F('D'+rHo+'/'+WD+'/'+DVH, (r.workDays*r.divHo)>0?n(p.hoOH)/(r.workDays*r.divHo):0),{z:M});
+    put(rHo,7,F('F'+rHo+'/'+BDAY, (r.workDays*r.divHo*r.batchDay)>0?n(p.hoOH)/(r.workDays*r.divHo*r.batchDay):0),{z:M});
     put(rHo,10,F('G'+rHo+'/'+STD, r.hoCtn),{z:Q6});
   }
   box(rHo,1,11);
@@ -16570,6 +16641,22 @@ function renderSettings(){
    (ed?'<button class="btn btn-primary btn-sm" onclick="fixAllCodes()">↻ সব Code পুনরায় সাজান</button>':'')+
    '</div>';
 
+  /* ---- v19.44 O/H Divisor Default ---- */
+  { const od=st.ohDiv||{}, cntOwn={};
+    OHD_KEYS.forEach(function(k){ cntOwn[k[0]]=(DB.products||[]).filter(function(p){ return ohDivOf(p,k[0]).own; }).length; });
+    const lbl={foh:TT('Others Factory O/H','Others Factory O/H'),dep:TT('Depreciation','Depreciation'),ho:TT('Head Office O/H','Head Office O/H'),soh:TT('Selling / Distribution O/H (মাসিক)','Selling / Distribution O/H (monthly)')};
+    h+='<div class="panel"><div class="panel-head"><h3>'+TT('O/H Divisor — Default','O/H Divisor — Default')+'</h3></div>'+
+     '<p class="hint" style="margin:-4px 0 12px;">'+TT('মাসিক টাকার খরচ প্রতি এককে আনতে ভাগ হয় — কর্মদিবস × <b>Divisor</b> × Batch/Day × Std Output দিয়ে। পুরোটা এই পণ্যের = 1, অর্ধেক = 2। '+
+       'এখানে যেটা দেবেন সেটা <b>সব Costing এ</b> বসবে। কোনো Costing এ নিজে আলাদা সংখ্যা দিলে সেটাই থাকবে — এখানে বদলালেও সেটা বদলাবে না।',
+       'Monthly costs are brought to a per-unit figure by dividing by working days × <b>divisor</b> × batch/day × std output. Whole = 1, half = 2. '+
+       'What you set here applies to <b>every costing</b>. A costing with its own value keeps it — changing this does not touch it.')+'</p>'+
+     '<div class="field-row cols-4">'+OHD_KEYS.map(function(k){
+        return '<div class="field"><label>'+lbl[k[0]]+'</label><input type="text" inputmode="decimal" id="stOhd_'+k[0]+'" value="'+esc(String(n(od[k[0]])>0?n(od[k[0]]):1))+'"'+ro+'>'+
+          '<div class="hint">'+(cntOwn[k[0]]?(TT(cntOwn[k[0]]+'টা Costing এ নিজস্ব মান','Own value in '+cntOwn[k[0]]+' costing(s)')):TT('সব Costing এই মান নিচ্ছে','All costings use this'))+'</div></div>';
+     }).join('')+'</div>'+
+     (ed?'<button class="btn btn-primary btn-sm" onclick="saveOhDiv()">'+TT('Default সেভ করুন','Save defaults')+'</button>':'')+
+     '</div>'; }
+
   /* ---- Backup ---- */
   h+='<div class="panel"><div class="panel-head"><h3>Backup ও Restore</h3></div>'+
    '<p class="hint" style="margin:-4px 0 12px;">সব ডাটা <b>এই ব্রাউজারেই</b> জমা থাকে। '+
@@ -16600,6 +16687,24 @@ function renderSettings(){
      '<button class="btn btn-sm btn-danger" onclick="clearAllData()">সব ডাটা মুছে ফেলুন</button></div>';
   }
   return h;
+}
+function saveOhDiv(){
+  if(!needTool('settings','Settings বদলানো')) return;
+  const nv={}, bad=[];
+  OHD_KEYS.forEach(function(k){ const el=document.getElementById('stOhd_'+k[0]); const v=el?n(el.value):1; if(!(v>0)) bad.push(k[2]); nv[k[0]]=v>0?v:1; });
+  if(bad.length){ toast(TT('০ এর বেশি সংখ্যা দিন: ','Enter a number above 0: ')+bad.join(', '),true); return; }
+  const old=DB.settings.ohDiv||{};
+  const chg=OHD_KEYS.filter(function(k){ return n(old[k[0]])!==nv[k[0]]; });
+  if(!chg.length){ toast(TT('কিছু বদলায়নি','Nothing changed')); return; }
+  const aff=(DB.products||[]).filter(function(p){ return chg.some(function(k){ return !ohDivOf(p,k[0]).own; }); }).length;
+  ucAsk(TT('O/H Divisor Default বদলাবেন?','Change the O/H divisor defaults?')+'\n'+
+    chg.map(function(k){ return k[2]+': '+trimNum(n(old[k[0]])||1,4)+' → '+trimNum(nv[k[0]],4); }).join('\n')+'\n\n'+
+    TT(aff+'টা Costing এর হিসাব বদলাবে (যেগুলোতে নিজস্ব মান নেই)। নিজস্ব মান দেওয়া Costing একই থাকবে।',aff+' costing(s) will be recalculated (those without their own value). Costings with their own value stay the same.'),
+    function(){
+      DB.settings.ohDiv=nv;
+      audit('settings','settings','O/H Divisor Default',chg.map(function(k){ return k[0]+' '+trimNum(n(old[k[0]])||1,4)+'→'+trimNum(nv[k[0]],4); }).join(', '));
+      saveDB(); render(); toast(TT('O/H Divisor Default সেভ হয়েছে','O/H divisor defaults saved'));
+    });
 }
 function saveCompany(){
   if(!needTool('settings','Settings বদলানো')) return;
@@ -17476,7 +17581,7 @@ function famPrevOf(p){
 
 /* ---------- কী কী মেলানো যায় ---------- */
 const FAM_SCAL=[['prod','loss','Process Loss %'],['prod','batchDay','Batch / Day'],['prod','workHours','কর্মঘণ্টা / দিন'],['prod','workDays','Working Days / Month'],
-  ['prod','pktCtn','Pkt / Ctn'],['prod','packKg','প্রতি Pkt এর ওজন (Kg)'],['oh','shift','O/H Divisor'],['mp','otherLabor','Other Labor (Wrap)'],
+  ['prod','pktCtn','Pkt / Ctn'],['prod','packKg','প্রতি Pkt এর ওজন (Kg)'],['oh','divFoh','O/H Divisor — Factory O/H'],['oh','divDep','O/H Divisor — Depreciation'],['oh','divHo','O/H Divisor — Head Office'],['oh','divSoh','O/H Divisor — Selling O/H'],['mp','otherLabor','Other Labor (Wrap)'],
   ['oh','bank','Bank Interest %'],['oh','risk','Risk Factor %']];
 const FAM_CMP=[['oh','foh',['otherFohMode','otherFOH','otherFohCost','otherFohProdVal','otherFohPct'],'Others Factory O/H'],
   ['oh','ho',['hoMode','hoOH','hoCost','hoProdVal','hoPct'],'Head Office O/H'],
@@ -17841,7 +17946,7 @@ function fmtMrg(d){
   const s=fH4('What if… (per '+u+')')+fTable('<tr>'+fTh('Change')+fTh('Cost / '+u,1)+fTh('Net profit / '+u,1)+fTh('Net margin',1)+(d.cont?fTh('Profit / container',1):'')+'</tr>'+
     sens.map(function(x){ const c=d.total+x[1], nn=x[2]-c; return '<tr>'+fTd(x[0],{l:1})+fTd(money(c))+fTd(money(nn))+fTd(x[2]>0?(nn/x[2]*100).toFixed(1)+'%':'—')+(d.cont?fTd(money(nn*d.cont,0)):'')+'</tr>'; }).join(''),9.8);
   const k=fKpis([['Contribution / '+u,'Tk '+money(M.contrib)],['P/V ratio',P>0?(M.contrib/P*100).toFixed(1)+'%':'—'],['Break-even / month',M.bep===null?'Not reached':money(M.bep,0)+' '+u],['Margin of safety',(M.bep!==null&&cap>0)?(M.bep>cap?'Below BEP':((cap-M.bep)/cap*100).toFixed(1)+'%'):'—']]);
-  const shiftNote=(n(d.p.shift)>1?' The O/H divisor is '+n(d.p.shift)+', so this product carries 1/'+n(d.p.shift)+' of the monthly factory and head-office overheads and depreciation.':'');
+  const shiftNote=((r.divFoh>1||r.divDep>1||r.divHo>1||r.divSoh>1)?' O/H divisors — factory O/H '+trimNum(r.divFoh,3)+', depreciation '+trimNum(r.divDep,3)+', head office '+trimNum(r.divHo,3)+', selling O/H '+trimNum(r.divSoh,3)+' — this product carries that share (1/divisor) of each monthly overhead.':'');
   return k+fTable(h)+s+fNote('Capacity = '+money(r.batchDay,2)+' batches × '+(n(d.p.workDays)||26)+' days × '+money(r.stdOut,3)+' '+u+'. Fixed costs are this product\'s monthly share at capacity (per-unit fixed cost × capacity: wages, depreciation, monthly factory and head-office overheads); everything else is variable.'+shiftNote);
 }
 /* ---------- 4. Multi-level cost sheet ---------- */
@@ -19208,6 +19313,12 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.44', d:'2026-11-17', t:'O/H Divisor — চারটা খরচের আলাদা ভাগ, Settings এ Default', li:[
+  '<b>চারটা আলাদা O/H Divisor:</b> Others Factory O/H, Depreciation, Head Office O/H আর Selling / Distribution O/H (মাসিক লাইন) — প্রতিটার নিজের Divisor। যেমন Factory O/H ২ দিয়ে ভাগ, Depreciation ১ দিয়ে',
+  '<b>Settings → O/H Divisor — Default:</b> এখানে চারটার মান দিলে সব Costing এ বসে। বদলানোর আগে দেখায় কয়টা Costing এর হিসাব বদলাবে',
+  '<b>Costing এ নিজস্ব মান:</b> প্রতিটা খরচের ঘরের পাশে “÷ O/H Divisor” ঘর। খালি = Settings এর Default; সংখ্যা দিলে সেটাই থাকে (ঘর কমলা), Settings বদলালেও বদলায় না। মুছে দিলে আবার Default',
+  '<b>Product Info থেকে পুরোনো একটাই O/H Divisor সরানো হয়েছে।</b> পুরোনো Costing এর হিসাব একটুও বদলায়নি — যেটায় যে Divisor ছিল সেটা চারটাতেই বসানো হয়েছে; যেটা বেশির ভাগ Costing এ ছিল সেটাই Settings এর Default হয়েছে',
+  'হিসাব (লাইভ), Costing Sheet Print, Excel (আলাদা ৪টা Divisor ঘর, live সূত্র), Budget, Statement of Cost, Template, মেলানো (Family) — সব জায়গায় নতুন নিয়ম']},
  {v:'19.43', d:'2026-11-16', t:'প্রিমিয়াম Costing কার্ড', li:[
   '<b>Costing কার্ড নতুন রূপে:</b> উপরে নাম, Code চিপ, অবস্থা (খসড়া / অনুমোদিত) ও বড় করে Mfg Cost। তার নিচে ৩টা মূল সংখ্যা আলাদা ঘরে — Break-even (Export হলে US$ সহ), Net Profit (লাভ সবুজ / লোকসান লাল, সাথে মার্জিন %), Prime Cost (Material সহ)',
   '<b>খরচের রঙিন বার:</b> বিক্রয়মূল্যের কত % Material, শ্রম, Factory OH, অন্যান্য খরচ আর কত % লাভ — এক নজরে। লোকসান হলে লাল দাগে বিক্রয়মূল্য দেখায়। বারের উপর মাউস রাখলে টাকার অংকও দেখা যায়',
@@ -21152,7 +21263,7 @@ const HELP=[
   hP('Man power এ দুইজনের গড় বেতন <code>(12000+24000)/2</code> লিখলে, Excel এ ওই ঘরে বসবে <b>=(12000+24000)/2</b> — শুধু ১৮০০০ নয়। তাই কাগজ দেখে পরেও বোঝা যায় সংখ্যাটা কোথা থেকে এসেছে, আর Excel এ একজনের বেতন বদলালে সব নিজে থেকেই হিসাব হয়ে যায়।')+
   hP('যেসব ঘরে কাজ করে:')+
   hUl([
-   'Pkt/Ctn, Pack Size, Process Loss, Batch/Day, Working Days, O/H Divisor',
+   'Pkt/Ctn, Pack Size, Process Loss, Batch/Day, Working Days',
    'ডলার রেট ও Break-even',
    'Raw Material এর Qty',
    'Man power এর সংখ্যা ও বেতন, Other Labor',
@@ -21223,8 +21334,10 @@ const HELP=[
   hT('Man power')+
   hP('প্রতিটা পদের জন্য জনসংখ্যা ও মাসিক বেতন দিন। App নিজেই মাসিক → দৈনিক → প্রতি ব্যাচ → প্রতি একক করে নেবে।')+
   hCode('প্রতি একক  =  (সংখ্যা × বেতন) ÷ Working Days ÷ Batch/Day ÷ Std Output')+
-  hT('O/H Divisor (আগের নাম Shift Divisor)')+
-  hP('এই Costing কারখানার Factory O/H, Head Office O/H ও Depreciation এর কত ভাগ নেবে। পুরোটা = 1, অর্ধেক = 2। এটা উৎপাদন বাড়ায় না — শুধু Overhead ভাগ করে। দুই দল একই মালে কাজ করলে (একদল Process, একদল Packing) এটা শিফট না।')+
+  hT('O/H Divisor — চারটা আলাদা')+
+  hP('মাসিক টাকার খরচ প্রতি এককে আনতে ভাগ হয়: <b>মাসিক টাকা ÷ Working Days ÷ Divisor ÷ Batch/Day ÷ Std Output</b>। পুরোটা এই পণ্যের = 1, অর্ধেক = 2। এটা উৎপাদন বাড়ায় না — শুধু Overhead ভাগ করে।')+
+  hTbl(['খরচ','কোথায় বসে'],[['Others Factory O/H (মাসিক)','Tab 4 — Amount / Month এর পাশে'],['Depreciation','Tab 4 — Rate % এর পাশে'],['Head Office O/H (মাসিক)','Tab 5 — Amount / Month এর পাশে'],['Selling / Distribution O/H (মাসিক লাইন)','Tab 5 — বিক্রয় / বিতরণ খরচ এর নিচে']])+
+  hBox('<b>Default:</b> Settings → <b>O/H Divisor — Default</b> এ চারটার মান দিন — সব Costing এ বসে। কোনো Costing এ ঘরে নিজে সংখ্যা দিলে সেটাই থাকে (ঘর কমলা হয়), Settings বদলালেও বদলায় না। ঘর মুছে দিলে আবার Default নেয়। % পদ্ধতির O/H, Manpower, Power এ Divisor লাগে না।')+
   hT('Depreciation — Asset তালিকা')+
   hP('একটা সংখ্যা না দিয়ে যন্ত্রপাতির তালিকা দিন:')+
   hTbl(['Asset','Value'],[['Packing Machine','2,400,000'],['Mixture and fryer','500,000'],['Building','0'],['<b>Total</b>','<b>2,900,000</b>']])+
@@ -21958,6 +22071,12 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.44', d:'2026-11-17', t:'O/H divisor — separate for four costs, defaults in Settings', li:[
+  '<b>Four separate O/H divisors:</b> Others factory O/H, depreciation, head office O/H and selling / distribution O/H (monthly lines) — each has its own divisor. E.g. factory O/H divided by 2, depreciation by 1',
+  '<b>Settings → O/H Divisor — Default:</b> the four values set here apply to every costing. Before changing, it shows how many costings will be recalculated',
+  '<b>Own value in a costing:</b> a “÷ O/H Divisor” box next to each cost. Blank = Settings default; a number stays (box turns orange) even when Settings change. Clear it to go back to the default',
+  '<b>The single O/H divisor was removed from Product Info.</b> Existing costings did not change by a single taka — each costing’s old divisor was set on all four; the most common one became the Settings default',
+  'Live calculation, costing sheet print, Excel (four divisor cells, live formulas), budget, statement of cost, templates and family match all follow the new rule']},
  {v:'19.43', d:'2026-11-16', t:'Premium costing cards', li:[
   '<b>Costing card redesigned:</b> name, code chip, status (draft / approved) and a large Mfg Cost on top. Below it three key figures in their own tiles — Break-even (with US$ for export), Net Profit (green profit / red loss, with margin %), Prime Cost (with material)',
   '<b>Cost bar:</b> what % of the sale price goes to material, labour, factory OH, other costs and profit — at a glance. A loss shows a red mark at the sale price. Hover the bar for taka amounts',
@@ -22687,7 +22806,6 @@ const DRIFT_FIELDS=[
   {k:'bank',     l:'Bank Interest %'},
   {k:'risk',     l:'Risk Factor %'},
   {k:'workDays', l:'Working Days / মাস'},
-  {k:'shift',    l:'O/H Divisor'},
   {k:'usd',      l:'USD Rate'}
 ];
 function driftScan(){
@@ -23265,7 +23383,10 @@ const ASST_HELP={
   p_loss:['Process Loss — রান্না / বেকিং / কাটায় যে ওজন কমে বা নষ্ট হয় (%)। বেকারিতে সাধারণত ৩–১২%। বেশি দিলে Output কমে, খরচ বাড়ে। আসল উৎপাদন থেকে মেপে বসান।','Process loss — weight lost or wasted in cooking, baking or cutting (%). Bakery is usually 3–12%. Higher loss means less output and higher cost. Measure it from real production.'],
   p_batchDay:['দিনে কয়টা Batch হয়। মজুরি, বিদ্যুৎ ও O/H এই সংখ্যা দিয়ে ভাগ হয় — কম দিলে প্রতি unit খরচ বাড়ে, বেশি দিলে কম দেখায়।','Batches per day. Wages, power and overhead are shared by this number — too low raises unit cost, too high hides it.'],
   p_workDays:['মাসে কয় দিন কাজ হয় (সাধারণত ২৬)। মাসিক খরচ এই দিন দিয়ে ভাগ হয়।','Working days per month (usually 26). Monthly costs are divided by it.'],
-  p_shift:['এই পণ্য Factory / Head Office O/H ও Depreciation এর কত ভাগ নেবে — পুরোটা = 1, অর্ধেক = 2। একই সময়ে কয়েকটা পণ্য চললে ভাগ বাড়ান।','How much of factory / head office overhead and depreciation this product carries — all = 1, half = 2. Raise it when several products run at the same time.'],
+  p_divFoh:['এই Costing মাসিক Others Factory O/H এর কত ভাগ নেবে — পুরোটা = 1, অর্ধেক = 2। খালি রাখলে Settings এর Default।','Share of the monthly factory O/H this costing carries — whole = 1, half = 2. Blank uses the Settings default.'],
+  p_divDep:['এই Costing মাসিক Depreciation এর কত ভাগ নেবে। খালি রাখলে Settings এর Default।','Share of monthly depreciation this costing carries. Blank uses the Settings default.'],
+  p_divHo:['এই Costing মাসিক Head Office O/H এর কত ভাগ নেবে। খালি রাখলে Settings এর Default।','Share of the monthly head office O/H this costing carries. Blank uses the Settings default.'],
+  p_divSoh:['মাসিক টাকার Selling / Distribution লাইনগুলো এই সংখ্যা দিয়ে ভাগ হয়। খালি রাখলে Settings এর Default।','Monthly selling / distribution lines are divided by this. Blank uses the Settings default.'],
   p_workHours:['দিনে কর্মঘণ্টা — “লাভ / Factory ঘণ্টা” আর মেশিনের বিদ্যুৎ হিসাবে লাগে।','Working hours per day — used for profit per factory hour and machine power.'],
   p_usd:['ডলারের দর — Export দাম টাকায় রূপান্তর হয় এটা দিয়ে।','USD rate — converts export prices to taka.'],
   p_sellBdt:['প্রতি unit বিক্রয়মূল্য (টাকা)। না থাকলে লাভ-লোকসান দেখানো যায় না।','Selling price per unit (taka). Without it profit cannot be shown.'],
