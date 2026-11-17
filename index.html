@@ -547,8 +547,15 @@ td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
 .pcs-warn{font-size:11.5px; color:var(--danger); background:color-mix(in srgb,#DC2626 7%,var(--panel)); border:1px solid color-mix(in srgb,#DC2626 25%,var(--border)); border-radius:7px; padding:4px 8px;}
 .pcs-foot{display:flex; justify-content:space-between; gap:8px; font-size:11.5px; color:var(--text-dim); padding-top:8px; border-top:1px solid var(--border);}
 .product-card.pc-std .pc-actions.pca{margin-top:auto; padding-top:2px; border-top:0;}
-html.ui-modern .product-card.pc-std:not(#printArea *):not(.pdfbox *){border:1px solid var(--border); border-radius:14px; box-shadow:0 1px 3px rgba(15,23,42,.06);}
-html.ui-modern .product-card.pc-std:hover:not(#printArea *):not(.pdfbox *){transform:translateY(-3px); box-shadow:var(--lift); border-color:var(--glow-b);}
+/* v19.49 — Modern এ Costing কার্ড হুবহু Dashboard এর KPI কার্ডের মতো: বর্ডার নেই, ২০px কোণ, একই ছায়া,
+   কোণে একই হালকা গোল নকশা; হোভারে একই — কার্সরের আলো + ৩px উপরে ওঠা + গভীর ছায়া (বাড়তি রেখা/রং বদল নেই) */
+html.ui-modern .product-card.pc-std:not(#printArea *):not(.pdfbox *){border:0; border-radius:20px; box-shadow:var(--shadow); transition:transform .2s, box-shadow .2s;}
+html.ui-modern .product-card.pc-std:not(#printArea *):not(.pdfbox *)::after{content:""; position:absolute; inset:auto; left:auto; right:-28px; top:-28px; width:96px; height:96px; border-radius:50%; background:var(--grad); opacity:.08; transform:none; z-index:0; pointer-events:none;}
+html.ui-modern .product-card.pc-std:hover:not(#printArea *):not(.pdfbox *){transform:translateY(-3px); box-shadow:var(--lift); border-color:transparent;}
+html.ui-modern .product-card.pc-std:hover:not(#printArea *):not(.pdfbox *)::after{transform:none;}
+html.ui-modern .product-card.pc-std:hover .pc-name{color:inherit;}
+html.ui-modern .product-card.pc-std:hover .pc-cost{transform:none;}
+html.ui-modern .product-card.pc-std:active{transform:translateY(-3px);}
 @media (max-width:460px){ .pcs-strip{grid-template-columns:1fr 1fr;} .pcs-c:nth-child(3){border-left:0;} .pcs-c:nth-child(n+3){border-top:1px solid var(--border);} .pcs-img{width:48px;height:48px;flex-basis:48px;} }
 .product-card{cursor:pointer;}
 .product-card .pc-actions{flex-wrap:wrap;}
@@ -19479,6 +19486,8 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.49', d:'2026-11-17', t:'Costing কার্ড হুবহু Dashboard কার্ডের মতো (Modern)', li:[
+  '<b>Modern নকশায় Costing কার্ড এখন Dashboard এর কার্ডের মতোই দেখায় ও হোভার করে:</b> বর্ডার নেই, একই গোল কোণ, একই নরম ছায়া, কোণে একই হালকা গোল নকশা। মাউস রাখলে একই কার্সরের আলো, একই ৩px উপরে ওঠা আর একই গভীর সবুজাভ ছায়া — আগের বাড়তি সোনালি বর্ডার, উপরের রঙিন রেখা, নামের রং বদল আর দাম বড় হওয়া বাদ। Classic নকশায় আগের মতোই Dashboard এর Classic কার্ডের সাথে মেলে']},
  {v:'19.48', d:'2026-11-17', t:'Costing কার্ডে Dashboard এর মতো হোভার আলো', li:[
   '<b>Costing কার্ডে মাউস রাখলে</b> এখন Dashboard এর কার্ডের মতোই আলো জ্বলে — কার্সরের সাথে সাথে নরম আলো সরে, উপরে রঙিন রেখা ফোটে, কার্ড একটু উপরে ওঠে আর ছায়া গাঢ় হয়, নামের রং বদলায়। Modern ও Classic দুই নকশাতেই। মোবাইলে (হোভার নেই) আগের মতো স্থির']},
  {v:'19.47', d:'2026-11-17', t:'ছবির Cloud Sync আরও নিরাপদ', li:[
@@ -22252,6 +22261,8 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.49', d:'2026-11-17', t:'Costing cards exactly like dashboard cards (Modern)', li:[
+  '<b>In the Modern look costing cards now look and hover exactly like the dashboard cards:</b> no border, the same rounded corners, the same soft shadow and the same faint circle in the corner. On hover: the same cursor glow, the same 3px lift and the same deeper teal shadow — the extra gold border, top coloured line, name colour change and price zoom are gone. In Classic they still match the Classic dashboard cards']},
  {v:'19.48', d:'2026-11-17', t:'Dashboard-style hover glow on costing cards', li:[
   '<b>Hovering a costing card</b> now lights it up like the dashboard cards — a soft glow follows the cursor, a coloured line appears on top, the card lifts slightly with a deeper shadow and the name changes colour. In both Modern and Classic. On phones (no hover) it stays still as before']},
  {v:'19.47', d:'2026-11-17', t:'Safer cloud sync for pictures', li:[
