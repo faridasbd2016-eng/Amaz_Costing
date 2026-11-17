@@ -16033,9 +16033,16 @@ async function cloudSync(silent){
     const pushedFp={}; rows.forEach(function(r){ if(!r.del) pushedFp[r.c+'|'+r.id]=r._fp; });
     let pushed=0, rejected=0;
     if(rows.length){
-      for(let i=0;i<rows.length;i+=150){            /* ছোট ছোট ভাগে */
+      /* v19.47 — ছোট ছোট ভাগে: সর্বোচ্চ ১৫০ সারি অথবা ~১.৫ MB (ছবির সারি বড় — একবারে অনেক MB না যায়) */
+      const chunks=[]; { let cur=[], sz=0;
+        rows.forEach(function(r){ const L=(r.json||'').length+120;
+          if(cur.length && (cur.length>=150 || sz+L>1500000)){ chunks.push(cur); cur=[]; sz=0; }
+          cur.push(r); sz+=L; });
+        if(cur.length) chunks.push(cur); }
+      for(let ci=0;ci<chunks.length;ci++){
+        if(chunks.length>1) syncStatus(TT('পাঠানো হচ্ছে… ','Sending… ')+(ci+1)+'/'+chunks.length);
         /* _fp ভেতরের হিসাব — সার্ভারে পাঠাই না */
-        const part=rows.slice(i,i+150).map(function(r){
+        const part=chunks[ci].map(function(r){
           return {c:r.c,id:r.id,ts:r.ts,dev:r.dev,del:r.del,json:r.json}; });
         const pr=await syncCall('push',{rows:part});
         const back=[];
@@ -19473,6 +19480,9 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.47', d:'2026-11-17', t:'ছবির Cloud Sync আরও নিরাপদ', li:[
+  '<b>অনেক ছবি একসাথে Sync:</b> পাঠানোর সময় এখন প্রতি ভাগে সর্বোচ্চ ~১.৫ MB (আগে ১৫০ সারি ধরে — ছবি থাকলে এক ধাক্কায় ৩–৫ MB যেত)। শত শত ছবিও ধাপে ধাপে যায়, মাঝে “পাঠানো হচ্ছে… ২/৫” দেখায়',
+  'যাচাই: অ্যাপের নিজের Google Apps Script কোড চালিয়ে দুই PC এর মধ্যে পরীক্ষা — ছবি যোগ, বদল, মুছে ফেলা, আর একসাথে ১২০টা ছবি — সব হুবহু অন্য PC তে পৌঁছেছে; Google Sheet এর এক ঘরে সবচেয়ে বড় ছবিটাও ৫০,০০০ অক্ষরের সীমার অনেক নিচে']},
  {v:'19.46', d:'2026-11-17', t:'ছবি সহ Costing কার্ড ঠিক করা', li:[
   '<b>ছবি দিলে কার্ড চেপে যেত — ঠিক হয়েছে:</b> নাম এখন পুরো চওড়ায় (সর্বোচ্চ ২ লাইন, বাকিটা মাউস রাখলে দেখায়); Code / অবস্থা আর Mfg Cost তার নিচের সারিতে। ছবি থাকুক বা না থাকুক — সব কার্ডের মাথা এক উচ্চতায়, পাশাপাশি কার্ড সমান থাকে',
   '<b>ছবি পুরোটা দেখায়:</b> লম্বা প্যাকেটের ছবি আর কেটে যায় না — সাদা পটভূমিতে পুরো ছবি',
@@ -22241,6 +22251,9 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.47', d:'2026-11-17', t:'Safer cloud sync for pictures', li:[
+  '<b>Syncing many pictures:</b> uploads now go in parts of at most ~1.5 MB (before it was 150 rows — with pictures one request could be 3–5 MB). Hundreds of pictures go step by step, showing “Sending… 2/5”',
+  'Checked by running the app’s own Google Apps Script code between two PCs — adding, changing and deleting pictures, and 120 pictures at once — all arrived exactly on the other PC; the largest picture is well under the 50,000-character Google Sheet cell limit']},
  {v:'19.46', d:'2026-11-17', t:'Costing card with picture fixed', li:[
   '<b>The card no longer squeezes when a picture is added:</b> the name now uses the full width (up to 2 lines, the rest on hover); code / status and Mfg Cost sit on the row below. With or without a picture, every card header has the same height, so cards side by side line up',
   '<b>The whole picture shows:</b> tall pack photos are no longer cropped — the full picture on a white background',
