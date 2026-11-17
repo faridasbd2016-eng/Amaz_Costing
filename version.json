@@ -1,1 +1,1 @@
-{"version": "19.45", "date": "2026-11-17", "notes": "Product এর ছবি (কার্ড, Print, দরপত্র, Price List — চালু/বন্ধ সহ; Sync ও Backup এ যায়) আর Standard Costing কার্ড", "notes_en": "Product pictures (cards, print, quotations, price list — each switchable; synced and backed up) and a standard costing card"}
+{"version": "19.46", "date": "2026-11-17", "notes": "ছবি সহ Costing কার্ড ঠিক — নাম পুরো চওড়ায়, সব কার্ড সমান উচ্চতায়, ছবি কাটে না", "notes_en": "Costing card with picture fixed — full-width name, even card heights, uncropped picture"}
