@@ -1739,6 +1739,98 @@ html.ui-modern .empty-state p:not(#printArea *):not(.pdfbox *){font-size:14px; c
 html.ui-modern .tag:not(#printArea *):not(.pdfbox *){font-size:11px;}
 @media (max-width:640px){ html.ui-modern .kpi .value:not(#printArea *):not(.pdfbox *){font-size:24px;} html.ui-modern .panel-body:not(#printArea *):not(.pdfbox *){padding:16px;} }
 
+
+/* ===================== v19.73 — মোবাইলে Android App এর মতো (৭৬০px এর নিচে; কম্পিউটার আগের মতো) ===================== */
+#bnav, #appmSheet, #ptrInd, .pa-more{display:none;}
+@media (max-width:760px){
+  html.appm body{-webkit-tap-highlight-color:transparent; overscroll-behavior-y:contain;}
+  html.appm.appm-in body{padding-bottom:calc(66px + env(safe-area-inset-bottom));}
+  /* নিচের ট্যাব বার */
+  html.appm.appm-in #bnav{display:grid; grid-template-columns:repeat(5,1fr); position:fixed; left:0; right:0; bottom:0; z-index:90;
+    height:calc(62px + env(safe-area-inset-bottom)); padding:4px 4px env(safe-area-inset-bottom); background:var(--panel);
+    border-top:1px solid var(--border); box-shadow:0 -6px 22px rgba(16,40,46,.08); transition:transform .22s ease;}
+  html.appm.kb-open #bnav{transform:translateY(110%);}
+  #bnav button{position:relative; border:0; background:none; color:var(--text-dim); font:inherit; font-size:11px; font-weight:600; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; cursor:pointer; min-width:0;}
+  #bnav button .bn-ic{width:56px; height:30px; border-radius:16px; display:flex; align-items:center; justify-content:center; transition:background .2s, color .2s;}
+  #bnav button svg{width:22px; height:22px;}
+  #bnav button span.bn-l{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #bnav button.on{color:var(--primary);} #bnav button.on .bn-ic{background:rgba(13,148,136,.14);}
+  html:not(.ui-modern) #bnav button.on .bn-ic{background:rgba(37,99,235,.12);}
+  #bnav button:active .bn-ic{transform:scale(.92);}
+  #bnav .bn-badge{position:absolute; top:3px; left:calc(50% + 6px); min-width:17px; height:17px; padding:0 5px; border-radius:9px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:800; line-height:17px; text-align:center;}
+  /* ওপরের App bar — নিচে স্ক্রল করলে লুকায়, ওপরে স্ক্রল করলে ফেরে */
+  html.appm #topbar{position:sticky; top:0; z-index:45; transition:transform .22s ease; background:var(--panel) !important; box-shadow:0 1px 0 var(--border);
+    padding-top:calc(6px + env(safe-area-inset-top)) !important; padding-bottom:6px !important;}
+  html.appm #topbar.tb-hide{transform:translateY(-110%);}
+  html.appm #topbar .page-title{font-size:18px !important; font-weight:800;}
+  html.appm .page-actions, html.appm .page-toolbar{position:static !important;}
+  html.appm #content{padding-left:12px !important; padding-right:12px !important;}
+  /* বোতাম আর ঘর আঙুলের মাপে */
+  html.appm #app .btn, html.appm .modal .btn{min-height:40px;} html.appm #app .btn-sm, html.appm .modal .btn-sm{min-height:36px;}
+  html.appm #app input:not([type=checkbox]):not([type=radio]):not([type=range]), html.appm #app select, html.appm .modal input:not([type=checkbox]):not([type=radio]):not([type=range]), html.appm .modal select{min-height:42px; font-size:16px;}
+  html.appm .btn:active, html.appm .icon-btn:active, html.appm .nav-item:active{transform:scale(.97);}
+  /* জানালা (Modal) পুরো পর্দা জুড়ে, বাঁয়ে ← ফিরে যান, নিচে Save স্থির */
+  html.appm .modal-overlay{padding:0 !important; align-items:stretch !important; background:var(--bg) !important; backdrop-filter:none !important;}
+  html.appm .modal-overlay > .modal{max-width:100% !important; width:100% !important; min-height:100dvh; border-radius:0 !important; border:0 !important; box-shadow:none !important;
+    display:flex; flex-direction:column; animation:appmIn .22s cubic-bezier(.2,.85,.3,1);}
+  @keyframes appmIn{from{transform:translateX(28px); opacity:.4;} to{transform:none; opacity:1;}}
+  html.appm .modal-overlay > .modal > .modal-head{position:sticky; top:0; z-index:6; background:var(--panel); padding:calc(8px + env(safe-area-inset-top)) 10px 8px 6px !important; gap:4px; box-shadow:0 1px 0 var(--border); flex-wrap:wrap;}
+  html.appm .modal-overlay > .modal > .modal-head h3{font-size:16.5px; font-weight:800; min-width:0;}
+  html.appm .modal-overlay > .modal > .modal-head .close-x{order:-1; font-size:0 !important; width:42px; min-width:42px; height:42px; border-radius:50%; color:var(--text) !important; background:none !important;}
+  html.appm .modal-overlay > .modal > .modal-head .close-x::before{content:"\2190"; font-size:24px; line-height:1; font-weight:600;}
+  html.appm .modal-overlay > .modal > .modal-body{max-height:none !important; flex:1 1 auto; padding:14px 14px 18px !important; overflow:visible;}
+  html.appm .modal-overlay > .modal > .modal-foot{position:sticky; bottom:0; z-index:6; background:var(--panel); padding:10px 12px calc(10px + env(safe-area-inset-bottom)) !important; box-shadow:0 -6px 18px rgba(16,40,46,.08); flex-wrap:wrap;}
+  html.appm .modal-overlay > .modal > .modal-foot .btn-primary{flex:1 1 auto;}
+  html.appm .modal .tabs{position:sticky; top:58px; z-index:5; background:var(--panel);}
+  /* টেবিল → কার্ড */
+  html.appm table.m-cards, html.appm table.m-cards tbody{display:block; width:100%;}
+  html.appm table.m-cards thead{display:none;}
+  html.appm table.m-cards tr{display:block; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:10px 14px; margin:0 0 10px; box-shadow:0 1px 2px rgba(16,40,46,.04);}
+  html.appm table.m-cards tr:hover{background:var(--panel);}
+  html.appm table.m-cards td{display:flex; justify-content:space-between; align-items:center; gap:12px; border:0 !important; padding:5px 0 !important; text-align:right; min-height:0; white-space:normal;}
+  html.appm table.m-cards td::before{content:attr(data-label); color:var(--text-dim); font-size:12px; font-weight:600; text-align:left; flex:0 0 auto; max-width:48%;}
+  html.appm table.m-cards td.mc-title{display:block; text-align:left; font-size:15px; font-weight:700; padding:2px 0 6px !important; border-bottom:1px solid var(--border) !important; margin-bottom:4px;}
+  html.appm table.m-cards td.mc-title::before, html.appm table.m-cards td.mc-act::before, html.appm table.m-cards td.mc-nolab::before{display:none;}
+  html.appm table.m-cards td.mc-act{justify-content:flex-end; flex-wrap:wrap; padding-top:8px !important; border-top:1px dashed var(--border) !important; margin-top:4px;}
+  html.appm table.m-cards td.mc-empty{display:none;}
+  html.appm table.m-cards tfoot{display:block;} html.appm table.m-cards tfoot tr{background:var(--panel-2);}
+  html.appm .table-wrap:has(> table.m-cards){overflow:visible; border:0; background:none; box-shadow:none;}
+  /* বাড়তি বোতাম "⋯" এ */
+  html.appm .pa-hid{display:none !important;}
+  html.appm .pa-more{display:inline-flex !important;}
+  /* নিচ থেকে ওঠা মেনু (Bottom sheet) */
+  #appmSheet.open{display:block; position:fixed; inset:0; z-index:100500; background:rgba(10,16,28,.42); animation:ucIn .15s ease-out;}
+  #appmSheet .sh{position:absolute; left:0; right:0; bottom:0; max-height:78vh; overflow:auto; background:var(--panel); border-radius:22px 22px 0 0; padding:8px 8px calc(12px + env(safe-area-inset-bottom)); animation:shUp .22s cubic-bezier(.2,.85,.3,1);}
+  @keyframes shUp{from{transform:translateY(100%);} to{transform:none;}}
+  #appmSheet .sh-grab{width:40px; height:5px; border-radius:3px; background:var(--border); margin:4px auto 8px;}
+  #appmSheet .sh-t{font-size:13px; font-weight:700; color:var(--text-dim); padding:4px 14px 8px;}
+  #appmSheet .sh-i{display:flex; align-items:center; gap:12px; width:100%; border:0; background:none; color:var(--text); font:inherit; font-size:15px; text-align:left; padding:13px 16px; border-radius:12px; cursor:pointer;}
+  #appmSheet .sh-i:active{background:var(--panel-2);}
+  /* টেনে Refresh */
+  #ptrInd{display:flex; position:fixed; left:50%; top:0; z-index:95; width:40px; height:40px; margin-left:-20px; border-radius:50%; background:var(--panel); box-shadow:0 4px 14px rgba(0,0,0,.18);
+    align-items:center; justify-content:center; color:var(--primary); transform:translateY(-60px); transition:transform .15s; pointer-events:none;}
+  #ptrInd svg{width:20px; height:20px;} #ptrInd.spin svg{animation:ptrSpin .8s linear infinite;}
+  @keyframes ptrSpin{to{transform:rotate(360deg);}}
+  /* ভাসমান বার / Undo / Toast নিচের বারের ওপরে */
+  html.appm.appm-in #undoBar{bottom:calc(74px + env(safe-area-inset-bottom)) !important;}
+  html.appm.appm-in .pt-prod.psel-on:not(.tb-open) #pselHost{bottom:calc(62px + env(safe-area-inset-bottom)) !important;}
+  html.appm.appm-in body:has(.pt-prod.psel-on:not(.tb-open)) #undoBar{bottom:calc(126px + env(safe-area-inset-bottom)) !important;}
+  html.appm #undoBar{font-size:13px !important; padding:6px 6px 6px 14px !important; left:12px !important; right:12px !important; max-width:none !important; border-radius:12px !important;}
+  html.appm #undoBar kbd{display:none;}
+  html.appm #undoBar > span{overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  html.appm.appm-modal #undoBar{bottom:calc(84px + env(safe-area-inset-bottom)) !important;}
+  html.appm table.m-cards tr{position:relative;}
+  html.appm table.m-cards td.mc-chk{position:absolute; top:12px; right:12px; padding:0 !important; display:block;}
+  html.appm table.m-cards td.mc-chk::before{display:none;}
+  html.appm table.m-cards tr:has(td.mc-chk) td.mc-title{padding-right:36px !important;}
+  html.appm table.m-cards td > *:not(button):not(input):not(select):not(.btn){max-width:64%; white-space:normal !important; overflow:visible !important; text-overflow:clip !important; overflow-wrap:anywhere;}
+  html.appm table.m-cards td.mc-title > *{max-width:none;}
+  html.appm table.m-cards td input:not([type=checkbox]):not([type=radio]), html.appm table.m-cards td select{width:58% !important; max-width:58%; min-width:0; text-align:right !important; flex:0 1 auto;}
+  html.appm #tstStack{top:auto !important; bottom:calc(76px + env(safe-area-inset-bottom)); left:12px; right:12px;}
+  html.appm #content > *{animation:pgIn .2s ease-out;}
+  @keyframes pgIn{from{opacity:.0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+}
+
 body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0,0,0,.5) !important;caret-color:transparent;pointer-events:none;user-select:none;}
 </style>
 </head>
@@ -1763,6 +1855,9 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
     <div class="foot" id="appFoot">AMAZ Product Costing<br>Powered By AMAZ ERP Solution</div>
   </aside>
   <div id="pmBack" role="status"></div>
+  <nav id="bnav" aria-label="App"></nav>
+  <div id="appmSheet" onclick="if(event.target===this) appmSheetClose()"></div>
+  <div id="ptrInd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg></div>
   <div id="main">
     <div id="topbar">
       <button id="menuBtn" onclick="toggleSidebar()">&#9776;</button>
@@ -4655,6 +4750,7 @@ function buildNav(){
 }
 function toggleNavGroup(id){ NAV_OPEN[id]=!NAV_OPEN[id]; buildNav(); }
 function goTo(page){
+  try{ appmNavPush(page); }catch(e){}
   if(page!==currentPage) OR_VTAB='all';      /* v19.70 — অন্য মেনু থেকে Order Requirement এ ফিরলে প্রথম ট্যাব “সব” */
   if(!can(page,'v')){                       /* অনুমতি নেই — প্রথম যেটায় অনুমতি আছে সেখানে যাই */
     const f=myNav()[0];
@@ -4892,6 +4988,203 @@ function monthlyReportHTML(ym,Rx){
   if(Rx) return printWrap((Rx.title||'Costing Report')+' — '+R.label, 'Period: '+R.label, h);
   return printWrap('Monthly Costing Report — '+R.label, 'Period: 1 – '+new Date(R.b-864e5).getDate()+' '+R.label, h);
 }
+
+/* ===================== v19.73 — মোবাইলে Android App এর মতো =====================
+   শুধু ৭৬০px এর নিচে চালু (html.appm)। কম্পিউটারে কিছুই বদলায় না। */
+const APPM_MQ=window.matchMedia?window.matchMedia('(max-width:760px)'):{matches:false,addEventListener:function(){}};
+function appmOn(){ return !!APPM_MQ.matches; }
+var APPM_POP=false, APPM_CLOSING=false, APPM_OPEN=0, APPM_LASTY=0, APPM_T=null, APPM_DEFER=null;
+function appmNavPush(page){
+  if(!appmOn() || APPM_POP || !page || page===currentPage) return;
+  try{ history.pushState({ap:page},''); }catch(e){}
+}
+function appmOverlays(){ const L=[].slice.call(document.querySelectorAll('.modal-overlay.open'));
+  const sb=document.getElementById('sidebar'); if(sb && sb.classList.contains('open')) L.push(sb); return L; }
+function appmCount(){ return appmOverlays().length; }
+function appmCloseTop(){
+  const sb=document.getElementById('sidebar');
+  const sh=document.getElementById('appmSheet'); if(sh && sh.classList.contains('open')){ appmSheetClose(); return true; }
+  const m=topModal();
+  if(m){ const x=m.querySelector('.modal-head .close-x')||m.querySelector('.close-x');
+    if(x) x.click(); else if(m.id && document.getElementById(m.id)===m) closeModal(m.id); else m.remove(); return true; }
+  if(sb && sb.classList.contains('open')){ sb.classList.remove('open'); return true; }
+  return false;
+}
+function appmOnPop(e){
+  if(!appmOn()) return;
+  const st=(e&&e.state)||{};
+  const shOpen=(document.getElementById('appmSheet')||{classList:{contains:function(){return false;}}}).classList.contains('open');
+  if(appmCount()>0 || shOpen){
+    const before=appmCount();
+    APPM_CLOSING=true; appmCloseTop();
+    setTimeout(function(){ APPM_CLOSING=false; APPM_OPEN=appmCount();
+      if(appmCount()>=before && before>0){ try{ history.pushState({amzM:1,ap:currentPage},''); }catch(e){} }   /* বন্ধ হয়নি (যেমন "সেভ হয়নি" প্রশ্নে না) — আবার ধরে রাখি */
+    },350);
+    return;
+  }
+  if(st.dead || st.amzM){ try{ history.back(); }catch(e){} return; }
+  if(currentPage==='orderreq' && OR_CUR && st.ord!==OR_CUR){ APPM_POP=true; try{ ordBack(); }catch(err){} APPM_POP=false; if(!st.ap || st.ap==='orderreq') return; }
+  if(st.ap && st.ap!==currentPage){ APPM_POP=true; try{ goTo(st.ap); }catch(err){} APPM_POP=false; }
+  else if(st.ap==='orderreq' && st.ord && st.ord!==OR_CUR){ APPM_POP=true; try{ ordOpen(st.ord); }catch(err){} APPM_POP=false; }
+}
+function appmWatchOverlays(){
+  const c=appmCount();
+  if(!appmOn()){ APPM_OPEN=c; return; }
+  if(c>APPM_OPEN){ for(let i=APPM_OPEN;i<c;i++){ try{ history.pushState({amzM:1,ap:currentPage},''); }catch(e){} } }
+  else if(c<APPM_OPEN && !APPM_CLOSING){ try{ if(history.state && history.state.amzM) history.replaceState({dead:1,ap:currentPage},''); }catch(e){} }
+  APPM_OPEN=c;
+  document.documentElement.classList.toggle('appm-modal',c>0);
+}
+/* ---- নিচের ট্যাব বার ---- */
+function appmTabs(){
+  const L=[];
+  if(can('dashboard','v')) L.push({k:'dashboard',l:TT('হোম','Home'),i:'grid',go:"goTo('dashboard')"});
+  if(can('products','v')) L.push({k:'products',l:'Costing',i:'box',go:"goTo('products')"});
+  if(can('orderreq','v')) L.push({k:'orderreq',l:'Order',i:'list',go:"goTo('orderreq')"});
+  const apr=(can('approval','e')||(aprCheckOn()&&can('approval','ck')));
+  if(apr) L.push({k:'_apr',l:TT('অনুমোদন','Approve'),i:'shield',go:'openAprBox()',badge:aprList().length});
+  else if(can('rawmaterials','v')) L.push({k:'rawmaterials',l:'RM',i:'leaf',go:"goTo('rawmaterials')"});
+  else if(can('packaging','v')) L.push({k:'packaging',l:'PM',i:'package',go:"goTo('packaging')"});
+  while(L.length>4) L.pop();
+  L.push({k:'_more',l:TT('আরও','More'),i:'caret',go:'appmMore()'});
+  return L;
+}
+function appmBnav(){
+  const nv=document.getElementById('bnav'); if(!nv) return;
+  const inApp=!!ME && appmOn() && !(document.getElementById('loginOverlay')&&getComputedStyle(document.getElementById('loginOverlay')).display!=='none');
+  document.documentElement.classList.toggle('appm-in',inApp);
+  if(!inApp){ if(nv.innerHTML) nv.innerHTML=''; return; }
+  const T=appmTabs(), keys=T.map(function(t){return t.k;});
+  const html=T.map(function(t){
+    const on=(t.k===currentPage) || (t.k==='_more' && keys.indexOf(currentPage)<0);
+    const ic=t.k==='_more'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>':navIco(t.i);
+    return '<button type="button" class="'+(on?'on':'')+'" onclick="'+t.go+'" aria-label="'+esc(t.l)+'"><span class="bn-ic">'+ic+'</span><span class="bn-l">'+esc(t.l)+'</span>'+(t.badge?'<span class="bn-badge">'+(t.badge>99?'99+':t.badge)+'</span>':'')+'</button>';
+  }).join('');
+  if(nv.__h!==html){ nv.innerHTML=html; nv.__h=html; }
+}
+function appmMore(){
+  const items=navLeaves().map(function(n){ const oc=n.getAttribute('onclick')||''; const m=oc.match(/goTo\('([^']+)'\)/); return m?{p:m[1], l:(n.querySelector('span')||n).textContent.trim()}:null; })
+    .filter(function(x){ return x && ['dashboard','products','orderreq'].indexOf(x.p)<0; });
+  const ex=[{l:TT('খুঁজুন (সব জায়গায়)','Search everything'),fn:'openQuickJump()'},{l:TT('Theme বদলান','Toggle theme'),fn:'toggleTheme()'},{l:TT('User Guide','User guide'),fn:'openHelp()'},
+    {l:TT('পাসওয়ার্ড বদলান','Change password'),fn:'openChangePass(false)'},{l:TT('লগআউট','Log out'),fn:'logout()',danger:1}];
+  appmSheet(TT('সব মেনু','All menus'), items.map(function(x){ return {l:x.l, fn:"goTo('"+x.p+"')", on:x.p===currentPage}; }).concat([{sep:1}]).concat(ex));
+}
+/* ---- নিচ থেকে ওঠা মেনু ---- */
+var APPM_SH=[];
+function appmSheet(title,items){
+  const el=document.getElementById('appmSheet'); if(!el) return; APPM_SH=items;
+  el.innerHTML='<div class="sh"><div class="sh-grab"></div>'+(title?'<div class="sh-t">'+esc(title)+'</div>':'')+items.map(function(it,i){
+    if(it.sep) return '<div style="height:1px;background:var(--border);margin:6px 10px;"></div>';
+    return '<button type="button" class="sh-i" style="'+(it.on?'color:var(--primary);font-weight:700;background:var(--panel-2);':'')+(it.danger?'color:var(--danger);':'')+'" onclick="appmSheetGo('+i+')">'+esc(it.l)+'</button>'; }).join('')+'</div>';
+  el.classList.add('open');
+  try{ history.pushState({amzM:1,ap:currentPage},''); }catch(e){}
+}
+function appmSheetClose(){ const el=document.getElementById('appmSheet'); if(!el||!el.classList.contains('open')) return; el.classList.remove('open'); el.innerHTML='';
+  if(!APPM_CLOSING){ try{ if(history.state && history.state.amzM) history.replaceState({dead:1,ap:currentPage},''); }catch(e){} } }
+function appmSheetGo(i){ const it=APPM_SH[i]; appmSheetClose(); if(!it) return;
+  setTimeout(function(){ try{ if(typeof it.fn==='function') it.fn(); else (new Function(it.fn))(); }catch(e){ console.error(e); } },30); }
+/* ---- টেবিল → কার্ড, বাড়তি বোতাম "⋯" এ ---- */
+const APPM_CARD_PAGES={rawmaterials:1,packaging:1,suppliers:1,machines:1,fgproducts:1,users:1,roles:1,audit:1,loginhist:1,recycle:1,quotation:1,exportset:1};
+function appmCards(){
+  if(!appmOn()) return;
+  const root=document.getElementById('content'); if(!root) return;
+  if(APPM_CARD_PAGES[currentPage]) root.querySelectorAll('table').forEach(function(tb){
+    if(tb.classList.contains('m-cards') || tb.closest('.modal')) return;
+    const hr=tb.tHead&&tb.tHead.rows.length?tb.tHead.rows[tb.tHead.rows.length-1]:null; if(!hr || hr.cells.length<2) return;
+    if(tb.querySelector('td[colspan]:not([colspan="1"])') && tb.tBodies[0] && tb.tBodies[0].rows.length===1) return;
+    const H=[]; [].forEach.call(hr.cells,function(th){ const t=(th.textContent||'').trim(); for(let k=0;k<(th.colSpan||1);k++) H.push(t); });
+    tb.classList.add('m-cards');
+    [].forEach.call(tb.tBodies,function(tbd){ [].forEach.call(tbd.rows,function(r){ let k=0, first=true;
+      [].forEach.call(r.cells,function(td){ const lab=H[k]||''; td.setAttribute('data-label',lab);
+        const txt=(td.textContent||'').trim(), hasBtn=!!td.querySelector('button,a.btn'), hasIn=!!td.querySelector('input,select,textarea');
+        const onlyChk=!txt && td.querySelector('input[type=checkbox]') && td.querySelectorAll('input,select,button').length===1;
+        if(onlyChk){ td.classList.add('mc-chk'); k+=td.colSpan||1; return; }
+        if(first && txt && !hasBtn){ td.classList.add('mc-title'); first=false; }
+        else if(hasBtn && !hasIn && !txt.replace(/[^\wঀ-৿]/g,'').length) td.classList.add('mc-act');
+        else if(hasBtn && !hasIn && td===r.cells[r.cells.length-1]) td.classList.add('mc-act');
+        else if(!lab) td.classList.add('mc-nolab');
+        if(!txt && !hasBtn && !hasIn && !td.querySelector('img,svg,span')) td.classList.add('mc-empty');
+        k+=td.colSpan||1; }); }); });
+  });
+}
+function appmActions(){
+  if(!appmOn()) return;
+  document.querySelectorAll('#content .page-actions').forEach(function(pa){
+    if(pa.querySelector('.tb-more') || pa.querySelector('.pa-more')) return;
+    const B=[].slice.call(pa.querySelectorAll(':scope > .btn, :scope > a.btn, :scope > div > .btn, :scope > span > .btn')).filter(function(b){ return b.offsetParent!==null || b.style.display!=='none'; });
+    if(B.length<=3) return;
+    const keep=B.filter(function(b){ return b.classList.contains('btn-primary') || /ফিরুন|Back/i.test(b.textContent); }).slice(0,2);
+    if(keep.length<2) B.forEach(function(b){ if(keep.length<2 && keep.indexOf(b)<0 && !/ফিরুন|Back/i.test(b.textContent)) keep.push(b); });
+    const hid=B.filter(function(b){ return keep.indexOf(b)<0; }); if(!hid.length) return;
+    hid.forEach(function(b){ b.classList.add('pa-hid'); });
+    const mb=document.createElement('button'); mb.type='button'; mb.className='btn btn-ghost btn-sm pa-more'; mb.innerHTML='&#8943; '+TT('আরও','More');
+    mb.onclick=function(){ appmSheet(TT('আরও কাজ','More actions'), hid.map(function(b){ return {l:(b.textContent||'').replace(/\s+/g,' ').trim()||b.title||'…', fn:function(){ b.click(); }}; })); };
+    const last=keep[keep.length-1]; (last&&last.parentNode===pa?pa:(last?last.parentNode:pa)).appendChild(mb);
+  });
+}
+function appmAfter(){
+  try{ appmBnav(); }catch(e){ console.error(e); }
+  try{ appmCards(); }catch(e){ console.error(e); }
+  try{ appmActions(); }catch(e){ console.error(e); }
+}
+/* ---- App bar লুকানো / ফেরানো ---- */
+function appmScroll(){
+  if(!appmOn()) return; const y=window.scrollY||0, tb=document.getElementById('topbar'); if(!tb) return;
+  if(y<60 || y<APPM_LASTY-8) tb.classList.remove('tb-hide'); else if(y>APPM_LASTY+8) tb.classList.add('tb-hide');
+  APPM_LASTY=y;
+}
+/* ---- কি-বোর্ড খুললে নিচের বার সরে যায় ---- */
+function appmVV(){ if(!window.visualViewport) return; const kb=window.visualViewport.height<window.innerHeight*0.72; document.documentElement.classList.toggle('kb-open',kb && appmOn()); }
+/* ---- টেনে Refresh (পাতার একদম ওপরে নিচের দিকে টানলে Sync) ---- */
+var PTR={y0:null,d:0,busy:false};
+function ptrStart(e){ if(!appmOn()||PTR.busy||appmCount()>0||window.scrollY>2||!ME) { PTR.y0=null; return; } PTR.y0=e.touches[0].clientY; PTR.d=0; }
+function ptrMove(e){ if(PTR.y0===null) return; PTR.d=e.touches[0].clientY-PTR.y0; const ind=document.getElementById('ptrInd'); if(!ind) return;
+  if(PTR.d>0 && window.scrollY<=0){ const t=Math.min(PTR.d*0.5,90); ind.style.transform='translateY('+(t-50)+'px) rotate('+(t*4)+'deg)'; } }
+function ptrEnd(){ const ind=document.getElementById('ptrInd'); if(PTR.y0===null){ return; } const go=PTR.d>130; PTR.y0=null;
+  if(!ind) return;
+  if(!go){ ind.style.transform=''; return; }
+  PTR.busy=true; ind.classList.add('spin'); ind.style.transform='translateY(26px)';
+  const done=function(){ PTR.busy=false; ind.classList.remove('spin'); ind.style.transform=''; render(); };
+  try{ if(typeof syncReady==='function' && syncReady()){ Promise.resolve(cloudSync(true)).then(function(){ toast(TT('Sync হয়েছে','Synced')); done(); }).catch(function(){ done(); }); }
+       else { setTimeout(function(){ done(); toast(TT('পাতা নতুন করে দেখানো হলো','Refreshed')); },400); } }catch(e){ done(); }
+}
+/* ---- Phone এ Install ---- */
+window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); APPM_DEFER=e; try{ if(currentPage==='dashboard') render(); }catch(x){} });
+function appmStandalone(){ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true; }
+function appmIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent||'') || (navigator.maxTouchPoints>1 && /Macintosh/.test(navigator.userAgent||'')); }
+function appmInstallCardHTML(){
+  if(!appmOn() || appmStandalone()) return '';
+  try{ if(localStorage.getItem('amaz_costing_noinst')) return ''; }catch(e){}
+  if(!APPM_DEFER && !appmIOS()) return '';
+  return '<div class="dnote info">'+dnIco('package')+'<span class="dn-t"><b>'+TT('Phone এ App হিসেবে রাখুন','Install as an app')+'</b> — '+TT('Home Screen এ icon, পুরো পর্দায় খোলে, দ্রুত চলে','icon on the home screen, opens full screen, faster')+'</span>'+
+    '<button class="btn btn-sm btn-primary" onclick="appmInstall()">'+TT('Install','Install')+'</button>'+
+    '<button class="btn btn-sm btn-ghost" onclick="try{localStorage.setItem(\'amaz_costing_noinst\',\'1\')}catch(e){};render()">&#10005;</button></div>';
+}
+function appmInstall(){
+  if(APPM_DEFER){ const d=APPM_DEFER; APPM_DEFER=null; d.prompt(); (d.userChoice||Promise.resolve({})).then(function(r){ if(r&&r.outcome==='accepted') toast(TT('Install হচ্ছে — Home Screen এ দেখুন','Installing — check your home screen')); render(); }); return; }
+  appmSheet(TT('iPhone এ Install','Install on iPhone'),[{l:TT('১. নিচের Share (⬆) বোতাম চাপুন','1. Tap the Share (⬆) button')},{l:TT('২. “Add to Home Screen” বাছুন','2. Choose “Add to Home Screen”')},{l:TT('৩. ওপরে ডানে “Add” চাপুন','3. Tap “Add” at the top right')}].map(function(x){ return {l:x.l, fn:function(){}}; }));
+}
+function appmInit(){
+  const apply=function(){ document.documentElement.classList.toggle('appm',appmOn()); appmAfter(); if(!appmOn()){ const tb=document.getElementById('topbar'); if(tb) tb.classList.remove('tb-hide'); } };
+  apply(); try{ APPM_MQ.addEventListener('change',apply); }catch(e){ try{ APPM_MQ.addListener(apply); }catch(x){} }
+  try{ history.replaceState({ap:currentPage||'dashboard'},''); }catch(e){}
+  window.addEventListener('popstate',appmOnPop);
+  window.addEventListener('scroll',appmScroll,{passive:true});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',appmVV);
+  document.addEventListener('touchstart',ptrStart,{passive:true}); document.addEventListener('touchmove',ptrMove,{passive:true}); document.addEventListener('touchend',ptrEnd,{passive:true});
+  const mo=new MutationObserver(function(muts){
+    let ov=false, ct=false;
+    muts.forEach(function(m){ const t=m.target;
+      if(m.type==='attributes'){ if(t.classList && (t.classList.contains('modal-overlay')||t.id==='sidebar')) ov=true; }
+      else { if(t.id==='content' || (t.closest && t.closest('#content'))) ct=true;
+        [].forEach.call(m.addedNodes,function(nd){ if(nd.classList && nd.classList.contains('modal-overlay')) ov=true; });
+        [].forEach.call(m.removedNodes,function(nd){ if(nd.classList && nd.classList.contains('modal-overlay')) ov=true; }); } });
+    if(ov) appmWatchOverlays();
+    if(ct){ clearTimeout(APPM_T); APPM_T=setTimeout(appmAfter,40); }
+  });
+  mo.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+}
+
 /* ================= v19.69 — সাপ্তাহিক সারাংশ =================
    প্রতি সপ্তাহের প্রথমবার Dashboard খুললে আগের ৭ দিনের সারাংশ: PDF / Email / WhatsApp।
    ব্রাউজার নিজে থেকে Email পাঠাতে পারে না (Server লাগে) — তাই Email বোতাম চাপলে Email App খোলে বার্তা সহ, PDF টা জুড়ে দিতে হয়। */
@@ -5111,7 +5404,7 @@ function renderDashboard(){
   const rows=DB.products.map(function(p){ const r=calc(p); avgMfg+=r.mfgCtn; if(r.netCtn>0) profitable++; return {p:p,r:r}; });
   if(tp) avgMfg/=tp;
   const recent=dashRecentList();
-  return dashHeader()+cfCardHTML()+aprCardHTML()+weeklyCardHTML()+monthlyCardHTML()+rateAlertHTML()+'<div class="grid-kpi">'+
+  return dashHeader()+appmInstallCardHTML()+cfCardHTML()+aprCardHTML()+weeklyCardHTML()+monthlyCardHTML()+rateAlertHTML()+'<div class="grid-kpi">'+
    '<div class="kpi primary"><div class="label">FG Costing Sheets</div><div class="value">'+tp+'</div><div class="sub">তৈরি করা হয়েছে</div></div>'+
    '<div class="kpi accent"><div class="label">Raw Materials</div><div class="value">'+DB.rawMaterials.length+'</div></div>'+
    '<div class="kpi"><div class="label">Packing Items</div><div class="value">'+DB.packaging.length+'</div></div>'+
@@ -11414,8 +11707,8 @@ function ordNew(){
   audit('create','order','('+ctypeLabel(OR_TAB)+')','');
   saveDB(); render();
 }
-function ordOpen(id){ if(OR_CUR!==id) OR_VTAB='all'; OR_CUR=id; render(); window.scrollTo(0,0); }
-function ordBack(){ OR_CUR=null; render(); window.scrollTo(0,0); }
+function ordOpen(id){ if(OR_CUR!==id) OR_VTAB='all'; if(OR_CUR!==id && !APPM_POP && appmOn()){ try{ history.pushState({ap:'orderreq',ord:id},''); }catch(e){} } OR_CUR=id; render(); window.scrollTo(0,0); }
+function ordBack(){ if(appmOn() && !APPM_POP){ try{ if(history.state && history.state.ord) history.replaceState({dead:1,ap:'orderreq'},''); }catch(e){} } OR_CUR=null; render(); window.scrollTo(0,0); }
 function ordDelete(id){
   if(!need('orderreq','d','Order মুছে ফেলা')) return;
   const o=ordById(id); if(!o) return;
@@ -18079,6 +18372,7 @@ function doLogin(){
   if(usr.mustChange) setTimeout(function(){ openChangePass(true); }, 400);
 }
 function logout(){
+  setTimeout(function(){ try{ appmBnav(); }catch(e){} },60);
   try{ pmBackHide(); }catch(e){}
   if(!confirm('লগআউট করবেন?')) return;
   audit('logout','session',ME?ME.username:'',''); saveDB();
@@ -19427,7 +19721,7 @@ function undoShow(){
   if(!b){ b=document.createElement('div'); b.id='undoBar'; document.body.appendChild(b); }
   const L=window.LANG==='en';
   b.innerHTML='<span>'+esc(undoDesc(g))+'</span><button class="btn btn-sm" onclick="undoLast()">↩ Undo <kbd>Ctrl+Z</kbd></button><button class="x" onclick="undoHide()" title="'+(L?'Close':'বন্ধ')+'">✕</button>';
-  b.classList.add('on'); clearTimeout(UNDO_T); UNDO_T=setTimeout(undoHide,12000);
+  b.classList.add('on'); clearTimeout(UNDO_T); UNDO_T=setTimeout(undoHide,(typeof appmOn==='function'&&appmOn())?6000:12000);
 }
 function undoHide(){ const b=document.getElementById('undoBar'); if(b) b.classList.remove('on'); }
 function undoLast(){
@@ -20398,6 +20692,17 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.73', d:'2026-11-18', t:'মোবাইলে Android App এর মতো ব্যবহার', li:[
+  '<b>নিচের ট্যাব বার:</b> হোম · Costing · Order · অনুমোদন (অপেক্ষার সংখ্যা সহ) · আরও — বুড়ো আঙুলের নাগালে; “আরও” চাপলে নিচ থেকে সব মেনু ওঠে',
+  '<b>ফোনের Back বোতাম:</b> খোলা জানালা, মেনু বা Order আগে বন্ধ করে, তারপর আগের পাতায় যায় — App এর মতো (“সেভ হয়নি” প্রশ্নে “না” দিলে জানালা খোলাই থাকে)',
+  '<b>ওপরের বার:</b> ছোট; নিচে স্ক্রল করলে লুকায়, ওপরে স্ক্রল করলেই ফেরে — বেশি জায়গা',
+  '<b>পুরো পর্দার জানালা:</b> Costing Edit, RM/PM Edit, অনুমোদন বাক্স ইত্যাদি পুরো পর্দা জুড়ে, বাঁয়ে “←” ফিরে যান, নিচে Save বোতাম সবসময় দেখা যায়',
+  '<b>টেবিলের বদলে কার্ড:</b> RM, PM, Supplier, Machine, FG, User, Role, Activity Log, Login History, Recycle Bin, Quotation — প্রতি সারি একটা কার্ড, পাশে স্ক্রল করতে হয় না',
+  '<b>“⋯ আরও” মেনু:</b> Order এর মতো যেখানে অনেক বোতাম, সেখানে মূল ১-২টা থাকে, বাকিগুলো নিচ থেকে ওঠা মেনুতে',
+  '<b>টেনে Refresh:</b> পাতার একদম ওপরে নিচের দিকে টানলে Cloud Sync হয়',
+  '<b>Install:</b> Dashboard এ “Phone এ App হিসেবে রাখুন” — Android এ এক চাপে, iPhone এ ধাপ দেখায়',
+  'বোতাম আর ঘর আঙুলের মাপে বড়, লেখার সময় নিচের বার সরে যায়, Undo বার ছোট ও ৬ সেকেন্ডে চলে যায়',
+  'কম্পিউটারে (৭৬০px এর বেশি চওড়া পর্দায়) কিছুই বদলায়নি']},
  {v:'19.72', d:'2026-11-18', t:'Premium চেহারা (শুধু Modern)', li:[
   '<b>বাংলা লেখা ইংরেজির সমান মাপে:</b> বাংলা অক্ষরের জন্য আলাদা font সেটিং — বোতাম, ট্যাব, টেবিলের মাথা, লেবেল সব জায়গায় বাংলা আর ছোট দেখায় না; সংখ্যাগুলো কলামে সোজা লাইনে',
   '<b>পেছনের নেটওয়ার্ক নকশা:</b> Menu তে প্রায় অদৃশ্য, পাতায় শুধু ডান দিকে — লেখার পেছনে আর দাগ পড়ে না (Login পাতা আগের মতো)',
@@ -23281,6 +23586,17 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.73', d:'2026-11-18', t:'Android-app feel on mobile', li:[
+  '<b>Bottom tab bar:</b> Home · Costing · Order · Approve (with pending count) · More — within thumb reach; “More” opens all menus in a bottom sheet',
+  '<b>Phone back button:</b> closes the open window, menu or order first, then goes to the previous page — like an app (answering “No” to an unsaved-changes prompt keeps the window open)',
+  '<b>Top bar:</b> compact; hides when scrolling down and returns when scrolling up',
+  '<b>Full-screen windows:</b> costing edit, RM/PM edit, approval box etc. fill the screen with a “←” back arrow and an always-visible Save bar',
+  '<b>Cards instead of tables:</b> RM, PM, suppliers, machines, FG, users, roles, activity log, login history, recycle bin and quotations show each row as a card — no sideways scrolling',
+  '<b>“⋯ More” menu:</b> pages with many buttons (like an order) keep the main 1-2 and move the rest into a bottom sheet',
+  '<b>Pull to refresh:</b> pulling down at the top of a page runs cloud sync',
+  '<b>Install:</b> a dashboard card to add the app to the home screen — one tap on Android, steps on iPhone',
+  'Larger touch targets, the bottom bar moves away while typing, smaller undo bar that leaves after 6 seconds',
+  'Nothing changes on a computer (screens wider than 760px)']},
  {v:'19.72', d:'2026-11-18', t:'Premium look (Modern only)', li:[
   '<b>Bangla text the same size as English:</b> a dedicated Bangla font setting — buttons, tabs, table headings and labels no longer show smaller Bangla; numbers line up in columns',
   '<b>Network background:</b> almost invisible in the menu and only on the right side of pages — no lines behind text (login page unchanged)',
@@ -26786,6 +27102,7 @@ function idleNote(){
 })();
 function startApp(){
   idleTouch(true);
+  try{ if(!window.__appmInit){ window.__appmInit=1; appmInit(); } else appmAfter(); }catch(e){ console.error(e); }
   setTimeout(function(){ try{ if(mediaApply()) saveDB(); }catch(e){ console.error(e); } },900);   /* v19.66 — Logo/সিল/স্বাক্ষর Cloud এ */
   setTimeout(function(){ try{ pmDraftCheck(); }catch(e){ console.error(e); } },700);
   const r=myRole();
