@@ -16152,6 +16152,54 @@ function remoteWins(rTs,rDev,lTs,lDev){
   return String(rDev||'') > String(lDev||'');
 }
 
+/* v19.66 — Logo / সিল / স্বাক্ষর এখন Cloud Sync হয়: Product ছবির মতোই DB.photos এ আলাদা সারি
+   (pid '__logo' / '__seal' / '__sign', ≤40,000 অক্ষর — দরকার হলে ছোট করে)। Settings এর ঘরে আগের মতোই থাকে।
+   Letter Head অনেক বড় (A4) — সেটা আগের মতো প্রতি ডিভাইসে আলাদা। */
+const MEDIA_KINDS=['logo','seal','sign'];
+function mediaState(){ DB._mediaAt=DB._mediaAt||{}; return DB._mediaAt; }
+function mediaFit(data,cb){
+  if(!data || data.length<=PHOTO_MAXLEN-500){ cb(data); return; }
+  const im=new Image();
+  im.onload=function(){
+    let w=im.width||1, h=im.height||1, out=data, sc=1;
+    for(let t=0;t<14 && out.length>PHOTO_MAXLEN-500;t++){
+      sc*=0.85; const cw=Math.max(20,Math.round(w*sc)), ch=Math.max(10,Math.round(h*sc));
+      const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const x=cv.getContext('2d');
+      x.drawImage(im,0,0,cw,ch); out=cv.toDataURL('image/png');
+      if(out.length>PHOTO_MAXLEN-500){ const c2=document.createElement('canvas'); c2.width=cw; c2.height=ch; const y=c2.getContext('2d');
+        y.fillStyle='#fff'; y.fillRect(0,0,cw,ch); y.drawImage(im,0,0,cw,ch); const j=c2.toDataURL('image/jpeg',0.8); if(j.length<out.length) out=j; }
+    }
+    cb(out.length<=PHOTO_MAXLEN?out:'');
+  };
+  im.onerror=function(){ cb(''); };
+  im.src=data;
+}
+function mediaPush(kind){
+  const st=DB.settings||{}, M=mediaState();
+  if(!st[kind]){ photoPut('__'+kind,''); delete M[kind]; return; }
+  const src=st[kind];
+  mediaFit(src,function(fit){
+    if(!fit || (DB.settings||{})[kind]!==src) return;
+    photoPut('__'+kind,fit); const r=photoRec('__'+kind); M[kind]=r?r.at:nowISO(); M[kind+'Src']=src.length;
+    saveDB();
+  });
+}
+function mediaApply(){
+  if(!DB.settings) return false;
+  const st=DB.settings, M=mediaState(); let ch=false;
+  MEDIA_KINDS.forEach(function(k){
+    const r=photoRec('__'+k);
+    if(r && r.img){
+      if(!M[k] || String(r.at||'')>String(M[k])){ st[k]=r.img; M[k]=r.at||nowISO(); M[k+'Src']=r.img.length; ch=true; }
+    } else if(M[k]){                           /* অন্য ডিভাইসে মুছে ফেলা হয়েছে */
+      delete st[k]; delete M[k]; delete M[k+'Src']; ch=true;
+    } else if(st[k] && !M[k+'Pending']){       /* আগের ভার্সনে এই ডিভাইসে দেওয়া — এখন ক্লাউডে পাঠাই */
+      M[k+'Pending']=1; setTimeout(function(){ delete M[k+'Pending']; mediaPush(k); },50);
+    }
+  });
+  return ch;
+}
+
 /* ---------- বদল ধরা: saveDB এর ভিতর থেকেই চলে ---------- */
 let SYNC_APPLYING=false;                  /* pull বসানোর সময় নিজের বদল গোনা বন্ধ */
 function stampChanges(){
@@ -16309,6 +16357,7 @@ function applyRemote(rows){
     if(cur) updated++; else added++;
   });
   SYNC_APPLYING=false;
+  try{ if(rows.some(function(r){ return r.c==='photos'; }) && mediaApply()){ saveDB(); } }catch(e){ console.error(e); }
   try{ undoResync(); }catch(e){}
   /* v19.14 — অন্য PC তে License বসালে এই PC তেও সাথে সাথে চালু */
   try{ if(rows.some(function(r){ return r.c==='licenses'||r.c==='singles'||r.c==='licDevices'; })) setTimeout(function(){ try{ licRefresh(); }catch(e){} },60); }catch(e){}
@@ -16951,6 +17000,7 @@ function onLogoFile(inp, which){
         DB.settings=DB.settings||{};
         DB.settings[kind]=data;
         saveDB(); render();
+        if(MEDIA_KINDS.indexOf(kind)>=0) mediaPush(kind);
         toast(lbl+' যোগ হয়েছে');
       }catch(err){ toast('ছবিটি পড়া গেল না',true); }
     };
@@ -16964,6 +17014,7 @@ function removeLogo(which){
   const kind=(which==='seal'||which==='letterhead'||which==='sign')?which:'logo';
   DB.settings=DB.settings||{};
   delete DB.settings[kind];
+  if(MEDIA_KINDS.indexOf(kind)>=0) mediaPush(kind);
   saveDB(); render();
   toast((kind==='seal'?'সিল':(kind==='sign'?'স্বাক্ষর':(kind==='letterhead'?'Letter Head':'লোগো')))+' সরানো হলো');
 }
@@ -19823,6 +19874,11 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.66', d:'2026-11-18', t:'Logo, সিল আর স্বাক্ষর এখন Cloud Sync হয়', li:[
+  '<b>সমস্যা:</b> Settings এ দেওয়া Logo, সিল আর Prepared By স্বাক্ষর শুধু সেই ডিভাইসেই থাকত — অন্য PC / মোবাইলে Print/PDF এ সই আসত না',
+  '<b>এখন:</b> এগুলো Product ছবির মতো আলাদা সারিতে Cloud এ যায়; অন্য ডিভাইসে Sync হলেই নিজে বসে; একটায় মুছলে বাকিগুলো থেকেও মুছে যায়',
+  'আগে থেকে দেওয়া Logo/সিল/সই নতুন Version খুললে নিজে থেকেই Cloud এ ওঠে — আবার আপলোড লাগবে না; বড় হলে নিজে ছোট হয়ে যায়',
+  'Letter Head (পুরো A4 ছবি) অনেক বড় — সেটা আগের মতো প্রতি ডিভাইসে আলাদা']},
  {v:'19.65', d:'2026-11-18', t:'মোবাইলে PDF / Excel Download ঠিক', li:[
   '<b>সমস্যা:</b> PDF বানাতে কয়েক সেকেন্ড লাগে — ততক্ষণে ফোনের ব্রাউজার আপনার “চাপ” ভুলে যায়, তাই “PDF তৈরি হয়েছে” দেখালেও ফাইল নামত না',
   '<b>এখন:</b> মোবাইলে ফাইল তৈরি হলে একটা বাক্স আসে — <b>Download</b> (ফোনে রাখুন), <b>Share</b> (WhatsApp / Drive / Email), <b>খুলে দেখুন</b>; চাপলেই নামে',
@@ -22664,6 +22720,11 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.66', d:'2026-11-18', t:'Logo, seal and signature now cloud sync', li:[
+  '<b>Problem:</b> the logo, seal and Prepared By signature set in Settings stayed on that device only — other PCs / phones printed without the signature',
+  '<b>Now:</b> they go to the cloud as separate rows like product pictures, appear on other devices after sync, and removing one removes it everywhere',
+  'A logo/seal/signature added earlier is uploaded automatically when the new version opens — no need to upload again; large images are shrunk automatically',
+  'The letterhead (full A4 image) is too large and still stays per device']},
  {v:'19.65', d:'2026-11-18', t:'PDF / Excel download fixed on mobile', li:[
   '<b>Problem:</b> building a PDF takes a few seconds, and by then the phone browser no longer treats it as your tap, so “PDF created” showed but nothing downloaded',
   '<b>Now:</b> on mobile a small box appears when the file is ready — <b>Download</b>, <b>Share</b> (WhatsApp / Drive / Email) and <b>Open</b>; tapping one saves it',
@@ -26072,6 +26133,7 @@ function idleNote(){
 })();
 function startApp(){
   idleTouch(true);
+  setTimeout(function(){ try{ if(mediaApply()) saveDB(); }catch(e){ console.error(e); } },900);   /* v19.66 — Logo/সিল/স্বাক্ষর Cloud এ */
   setTimeout(function(){ try{ pmDraftCheck(); }catch(e){ console.error(e); } },700);
   const r=myRole();
   document.getElementById('userChip').style.display='flex';
