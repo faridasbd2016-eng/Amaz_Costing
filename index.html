@@ -1831,6 +1831,53 @@ html.ui-modern .tag:not(#printArea *):not(.pdfbox *){font-size:11px;}
   @keyframes pgIn{from{opacity:.0; transform:translateY(6px);} to{opacity:1; transform:none;}}
 }
 
+
+/* ===================== v19.74 — মোবাইলে Login পাতা App এর মতো + সব পাতায় FAB / ⋯ মেনু ===================== */
+#appmFab{display:none;}
+@media (max-width:760px){
+  html #loginOverlay.ln{background:linear-gradient(160deg,var(--primary) 0%,var(--primary-2) 100%) !important; flex-direction:column !important;}
+  html[data-theme="dark"] #loginOverlay.ln{background:linear-gradient(160deg,#0b3b38 0%,#0c2f3d 100%) !important;}
+  html #loginOverlay.ln #lnNet{opacity:.35 !important;}
+  html #loginOverlay.ln .ln-brand{display:none !important;}
+  html #loginOverlay.ln .ln-main{justify-content:flex-end !important; align-items:stretch !important; padding:clamp(210px,34vh,320px) 0 0 !important; min-height:100dvh; flex:1 0 auto;}
+  html #loginOverlay.ln .ln-card{max-width:none !important; width:100% !important; margin:0 !important; border-radius:28px 28px 0 0 !important; border:0 !important; position:static !important;
+    box-shadow:0 -12px 40px rgba(0,0,0,.18) !important; padding:26px 22px 18px !important; animation:lnSheet .38s cubic-bezier(.2,.85,.3,1); background:var(--panel) !important;}
+  @keyframes lnSheet{from{transform:translateY(40px); opacity:.3;} to{transform:none; opacity:1;}}
+  html #loginOverlay.ln .ln-mlogo{display:flex !important; position:absolute; top:calc(7vh + env(safe-area-inset-top)); left:0; right:0; flex-direction:column; align-items:center; gap:10px; margin:0 !important; text-align:center; pointer-events:none;}
+  html #loginOverlay.ln .ln-mlogo .ln-mark{width:78px !important; height:78px !important; border-radius:24px !important; font-size:27px !important; background:#fff !important; color:var(--primary) !important; box-shadow:0 14px 34px rgba(0,0,0,.22) !important;}
+  html #loginOverlay.ln .ln-mlogo b{font-size:25px !important; color:#fff !important; font-weight:800; letter-spacing:-.2px;}
+  html #loginOverlay.ln .ln-mlogo .ln-mco{display:block; font-size:13px; color:rgba(255,255,255,.85); margin-top:-4px; max-width:86vw;}
+  html #loginOverlay.ln .ln-vpill{position:absolute !important; top:calc(14px + env(safe-area-inset-top)) !important; left:16px !important; right:auto !important; background:rgba(255,255,255,.16) !important; color:#fff !important; border-color:rgba(255,255,255,.3) !important;}
+  html #loginOverlay.ln .ln-lang{position:absolute !important; top:calc(10px + env(safe-area-inset-top)) !important; right:14px !important; background:rgba(255,255,255,.16) !important; color:#fff !important; border:1px solid rgba(255,255,255,.3) !important; border-radius:999px !important; height:36px !important;}
+  html #loginOverlay.ln .ln-card h2{font-size:24px !important; font-weight:800 !important;}
+  html #loginOverlay.ln .ln-sub{margin:4px 0 18px !important;}
+  html #loginOverlay.ln .ln-inp input{height:54px !important; border-radius:14px !important; font-size:16px !important;}
+  html #loginOverlay.ln .ln-btn, html #loginOverlay.ln .lg-btn{height:54px !important; border-radius:16px !important; font-size:16.5px !important; font-weight:800 !important;}
+  html #loginOverlay.ln .ln-btn2{min-height:50px !important; border-radius:14px !important;}
+  html #loginOverlay.ln .ln-ver{background:var(--panel); margin:0 !important; padding:4px 16px calc(16px + env(safe-area-inset-bottom)) !important; text-align:center;}
+  html #loginOverlay.ln .ln-foot{font-size:12.5px;}
+  /* FAB — নতুন যোগ করার গোল বোতাম */
+  html.appm.appm-in #appmFab.on{display:inline-flex; position:fixed; right:16px; bottom:calc(76px + env(safe-area-inset-bottom)); z-index:89; height:56px; min-width:56px; padding:0 20px 0 16px; gap:8px;
+    align-items:center; justify-content:center; border:0; border-radius:18px; background:var(--grad,var(--primary)); background-color:var(--primary); color:#fff; font:inherit; font-size:15px; font-weight:800;
+    box-shadow:0 10px 24px rgba(13,148,136,.35), 0 3px 8px rgba(0,0,0,.15); cursor:pointer; transition:padding .2s, transform .2s, bottom .22s;}
+  html.appm.appm-in #appmFab svg{width:24px; height:24px; flex:none;}
+  html.appm.appm-in #appmFab .fl{max-width:150px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; transition:max-width .2s, opacity .2s;}
+  html.appm.appm-in #appmFab.mini{padding:0;} html.appm.appm-in #appmFab.mini .fl{max-width:0; opacity:0;}
+  html.appm.appm-in #appmFab:active{transform:scale(.94);}
+  html.appm.kb-open #appmFab, html.appm.appm-modal #appmFab{display:none !important;}
+  html.appm.appm-in body:has(#undoBar.on) #appmFab{bottom:calc(140px + env(safe-area-inset-bottom));}
+  html.appm #content{padding-bottom:84px !important;}
+  /* ট্যাব / চিপ সারি পাশে স্ক্রল, স্ক্রলবার ছাড়া */
+  html.appm #content .tabs, html.appm #content .sec-tabs, html.appm #content .prod-tabs{flex-wrap:nowrap !important; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;}
+  html.appm #content .tabs::-webkit-scrollbar, html.appm #content .sec-tabs::-webkit-scrollbar{display:none;}
+  html.appm #content .tabs > *, html.appm #content .sec-tabs > *{flex:0 0 auto; scroll-snap-align:start;}
+  /* Panel এর মাথা: খোঁজার ঘর পুরো চওড়া */
+  html.appm #content .panel-head{flex-wrap:wrap; gap:8px; padding:12px 14px !important;}
+  html.appm #content .panel-head .search-box{flex:1 1 100%; max-width:none;}
+  html.appm #content .panel-head h3:empty{display:none;}
+  html.appm .product-card:active, html.appm table.m-cards tr:active{transform:scale(.99);}
+}
+
 body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0,0,0,.5) !important;caret-color:transparent;pointer-events:none;user-select:none;}
 </style>
 </head>
@@ -1856,6 +1903,7 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
   </aside>
   <div id="pmBack" role="status"></div>
   <nav id="bnav" aria-label="App"></nav>
+  <button type="button" id="appmFab" onclick="appmFabGo()" aria-label="নতুন"></button>
   <div id="appmSheet" onclick="if(event.target===this) appmSheetClose()"></div>
   <div id="ptrInd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg></div>
   <div id="main">
@@ -2579,7 +2627,7 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
     <button class="lang-btn ln-lang" onclick="toggleLang()" title="Language">EN</button>
     <div class="ln-card">
       <span class="ln-vpill" id="lgVerPill" title=""></span>
-      <div class="ln-mlogo"><span class="ln-mark">AC</span><b>AMAZ Costing</b></div>
+      <div class="ln-mlogo"><span class="ln-mark">AC</span><b>AMAZ Costing</b><small class="ln-mco" id="lgCoM"></small></div>
       <h2>লগইন করুন</h2>
       <p class="ln-sub">আপনার Username ও Password দিন</p>
       <label class="ln-lbl" for="lgUser">Username</label>
@@ -5122,10 +5170,59 @@ function appmActions(){
     const last=keep[keep.length-1]; (last&&last.parentNode===pa?pa:(last?last.parentNode:pa)).appendChild(mb);
   });
 }
+/* ---- v19.74 — FAB (নতুন যোগ) আর Panel এর মাথার বাড়তি বোতাম "⋯" এ ---- */
+var APPM_FAB=null;
+function appmFab(){
+  const fb=document.getElementById('appmFab'); if(!fb) return;
+  APPM_FAB=null;
+  if(appmOn() && ME){
+    const B=[].slice.call(document.querySelectorAll('#content .btn-primary')).filter(function(b){
+      if(b.closest('table,td,.modal,.product-card,.dnote,.empty-state,#orWrap')) return false;
+      const t=(b.textContent||'').trim(); return /^\+/.test(t) && (b.offsetParent!==null || b.classList.contains('pa-hid')); });
+    if(B.length) APPM_FAB=B[0];
+  }
+  if(!APPM_FAB){ fb.classList.remove('on'); fb.__k=''; return; }
+  APPM_FAB.classList.add('pa-hid');
+  const lab=(APPM_FAB.textContent||'').replace(/^\s*\+\s*/,'').trim();
+  const k=currentPage+'|'+lab;
+  if(fb.__k!==k){ fb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="fl">'+esc(lab)+'</span>'; fb.setAttribute('aria-label',lab); fb.__k=k; fb.classList.remove('mini'); }
+  fb.classList.add('on');
+}
+function appmFabGo(){ if(APPM_FAB) APPM_FAB.click(); }
+function appmHeads(){
+  if(!appmOn()) return;
+  document.querySelectorAll('#content .panel-head').forEach(function(h){
+    if(h.querySelector('.pa-more') || h.closest('.modal')) return;
+    const B=[].slice.call(h.querySelectorAll(':scope > .btn, :scope > a.btn, :scope > div > .btn, :scope > span > .btn')).filter(function(b){
+      return !b.classList.contains('pa-hid') && !b.classList.contains('on') && !b.classList.contains('active') && !b.closest('.tabs,.sec-tabs,.seg'); });
+    if(B.length<3) return;
+    B.forEach(function(b){ b.classList.add('pa-hid'); });
+    const mb=document.createElement('button'); mb.type='button'; mb.className='btn btn-ghost btn-sm pa-more'; mb.innerHTML='&#8943; '+TT('আরও','More');
+    mb.onclick=function(){ appmSheet(TT('আরও কাজ','More actions'), B.filter(function(b){ return !(APPM_FAB===b); }).map(function(b){
+      return {l:(b.textContent||'').replace(/\s+/g,' ').trim()||b.title||'…', danger:b.classList.contains('btn-danger'), fn:function(){ b.click(); }}; })); };
+    h.appendChild(mb);
+  });
+}
+function appmFabScroll(){ const fb=document.getElementById('appmFab'); if(!fb||!fb.classList.contains('on')) return; const y=window.scrollY||0;
+  if(y>APPM_FY+10) fb.classList.add('mini'); else if(y<APPM_FY-10 || y<40) fb.classList.remove('mini'); APPM_FY=y; }
+var APPM_FY=0;
+window.addEventListener('load',function(){ setTimeout(appmTheme,400); try{ APPM_MQ.addEventListener('change',appmTheme); }catch(e){} });
+function appmTheme(){
+  try{ const m=document.querySelector('meta[name="theme-color"]'); if(!m) return;
+    const lo=document.getElementById('loginOverlay'), inLogin=lo && getComputedStyle(lo).display!=='none';
+    const cs=getComputedStyle(document.documentElement);
+    let c=inLogin && appmOn() ? (cs.getPropertyValue('--primary')||'').trim() : (cs.getPropertyValue('--panel')||'').trim();
+    if(!m.__orig) m.__orig=m.getAttribute('content');
+    if(!appmOn()) c=m.__orig; if(c) m.setAttribute('content',c);
+  }catch(e){}
+}
 function appmAfter(){
+  try{ appmTheme(); }catch(e){}
   try{ appmBnav(); }catch(e){ console.error(e); }
   try{ appmCards(); }catch(e){ console.error(e); }
   try{ appmActions(); }catch(e){ console.error(e); }
+  try{ appmHeads(); }catch(e){ console.error(e); }
+  try{ appmFab(); }catch(e){ console.error(e); }
 }
 /* ---- App bar লুকানো / ফেরানো ---- */
 function appmScroll(){
@@ -5170,6 +5267,7 @@ function appmInit(){
   try{ history.replaceState({ap:currentPage||'dashboard'},''); }catch(e){}
   window.addEventListener('popstate',appmOnPop);
   window.addEventListener('scroll',appmScroll,{passive:true});
+  window.addEventListener('scroll',appmFabScroll,{passive:true});
   if(window.visualViewport) window.visualViewport.addEventListener('resize',appmVV);
   document.addEventListener('touchstart',ptrStart,{passive:true}); document.addEventListener('touchmove',ptrMove,{passive:true}); document.addEventListener('touchend',ptrEnd,{passive:true});
   const mo=new MutationObserver(function(muts){
@@ -18372,7 +18470,7 @@ function doLogin(){
   if(usr.mustChange) setTimeout(function(){ openChangePass(true); }, 400);
 }
 function logout(){
-  setTimeout(function(){ try{ appmBnav(); }catch(e){} },60);
+  setTimeout(function(){ try{ appmBnav(); appmFab(); appmTheme(); }catch(e){} },60);
   try{ pmBackHide(); }catch(e){}
   if(!confirm('লগআউট করবেন?')) return;
   audit('logout','session',ME?ME.username:'',''); saveDB();
@@ -20692,6 +20790,13 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.74', d:'2026-11-18', t:'মোবাইলে Login পাতা ও সব মেনু App এর মতো', li:[
+  '<b>Login পাতা:</b> ওপরে রঙিন অংশে বড় App icon, নাম আর Company; নিচ থেকে ওঠা সাদা কার্ডে Username / Password — বড় ঘর, বড় “প্রবেশ করুন” বোতাম; Forgot আর Cloud Setup একই রকম; Dark এও মানানসই',
+  '<b>ফোনের ওপরের Status bar:</b> Login এ App এর রঙে, ভেতরে সাদা (Dark এ গাঢ়) — App এর মতো',
+  '<b>সব পাতায় নতুন যোগের গোল বোতাম (FAB):</b> নতুন Costing, Add Raw Material, Add Packing Item, নতুন Supplier, Machine, FG, দরপত্র, Budget, User, Role, দেশ — ডান দিকে নিচে; স্ক্রল করলে ছোট হয়ে শুধু “+”',
+  '<b>Panel এর মাথা পরিষ্কার:</b> RM, PM, Machine, Reports ইত্যাদিতে Excel / PDF / Print / Import / মোছা — এক “⋯ আরও” তে, খোঁজার ঘর পুরো চওড়া',
+  '<b>ট্যাব / চিপ সারি:</b> আঙুল দিয়ে পাশে টানা যায়, স্ক্রলবার ছাড়া',
+  'কার্ডে চাপলে হালকা চাপ-অনুভূতি; কম্পিউটারে কিছুই বদলায়নি']},
  {v:'19.73', d:'2026-11-18', t:'মোবাইলে Android App এর মতো ব্যবহার', li:[
   '<b>নিচের ট্যাব বার:</b> হোম · Costing · Order · অনুমোদন (অপেক্ষার সংখ্যা সহ) · আরও — বুড়ো আঙুলের নাগালে; “আরও” চাপলে নিচ থেকে সব মেনু ওঠে',
   '<b>ফোনের Back বোতাম:</b> খোলা জানালা, মেনু বা Order আগে বন্ধ করে, তারপর আগের পাতায় যায় — App এর মতো (“সেভ হয়নি” প্রশ্নে “না” দিলে জানালা খোলাই থাকে)',
@@ -23586,6 +23691,13 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.74', d:'2026-11-18', t:'App-style login and menus on mobile', li:[
+  '<b>Login page:</b> large app icon, name and company on a coloured top area; username / password on a white sheet rising from the bottom — big fields and a big sign-in button; forgot-password and cloud setup match; works in dark mode',
+  '<b>Phone status bar:</b> app colour on the login page, white (dark in dark mode) inside — like an app',
+  '<b>Floating add button (FAB) on every page:</b> new costing, add raw material, add packing item, new supplier, machine, FG, quotation, budget, user, role, country — bottom right; shrinks to “+” while scrolling',
+  '<b>Cleaner panel headers:</b> Excel / PDF / Print / Import / delete on RM, PM, machines, reports etc. move into one “⋯ More”; the search box spans the full width',
+  '<b>Tab / chip rows:</b> swipe sideways, no scrollbar',
+  'Light press feedback on cards; nothing changes on a computer']},
  {v:'19.73', d:'2026-11-18', t:'Android-app feel on mobile', li:[
   '<b>Bottom tab bar:</b> Home · Costing · Order · Approve (with pending count) · More — within thumb reach; “More” opens all menus in a bottom sheet',
   '<b>Phone back button:</b> closes the open window, menu or order first, then goes to the previous page — like an app (answering “No” to an unsaved-changes prompt keeps the window open)',
@@ -27310,6 +27422,7 @@ function lgInfoRefresh(){
   (function(){
     var co = (DB.settings && DB.settings.companyName && DB.settings.companyName!=='Company Name') ? String(DB.settings.companyName).trim() : '';
     var e1=document.getElementById('lgCo'); if(e1 && co) e1.textContent = co;
+    var e1m=document.getElementById('lgCoM'); if(e1m && co) e1m.textContent = co;
     var e2=document.getElementById('lgStamp'); if(e2) e2.textContent = (co ? co.toUpperCase()+' · ' : '')+'AMAZ ERP SOLUTION';
     var e3=document.getElementById('lgVer'); if(e3) e3.textContent='AMAZ Product Costing v'+APP_VER+' · Powered by AMAZ ERP Solution';
     /* v19.32 — লগইন পাতায় Version স্পষ্ট করে: কার্ডের কোণে আর বাম দিকে নামের পাশে */
