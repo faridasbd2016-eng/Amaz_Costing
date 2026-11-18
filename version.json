@@ -1,1 +1,1 @@
-{"version": "19.52", "date": "2026-11-18", "notes": "চলমান নেটওয়ার্ক পটভূমি — Login ও Menu (শুধু আধুনিক চেহারায়)", "notes_en": "Moving network background — login and menu (Modern look only)"}
+{"version": "19.55", "date": "2026-11-18", "notes": "PM Demand Sheet এ Physical Stock নিজে থেকে বসে (দুই দিকেই মিলে থাকে)", "notes_en": "Physical stock fills the PM demand sheet automatically (kept in sync both ways)"}

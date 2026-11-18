@@ -49,11 +49,14 @@
 .net-fx{position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; z-index:1;}
 #loginOverlay > .net-fx{position:fixed;}
 #loginOverlay.ln .ln-main{position:relative; z-index:2;}
-#sidebar{position:relative;}
-#sidebar > .net-fx{z-index:0;}
-#sidebar > *:not(.net-fx){position:relative; z-index:1;}
-#sidebar > .sidebar-collapse-btn{position:absolute; z-index:3;}
-html:not(.ui-modern) .net-fx, html.fx-off .net-fx, html.fx-login-off #lnNet, html.fx-menu-off #sbNet{display:none;}   /* শুধু আধুনিক (Modern) চেহারায় — Classic আগের মতো */
+html:not(.ui-modern) .net-fx, html.fx-off .net-fx, html.fx-login-off #lnNet{display:none;}
+/* v19.53 — Menu ও Software এর পেছনে স্থির নেটওয়ার্ক নকশা (Software এর নিজের রঙে আঁকা; অ্যানিমেশন নয়) — শুধু আধুনিক চেহারায় */
+.net-bg{display:none; pointer-events:none;}
+html.ui-modern:not(.fx-bg-off) #appNet{display:block; position:fixed; inset:0; width:100vw; height:100vh; z-index:-1;}
+html.ui-modern:not(.fx-menu-off) #sbNet{display:block; position:absolute; inset:0; width:100%; height:100%; z-index:0;}
+html.ui-modern #sidebar > *:not(.net-bg){position:relative; z-index:1;}
+html.ui-modern #sidebar > .sidebar-collapse-btn{position:absolute; z-index:3;}
+@media print{ .net-bg{display:none!important;} }
 @media print{ .net-fx{display:none!important;} }
 #loginOverlay.ln{position:fixed; inset:0; z-index:200; display:flex; padding:0; gap:0; align-items:stretch; justify-content:flex-start; flex-direction:row; overflow:auto; background:var(--bg);
   font-family:"Segoe UI","Inter","Nirmala UI","Noto Sans Bengali","Hind Siliguri",system-ui,-apple-system,Roboto,Arial,sans-serif; animation:none;}
@@ -1653,7 +1656,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
 <body>
 <div id="app">
   <aside id="sidebar">
-    <canvas id="sbNet" class="net-fx" aria-hidden="true"></canvas>
+    <canvas id="sbNet" class="net-bg" aria-hidden="true"></canvas>
     <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="মেনু ছোট/বড় করুন" onclick="toggleSidebarCollapse()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
@@ -2368,6 +2371,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
   <div class="modal-foot"><button class="btn" onclick="closeModal('histModal')">Close</button></div>
 </div></div>
 
+<canvas id="appNet" class="net-bg" aria-hidden="true"></canvas>
 <div id="loginOverlay" class="ln">
   <canvas id="lnNet" class="net-fx" aria-hidden="true"></canvas>
   <aside class="ln-brand">
@@ -3204,7 +3208,7 @@ function effProduct(p){
    বিন্দু আস্তে নড়ে, কাছাকাছি বিন্দুতে রেখা; মাউস/আঙুল নিলে কাছের বিন্দু সরে যায়, রেখা গাঢ় হয়, মাউসের সাথে রেখা জোড়ে।
    স্ক্রিনে না থাকলে বা ট্যাব লুকানো থাকলে থেমে থাকে। “কম নড়াচড়া” চালু ডিভাইসে স্থির ছবি। Settings এ বন্ধ করা যায়। */
 function fxPref(k){ try{ return localStorage.getItem('amazFx_'+k)!=='off'; }catch(e){ return true; } }
-function fxApplyPrefs(){ const r=document.documentElement; r.classList.toggle('fx-login-off',!fxPref('login')); r.classList.toggle('fx-menu-off',!fxPref('menu')); }
+function fxApplyPrefs(){ const r=document.documentElement; r.classList.toggle('fx-login-off',!fxPref('login')); r.classList.toggle('fx-menu-off',!fxPref('menu')); r.classList.toggle('fx-bg-off',!fxPref('bg')); }
 function setFxPref(k,on){ try{ localStorage.setItem('amazFx_'+k,on?'on':'off'); }catch(e){} fxApplyPrefs(); NETFX.forEach(function(n){ n.kick(); }); }
 function fxHex(c,fb){ c=String(c||'').trim(); let m=c.match(/^#([0-9a-f]{6})$/i); if(m) return [parseInt(m[1].slice(0,2),16),parseInt(m[1].slice(2,4),16),parseInt(m[1].slice(4,6),16)];
   m=c.match(/^#([0-9a-f]{3})$/i); if(m) return m[1].split('').map(function(x){ return parseInt(x+x,16); });
@@ -3215,7 +3219,7 @@ function NetFX(cv, host, o){
   const reduce=(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
   function visible(){ if(document.hidden || !cv.clientWidth || !cv.getClientRects().length) return false; if(cv.checkVisibility && !cv.checkVisibility()) return false;
     const r=cv.getBoundingClientRect(); return r.right>0 && r.left<innerWidth && r.bottom>0 && r.top<innerHeight; }   /* মোবাইলে লুকানো মেনু (পর্দার বাইরে) হলে থামে */
-  function size(){ const dpr=Math.min(2,window.devicePixelRatio||1); const w=cv.clientWidth, h=cv.clientHeight; if(!w||!h) return false;
+  function size(){ const dpr=Math.min(o.dpr||1,window.devicePixelRatio||1); const w=cv.clientWidth, h=cv.clientHeight; if(!w||!h) return false;   /* v19.54 — HiDPI তে পুরো রেজোলিউশনে আঁকলে CPU ভরে যেত */
     if(w!==W||h!==H){ W=w; H=h; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); x.setTransform(dpr,0,0,dpr,0,0);
       const n=Math.round(Math.min(o.max, Math.max(o.min, W*H/o.area))); P=[];
       for(let i=0;i<n;i++){ const px=(o.bias?Math.pow(Math.random(),o.bias):Math.random())*W*1.04, py=Math.random()*H;
@@ -3234,7 +3238,8 @@ function NetFX(cv, host, o){
     for(const p of P){ const c=col(p.x,W); x.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+Math.min(1,c[3]*1.5)+')'; x.beginPath(); x.arc(p.x,p.y,p.r,0,6.3); x.fill();
       x.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+(c[3]*.22)+')'; x.beginPath(); x.arc(p.x,p.y,p.r*3,0,6.3); x.fill(); } }
   function loop(t){ raf=0; if(!run) return; if(!visible()){ run=false; return; }
-    if(t-last>=o.frame){ last=t; size(); draw(); }
+    if(t-last>=o.frame){ last=t; const t0=performance.now(); size(); draw(); const dt=performance.now()-t0;
+      if(dt>12 && o.frame<80) o.frame+=8; }      /* ধীর যন্ত্রে নিজে থেকে কম ঘনঘন আঁকে */
     if(!reduce) raf=requestAnimationFrame(loop); else run=false; }
   me.kick=function(){ if(run) return; if(!visible()) return; if(!size()) return; run=true; last=0; raf=requestAnimationFrame(loop); };
   me.recolor=function(){ if(!run&&visible()&&size()) draw(); };
@@ -3243,21 +3248,51 @@ function NetFX(cv, host, o){
   host.addEventListener('touchend',function(){ M.on=false; },{passive:true});
   NETFX.push(me);
 }
+/* স্থির নকশা — একবার আঁকা হয় (মাপ বা Theme বদলালে আবার)। ছবির মতো: সামনে স্পষ্ট বিন্দু-রেখা, পেছনে ঝাপসা গভীরতা */
+function netStatic(cv, o){
+  let x=cv.getContext('2d'); let key='';
+  function rnd(seed){ let t=seed>>>0; return function(){ t+=0x6D2B79F5; let r=Math.imul(t^t>>>15,1|t); r^=r+Math.imul(r^r>>>7,61|r); return ((r^r>>>14)>>>0)/4294967296; }; }
+  function draw(){
+    const w=cv.clientWidth, h=cv.clientHeight; if(!w||!h) return;
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    const c1=fxHex(getComputedStyle(document.documentElement).getPropertyValue('--primary-2'),[8,145,178]);
+    const c2=fxHex(getComputedStyle(document.documentElement).getPropertyValue('--primary'),[13,148,136]);
+    const k=[w,h,dark,c1.join(),c2.join()].join('|'); if(k===key) return; key=k;
+    const dpr=Math.min(1.25,window.devicePixelRatio||1); cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,w,h);   /* নরম পটভূমি — পুরো HiDPI লাগে না */
+    const R=rnd(o.seed||7), A=(dark?o.aDark:o.a);
+    const mix=function(t){ return [Math.round(c2[0]+(c1[0]-c2[0])*t),Math.round(c2[1]+(c1[1]-c2[1])*t),Math.round(c2[2]+(c1[2]-c2[2])*t)]; };
+    const layer=function(n,link,alpha,blur,rmax){
+      const P=[]; for(let i=0;i<n;i++) P.push({x:R()*w*1.06-w*.03, y:R()*h*1.06-h*.03, r:.8+R()*rmax, t:R()});
+      /* v19.54 — ঝাপসা স্তর: আগে প্রতিটা রেখায় আলাদা blur (HiDPI তে কয়েক সেকেন্ড আটকে যেত); এখন ছোট আলাদা ক্যানভাসে এঁকে একবারে ঝাপসা করে বসানো */
+      const main=x; let off=null;
+      if(blur){ off=document.createElement('canvas'); const q=.5; off.width=Math.max(1,Math.round(w*q)); off.height=Math.max(1,Math.round(h*q)); x=off.getContext('2d'); x.setTransform(q,0,0,q,0,0); }
+      for(let i=0;i<P.length;i++) for(let j=i+1;j<P.length;j++){ const a=P[i], b=P[j], d=Math.hypot(a.x-b.x,a.y-b.y); if(d<link){
+        const c=mix((a.t+b.t)/2); x.strokeStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+((1-d/link)*alpha)+')'; x.lineWidth=blur?3:1; x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); } }
+      for(const p of P){ const c=mix(p.t); x.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+(alpha*1.6)+')'; x.beginPath(); x.arc(p.x,p.y,p.r*(blur?3:1),0,6.3); x.fill();
+        if(!blur){ x.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+(alpha*.35)+')'; x.beginPath(); x.arc(p.x,p.y,p.r*3.2,0,6.3); x.fill(); } }
+      if(off){ x=main; x.save(); x.filter='blur('+blur+'px)'; x.drawImage(off,0,0,w,h); x.restore(); } };
+    const area=w*h;
+    layer(Math.round(Math.min(o.max*.5,area/o.area*.5)), o.link*1.5, A*.45, 7, 3);      /* পেছনের ঝাপসা স্তর */
+    layer(Math.round(Math.min(o.max,area/o.area)), o.link, A, 0, 2.6);                  /* সামনের স্পষ্ট স্তর */
+  }
+  draw(); return draw;
+}
 function fxStart(){
   if(fxStart.done) return; fxStart.done=true; fxApplyPrefs();
   const css=function(v,fb){ return fxHex(getComputedStyle(document.documentElement).getPropertyValue(v),fb); };
   const dark=function(){ return document.documentElement.getAttribute('data-theme')==='dark'; };
   const lc=document.getElementById('lnNet'), lo=document.getElementById('loginOverlay');
-  if(lc&&lo) new NetFX(lc, lo, {min:55,max:150,area:9000,link:150,mr:170,speed:.28,bias:1.25,frame:16,
+  if(lc&&lo) new NetFX(lc, lo, {min:50,max:120,area:10000,link:150,mr:170,speed:.28,bias:1.25,frame:33,dpr:1.25,
     color:(function(){ return function(px){ const br=document.querySelector('#loginOverlay .ln-brand'); const bw=br&&br.offsetWidth&&getComputedStyle(br).display!=='none'?br.getBoundingClientRect().right:0;
       if(px<bw) return [255,255,255,.34];
       const c=css('--primary-2',[8,145,178]); return dark()?[150,195,235,.32]:[c[0],c[1],c[2],.46]; }; })()});
-  const sc=document.getElementById('sbNet'), sb=document.getElementById('sidebar');
-  if(sc&&sb) new NetFX(sc, sb, {min:16,max:46,area:5200,link:110,mr:120,speed:.18,bias:0,frame:33,boost:.45,
-    color:function(){ const modern=document.documentElement.classList.contains('ui-modern');
-      if(dark()) return [150,195,235,.22];
-      if(modern){ const c=css('--primary-2',[8,145,178]); return [c[0],c[1],c[2],.26]; }
-      return [255,255,255,.22]; }});
+  const st=[]; const an=document.getElementById('appNet'), sn=document.getElementById('sbNet');
+  if(an) st.push(netStatic(an,{area:11000,max:240,link:175,a:.42,aDark:.26,seed:11}));
+  if(sn) st.push(netStatic(sn,{area:5000,max:80,link:125,a:.28,aDark:.18,seed:23}));
+  const redraw=function(){ st.forEach(function(f){ f(); }); };
+  try{ new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','class']}); }catch(e){}
+  let rt=0; addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(redraw,200); });
+  setInterval(redraw,2000);      /* মেনু খোলা/বন্ধ বা চেহারা বদলালে মাপ ঠিক রাখে — বদল না থাকলে কিছুই আঁকে না */
   const kick=function(){ NETFX.forEach(function(n){ n.kick(); }); };
   document.addEventListener('visibilitychange',kick); addEventListener('resize',kick);
   setInterval(kick,1500);          /* Login দেখালে / মেনু খুললে আবার চালু */
@@ -4505,7 +4540,7 @@ function goTo(page){
   }
   if(page==='rateimpact'){ ANA_TAB='rate'; page='analysis'; }          /* v18.71 — Rate Impact এখন Analysis এর ট্যাব */
   if(!NAV.some(function(x){return x.id===page;})) page='dashboard';    /* সরানো মেনুর পুরনো লিংক */
-  currentPage=page; MOTION_PG=true;
+  currentPage=page; MOTION_PG=true; RENDER_LAST_PAGE="";      /* মেনু থেকে এলে নতুন করে, উপর থেকে */
   const pit=NAV.find(function(x){return x.id===page;});
   NAV_OPEN={};                              /* অন্য মেনু তে গেলে আগেরটা মিনিমাইজ হয়ে যাবে */
   if(pit && pit.parent) NAV_OPEN[pit.parent]=true;
@@ -4598,7 +4633,26 @@ function closeNtf(){ const m=document.getElementById('ntfMenu'); if(m) m.classLi
 function ntfOpen(id){ closeNtf(); if(currentPage!=='products') goTo('products'); editProduct(id); }
 document.addEventListener('click',function(e){ const w=document.getElementById('ntfWrap'); if(w && !w.contains(e.target)) closeNtf(); });
 setInterval(function(){ try{ ntfUpdate(); }catch(e){} },15000);
+/* v19.54 — Save এর পর তালিকা আগের জায়গাতেই: একই পাতা আবার আঁকলে খোঁজার লেখা, ফিল্টার আর স্ক্রল-অবস্থান থাকে */
+let RENDER_LAST_PAGE='';
+const RENDER_TABLES={rawmaterials:'renderRMTable',packaging:'renderPKTable',fgproducts:'renderFgTable',machines:'renderMCTable',products:'renderProductsGrid'};
 function render(){
+  const same=RENDER_LAST_PAGE===currentPage, keep={}, sy=window.scrollY, inner={};
+  if(same){ const c0=document.getElementById('content');
+    if(c0){ c0.querySelectorAll('input[id],select[id]').forEach(function(e){ if(/(Search|ZeroOnly)$|^pselMode$/.test(e.id)) keep[e.id]=(e.type==='checkbox')?e.checked:e.value; });
+      c0.querySelectorAll('[id]').forEach(function(e){ if(e.scrollTop>0||e.scrollLeft>0) inner[e.id]=[e.scrollTop,e.scrollLeft]; }); } }
+  RENDER_LAST_PAGE=currentPage;
+  renderCore();
+  if(!same) return;
+  let changed=false;
+  Object.keys(keep).forEach(function(id){ const e=document.getElementById(id); if(!e) return;
+    if(e.type==='checkbox'){ if(e.checked!==keep[id]){ e.checked=keep[id]; changed=true; } } else if(e.value!==keep[id]){ e.value=keep[id]; changed=true; } });
+  if(changed){ const fn=RENDER_TABLES[currentPage]; if(fn&&typeof window[fn]==='function'){ try{ window[fn](); }catch(e){ console.error(e); } } }
+  const back=function(){ Object.keys(inner).forEach(function(id){ const e=document.getElementById(id); if(e){ e.scrollTop=inner[id][0]; e.scrollLeft=inner[id][1]; } });
+    if(Math.abs(window.scrollY-sy)>2){ try{ window.scrollTo({top:sy,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,sy); } } };
+  back(); requestAnimationFrame(back); setTimeout(back,60);
+}
+function renderCore(){
   if(typeof SYNC_NEED_RENDER!=='undefined' && SYNC_NEED_RENDER){ try{ syncNewMark(false); }catch(e){} }
   setTimeout(function(){ try{ ntfUpdate(); }catch(e){} },0);
   const c=document.getElementById('content');
@@ -7528,7 +7582,9 @@ function ordSetStock(matId,v){
   if(q>0) o.stock[matId]=q; else delete o.stock[matId];
   o.updatedAt=nowISO(); saveDB();
   reqRefresh();
+  demPanelRefresh();      /* v19.55 — PM Demand এর Stock / মোট টাকা সাথে সাথে */
 }
+function demPanelRefresh(){ const p=document.getElementById('demPanel'); if(!p) return; try{ const t=document.createElement('div'); t.innerHTML=demandPanelHTML(orderCalc()); p.replaceWith(t.firstElementChild); }catch(e){ console.error(e); } }
 /* v15.1 — শুধু সংখ্যাগুলো জায়গায় বসে যায়, টেবিল নতুন করে আঁকা হয় না।
    তাই Stock ঘরে টাইপ করে Tab/Enter চাপলে কার্সর যেখানে যাওয়ার সেখানেই থাকে। */
 function reqRefresh(){
@@ -10581,10 +10637,35 @@ function demSheet(type,force){
   o.demand=o.demand||{hdr:{co:DEM_CO,fac:DEM_FAC},sheets:{}};
   if(!o.demand.sheets) o.demand.sheets={};
   if(force || !o.demand.sheets[type]){
-    o.demand.sheets[type]={title:demT(type).t, rows:demandItems(orderCalc(),type).map(demRowFrom)};
+    o.demand.sheets[type]={title:demT(type).t, rows:demandItems(orderCalc(),type).map(function(r){ const x=demRowFrom(r); x.auto=1; return x; }), removed:[]};
     saveDB();
-  }
+  } else if(!ordIsLocked(o)) demSync(o.demand.sheets[type],type);
   return o.demand.sheets[type];
+}
+/* v19.54 — সেভ করা Sheet কে Order এর সাথে মিলিয়ে রাখা: Order এর পণ্য/পরিমাণ/স্টক/দর বদলালে Need, Stock, Rate নতুন হয়;
+   নতুন PM এলে যোগ হয়, Order থেকে বাদ গেলে নিজে থেকে আসা row সরে যায়। হাতে বদলানো ঘর, Size/Paper/Party/Demand লেখা,
+   হাতে যোগ করা row আর হাতে মোছা row — এগুলো যেমন আছে থাকে। Delivery হয়ে Lock হলে Sheet আর বদলায় না। */
+function demSync(sh,type){
+  if(!sh || !Array.isArray(sh.rows)) return false;
+  const live=demandItems(orderCalc(),type), byId={};
+  live.forEach(function(r){ const id=r.x.id||(r.m&&r.m.id); if(id) byId[id]=r; });
+  const removed=sh.removed||[], seen={}; let ch=false;
+  const keep=[];
+  sh.rows.forEach(function(row){
+    const id=row.pmId; if(row.auto===undefined) row.auto=id?1:0;           /* আগের সেভ করা Sheet */
+    const man=row.man||{};
+    if(id && byId[id]){ seen[id]=1; const fresh=demRowFrom(byId[id]);
+      ['need','stock','rate','unit'].forEach(function(k){ if(!man[k] && String(row[k])!==String(fresh[k])){ row[k]=fresh[k]; ch=true; } });
+      if(!row.name && fresh.name){ row.name=fresh.name; ch=true; }
+      keep.push(row); return; }
+    if(id && row.auto && !man.need && !man.stock && !man.rate){ ch=true; return; }   /* Order এ আর নেই — নিজে থেকে আসা row সরাই */
+    if(id && !man.need && n(row.need)!==0 && !row.auto){ row.need=0; ch=true; }        /* হাতে যোগ করা — Order এ নেই তাই Need ০ */
+    keep.push(row);
+  });
+  live.forEach(function(r){ const id=r.x.id||(r.m&&r.m.id); if(!id || seen[id] || removed.indexOf(id)>=0) return;
+    const x=demRowFrom(r); x.auto=1; keep.push(x); ch=true; });
+  if(ch){ sh.rows=keep; saveDB(); }
+  return ch;
 }
 function demSpec(type){
   const L=demT(type).lay;
@@ -10737,7 +10818,16 @@ function demRender(){
 function demSet(i,k,v){
   const sh=demSheet(DEM_CUR); if(!sh||!sh.rows[i]) return;
   const sp=demSpec(DEM_CUR).filter(function(x){return x.k===k;})[0];
+  if(k==='stock' && sh.rows[i].pmId && !ordIsLocked(orderPlan())){
+    /* v19.55 — Physical Stock একটাই জায়গায়: Demand Sheet এ লিখলে Order এর PM চাহিদার Physical Stock ও বদলায়, আর উল্টোটাও */
+    const o=orderPlan(); o.stock=o.stock||{}; const q=n(v); if(q>0) o.stock[sh.rows[i].pmId]=q; else delete o.stock[sh.rows[i].pmId];
+    sh.rows[i].stock=q; if(sh.rows[i].man) delete sh.rows[i].man.stock;
+    o.updatedAt=nowISO(); saveDB();
+    const c=demCalc(sh.rows[i]); setTxt('dm_act_'+i,demFmt({t:'n',k:'act'},c.act)); setTxt('dm_amt_'+i,demFmt({t:'n',k:'amt'},c.amt));
+    const T=demSums(sh); setTxt('dm_tot',money(T.act,0)+' / ৳'+money(T.amt,0)); return;
+  }
   sh.rows[i][k]= (sp&&sp.t==='n') ? n(v) : String(v).trim();
+  if(k==='need'||k==='stock'||k==='rate'){ sh.rows[i].man=sh.rows[i].man||{}; sh.rows[i].man[k]=String(v).trim()!==''; }   /* হাতে বদলানো — Order বদলালেও থাকে; খালি করলে আবার Order থেকে */
   const o=orderPlan(); o.updatedAt=nowISO(); saveDB();
   const c=demCalc(sh.rows[i]); setTxt('dm_act_'+i,demFmt({t:'n',k:'act'},c.act)); setTxt('dm_amt_'+i,demFmt({t:'n',k:'amt'},c.amt));
   const T=demSums(sh); setTxt('dm_tot',money(T.act,0)+' / ৳'+money(T.amt,0));
@@ -10797,13 +10887,13 @@ function demPickCnt(){ const k=Object.keys(DPK.sel).length, b=document.getElemen
 function demPickAdd(){
   const sh=demSheet(DEM_CUR); if(!sh) return;
   const ids=Object.keys(DPK.sel); let added=0;
-  ids.forEach(function(id){ const m=pmMasterOf(id); if(!m||!m.id) return; sh.rows.push(demRowFromPm(m)); added++; });
+  ids.forEach(function(id){ const m=pmMasterOf(id); if(!m||!m.id) return; const r=demRowFromPm(m); r.auto=0; sh.rows.push(r); if(sh.removed) sh.removed=sh.removed.filter(function(z){ return z!==m.id; }); added++; });
   orderPlan().updatedAt=nowISO(); saveDB();
   const ov=document.getElementById('dpkModal'); if(ov) ov.remove();
   demRender(); toast(added+' টি Item যোগ হয়েছে — Need / Stock / Party দেখে নিন');
 }
 function demAdd(){ demPickOpen(); }
-function demDel(i){ const sh=demSheet(DEM_CUR); if(!sh) return; sh.rows.splice(i,1); saveDB(); demRender(); }
+function demDel(i){ const sh=demSheet(DEM_CUR); if(!sh||!sh.rows[i]) return; const r=sh.rows[i]; if(r.pmId){ sh.removed=sh.removed||[]; if(sh.removed.indexOf(r.pmId)<0) sh.removed.push(r.pmId); } sh.rows.splice(i,1); saveDB(); demRender(); }
 function demTitle(v){ const sh=demSheet(DEM_CUR); if(sh){ sh.title=v.trim()||demT(DEM_CUR).t; saveDB(); } }
 var DEM_SIG=[['p','Prepared By'],['c','Checked By'],['a','Approved By']];
 function demSigGet(){ const o=orderPlan(); o.demand=o.demand||{hdr:{co:DEM_CO,fac:DEM_FAC},sheets:{}}; o.demand.hdr=o.demand.hdr||{}; if(!o.demand.hdr.sg) o.demand.hdr.sg={p:1,c:0,a:1,pn:'',cn:'',an:''}; return o.demand.hdr.sg; }
@@ -10875,16 +10965,20 @@ function demandPanelHTML(d){
   const sheets=((d.plan||{}).demand||{}).sheets||{};
   const lk=ordIsLocked(d.plan||orderPlan()), ed=can('orderreq','e');
   const rows=demTypes().map(function(T){
-    const sh=sheets[T.v], cnt=sh?sh.rows.length:demandItems(d,T.v).length;
-    const amt=sh?demSums(sh).amt:0;
+    const sh0=sheets[T.v], sh=sh0?(lk?sh0:(demSync(sh0,T.v),sh0)):null;
+    const live=sh?null:{rows:demandItems(d,T.v).map(demRowFrom)};       /* v19.54 — Sheet না খুললেও মোট টাকা দেখায় */
+    const cnt=sh?sh.rows.length:live.rows.length;
+    const amt=demSums(sh||live).amt;
     return '<tr><td style="padding:9px 14px;"><b>'+esc(T.l)+'</b>'+(T.custom?' <span class="tag" style="font-size:10px;">নিজের</span>':'')+(sh?' <span class="muted" style="font-size:11px;">(সেভ করা)</span>':'')+
       (T.custom&&ed?' <button class="btn btn-ghost btn-sm" style="padding:1px 6px;" title="ধরন বদলান" onclick="demTypeOpen(\''+T.v+'\')">&#9998;</button>':'')+'</td><td class="num">'+cnt+' টি item</td>'+
-      '<td class="num">'+(sh&&amt>0?('৳'+money(amt,0)):'—')+'</td><td style="text-align:right;padding-right:14px;white-space:nowrap;">'+
+      '<td class="num">'+(amt>0?('৳'+money(amt,0)):'—')+'</td><td style="text-align:right;padding-right:14px;white-space:nowrap;">'+
       '<button class="btn btn-primary btn-sm" onclick="demOpen(\''+T.v+'\')">&#9998; Edit</button> '+
       '<button class="btn btn-ghost btn-sm" onclick="pdfRun(function(){demPrint(\''+T.v+'\')},function(){return pdfOrdName(\''+T.v+'_Demand\')})">PDF</button> '+
       '<button class="btn btn-ghost btn-sm" onclick="demPrint(\''+T.v+'\')">&#128424; Print</button> '+
       '<button class="btn btn-ghost btn-sm" onclick="demExcel(\''+T.v+'\')">&#8681; Excel</button></td></tr>'; }).join('');
-  return '<div class="panel" style="margin-bottom:16px;"><div class="panel-head"><h3>PM Demand Sheet (Head Office এ পাঠানোর জন্য)</h3><span style="flex:1"></span>'+
+  const hid=DEM_HO_ONLY?(d.pk||[]).filter(function(x){ return x.need>0.0005 && x.buyBy!=='ho' && pmDemandType(pmMasterOf(x.id),x.name); }).length:0;
+  return '<div class="panel" id="demPanel" style="margin-bottom:16px;"><div class="panel-head"><h3>PM Demand Sheet (Head Office এ পাঠানোর জন্য)</h3><span style="flex:1"></span>'+
+    (hid?'<span class="hint" style="margin-right:10px;color:var(--warning,#B45309);" title="এই PM গুলোর “কে কিনবে” Head Office দেওয়া নেই — টিক তুলে দিলে বা PM List এ Head Office বাছলে Sheet এ আসবে">⚠ '+hid+' টি PM Head Office বাছা নেই — দেখাচ্ছে না</span>':'')+
     '<label style="font-size:12.5px;display:flex;gap:6px;align-items:center;cursor:pointer;"><input type="checkbox" '+(DEM_HO_ONLY?'checked ':'')+'onchange="demandHoToggle(this.checked)"> শুধু Head Office Purchase</label></div>'+
     '<div class="table-wrap"><table><thead><tr><th>ধরন</th><th class="num">Item</th><th class="num">মোট টাকা</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<p style="margin:8px 16px 0;">'+(ed?'<button class="btn btn-primary btn-sm" onclick="demTypeOpen()">+ নতুন Demand ধরন</button> ':'')+'<button class="btn btn-ghost btn-sm" onclick="openDM()">Demand Master (Size/Paper/Party/Rate + Excel Import)</button></p><p class="hint" style="margin:8px 16px 12px;">Edit চেপে Qty, Stock, Rate, Party বদলান; নতুন row যোগ করুন বা মুছুন — এই Order এর জন্য সেভ থাকে এবং Print/Excel এ সেটাই যায়। Item কোন ধরনে যাবে তা নাম/Category থেকে নিজে ধরা হয় — ঠিক না হলে Packing Material Edit এ <b>Demand Sheet ধরন</b> বদলান; Carton এর Size/Ply/Paper/Liner/Country সেখানেই বসান।</p></div>';
@@ -16773,9 +16867,10 @@ function renderSettings(){
      '<p class="hint" style="margin:-4px 0 10px;">'+TT('শুধু এই ডিভাইসের জন্য — অন্যদের স্ক্রিন বদলায় না। Print / PDF / Excel একই থাকে।','For this device only — other people’s screens do not change. Print / PDF / Excel stay the same.')+'</p>'+
      '<div class="ui-looks">'+lk('modern',TT('আধুনিক','Modern'),TT('সাদা sidebar, teal রং, গোল বোতাম','White sidebar, teal colours, round buttons'),'pm')+
        lk('classic',TT('ক্লাসিক','Classic'),TT('আগের চেহারা','The previous look'),'pc')+'</div>'+
-     '<div class="fx-tgs"><b>'+TT('চলমান নেটওয়ার্ক পটভূমি (শুধু আধুনিক চেহারায়)','Moving network background (Modern look only)')+'</b>'+
-       '<label><input type="checkbox"'+(fxPref('login')?' checked':'')+' onchange="setFxPref(\'login\',this.checked)"> '+TT('Login পাতায়','On the login page')+'</label>'+
-       '<label><input type="checkbox"'+(fxPref('menu')?' checked':'')+' onchange="setFxPref(\'menu\',this.checked)"> '+TT('বাম পাশের Menu তে','In the left menu')+'</label></div>'+
+     '<div class="fx-tgs"><b>'+TT('নেটওয়ার্ক পটভূমি (শুধু আধুনিক চেহারায়)','Network background (Modern look only)')+'</b>'+
+       '<label><input type="checkbox"'+(fxPref('login')?' checked':'')+' onchange="setFxPref(\'login\',this.checked)"> '+TT('Login পাতায় (চলমান)','Login page (moving)')+'</label>'+
+       '<label><input type="checkbox"'+(fxPref('menu')?' checked':'')+' onchange="setFxPref(\'menu\',this.checked)"> '+TT('বাম পাশের Menu তে (স্থির ছবি)','Left menu (still picture)')+'</label>'+
+       '<label><input type="checkbox"'+(fxPref('bg')?' checked':'')+' onchange="setFxPref(\'bg\',this.checked)"> '+TT('Software এর পেছনে (স্থির ছবি)','Software background (still picture)')+'</label></div>'+
      '</div></div>';
 
   /* ---- কোম্পানির তথ্য ---- */
@@ -19616,6 +19711,20 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.55', d:'2026-11-18', t:'PM Demand এ Physical Stock নিজে থেকে', li:[
+  '<b>Physical Stock একটাই জায়গা:</b> Order Requirement এর PM চাহিদার টেবিলে যে Physical Stock বসান, সেটা নিজে থেকেই PM Demand Sheet এর Stock ঘরে বসে — আর Actual Need ও টাকা সাথে সাথে বদলায়',
+  '<b>উল্টোটাও:</b> Demand Sheet এ Stock লিখলে Order এর Physical Stock ও বদলে যায় — দুই জায়গায় আলাদা হিসাব থাকে না',
+  'Stock বসানোর সাথে সাথে PM Demand Sheet এর “মোট টাকা” নতুন হয়, পাতা আবার খুলতে হয় না']},
+ {v:'19.54', d:'2026-11-18', t:'Save এর পর তালিকা আগের জায়গায় · PM Demand এর মোট টাকা ঠিক', li:[
+  '<b>RM / PM / FG / Machine তালিকায় Save এর পর:</b> আগে খোঁজার লেখা আর “শুধু Rate নেই” ফিল্টার মুছে গিয়ে পুরো তালিকা শুরু থেকে দেখাত। এখন খোঁজা, ফিল্টার আর স্ক্রল — যেখানে ছিলেন সেখানেই থাকে। Menu থেকে আবার ঢুকলে নতুন করে উপর থেকে',
+  '<b>Order Requirement → PM Demand Sheet এর “মোট টাকা”:</b> আগে Sheet না খোলা পর্যন্ত “—” দেখাত, আর একবার খোলার পর Order এর পরিমাণ / নতুন পণ্য / Stock / দর বদলালেও পুরনো টাকাই থেকে যেত। এখন সবসময় Order এর সাথে মিলে থাকে — Need, Stock, Rate নতুন হয়, নতুন PM নিজে যোগ হয়, Order থেকে বাদ গেলে সরে যায়',
+  '<b>হাতে করা কাজ থাকে:</b> Sheet এ হাতে বদলানো Need / Stock / Rate, Size-Paper-Party-Demand লেখা, হাতে যোগ করা row আর হাতে মোছা row — Order বদলালেও যেমন ছিল থাকে। Delivery হয়ে Lock হলে Sheet আর বদলায় না',
+  '<b>“শুধু Head Office Purchase”</b> টিক থাকলে কয়টা PM Head Office বাছা নেই বলে Sheet এ আসছে না — সেটা এখন পাশেই লেখা থাকে',
+  '<b>বড় রেজোলিউশনের স্ক্রিনে Software ধীর হওয়া ঠিক:</b> v19.53 এর পেছনের নকশা উঁচু রেজোলিউশনের (বেশির ভাগ নতুন Laptop / মোবাইল) স্ক্রিনে প্রথমবার আঁকতে কয়েক সেকেন্ড থেকে ৩০ সেকেন্ড পর্যন্ত আটকে রাখত। এখন ১ সেকেন্ডের অনেক কমে খোলে (নকশা একই)। Login এর অ্যানিমেশনও এখন কম CPU নেয়, ধীর যন্ত্রে নিজে থেকে কম ঘনঘন আঁকে']},
+ {v:'19.53', d:'2026-11-18', t:'Menu ও Software এর পেছনে স্থির নেটওয়ার্ক ছবি', li:[
+  '<b>বাম পাশের Menu আর পুরো Software এর পেছনে</b> এখন নড়াচড়া ছাড়া নেটওয়ার্ক নকশা — Software এর নিজের রঙে (teal), ডান পাশের পুরো জায়গা জুড়ে; কার্ডগুলোর ফাঁকে দেখা যায়, লেখা পড়তে অসুবিধা হয় না। Dark এ আরও হালকা। Software নিজেই আঁকে — যেকোনো স্ক্রিন মাপে খাপ খায়, ইন্টারনেট লাগে না',
+  '<b>Login পাতার চলমান নেটওয়ার্ক আগের মতোই।</b> Menu এর অ্যানিমেশন বাদ — এখন কোনো অ্যানিমেশন শুধু Login এ',
+  'শুধু আধুনিক (Modern) চেহারায়, Classic আগের মতো। Settings → চেহারা থেকে Login, Menu আর Software এর পেছন — তিনটা আলাদা চালু / বন্ধ। Print / PDF এ আসে না']},
  {v:'19.52', d:'2026-11-18', t:'চলমান নেটওয়ার্ক পটভূমি — Login ও Menu (আধুনিক চেহারায়)', li:[
   '<b>Login পাতা:</b> আগের নকশা একই আছে, পেছনে এখন চলমান নেটওয়ার্ক — বিন্দুগুলো আস্তে নড়ে, কাছের বিন্দুতে রেখা জোড়ে। মাউস (মোবাইলে আঙুল) নিলে কাছের বিন্দু সরে যায়, রেখা গাঢ় হয়, মাউসের সাথে রেখা জুড়ে যায়। বাম রঙিন অংশে সাদা, ডান অংশে Theme এর রঙে; Dark এও মানানসই',
   '<b>বাম পাশের Menu:</b> হালকা করে একই চলমান নেটওয়ার্ক — মাউস নিলে হালকা সাড়া দেয়, লেখা পড়তে অসুবিধা হয় না',
@@ -22403,6 +22512,20 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.55', d:'2026-11-18', t:'Physical stock fills the PM demand sheet automatically', li:[
+  '<b>One physical stock:</b> the physical stock entered in the order requirement PM table now goes straight into the stock column of the PM demand sheet — actual need and amount update at once',
+  '<b>Both ways:</b> typing stock in the demand sheet also updates the order’s physical stock — no two separate figures',
+  'The PM demand sheet “Total” refreshes as soon as stock is entered, no need to reopen the page']},
+ {v:'19.54', d:'2026-11-18', t:'List stays in place after save · PM demand totals fixed', li:[
+  '<b>RM / PM / FG / machine lists after save:</b> before, the search text and the “No rate only” filter were cleared and the whole list showed from the start. Now search, filter and scroll stay where you were. Coming back from the menu starts fresh at the top',
+  '<b>Order requirement → PM demand sheet “Total”:</b> before, it showed “—” until a sheet was opened, and once opened it kept the old amount even when order quantity / products / stock / rates changed. Now it always follows the order — need, stock and rate update, new PMs are added and removed ones drop out',
+  '<b>Your own edits stay:</b> need / stock / rate typed by hand, size-paper-party-demand text, rows you added and rows you deleted stay as they are when the order changes. After delivery (locked) the sheet no longer changes',
+  '<b>With “Head Office purchase only”</b> ticked, the number of PMs hidden because they are not marked Head Office is now shown next to it',
+  '<b>Slowness on high-resolution screens fixed:</b> the v19.53 background could freeze the software for several seconds up to 30 seconds on first draw on high-resolution screens (most new laptops / phones). It now opens in well under a second (same design). The login animation also uses less CPU and draws less often on slow machines']},
+ {v:'19.53', d:'2026-11-18', t:'Still network picture behind the menu and the software', li:[
+  '<b>The left menu and the whole software</b> now have a still network design — in the software’s own teal colour, across the whole right side; it shows between the cards without hurting readability. Fainter in Dark. Drawn by the software itself — fits any screen size, no internet needed',
+  '<b>The moving network on the login page stays as it was.</b> The menu animation is gone — the only animation is now on the login page',
+  'Modern look only, Classic as before. Settings → Look turns the login page, the menu and the software background on / off separately. Not in print / PDF']},
  {v:'19.52', d:'2026-11-18', t:'Moving network background — login and menu (Modern look)', li:[
   '<b>Login page:</b> the same design, now with a moving network behind it — dots drift slowly and nearby dots join with lines. Move the mouse (or a finger on mobile) and nearby dots move away, lines darken and join the cursor. White on the coloured left part, theme colour on the right; suits Dark too',
   '<b>Left menu:</b> the same moving network, faint — reacts lightly to the mouse without hurting readability',
