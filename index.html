@@ -10749,7 +10749,7 @@ function demPrintHTML(type){
   const tc='padding:5px;border:1px solid #9fc7c2;border-top:2px solid '+TL+';background:#e3f1ef;color:'+TL+';font-weight:bold;';
   const ia=sp.findIndex(function(x){return x.k==='act';}), ma=sp.findIndex(function(x){return x.k==='amt';});
   let tot='<tr><td style="'+tc+'text-align:right;" colspan="'+(ia+1)+'">Total</td>';
-  for(let k=ia;k<sp.length;k++){ const x=sp[k]; tot+='<td style="'+tc+'text-align:right;">'+(x.k==='act'?demFmt(x,T.act):x.k==='amt'?'৳ '+money(T.amt,0):'')+'</td>'; }
+  for(let k=ia;k<sp.length;k++){ const x=sp[k]; tot+='<td style="'+tc+'text-align:right;">'+(x.k==='act'?demFmt(x,T.act):x.k==='amt'?money(T.amt,0):'')+'</td>'; }
   tot+='</tr>';
   const cell=function(k,v){ return '<td style="border:1px solid #b9d6d2;padding:6px 10px;background:#fbfdfd;font-size:12.5px;"><span style="color:#24423f;font-weight:600;">'+k+':</span> <b style="color:#000;">'+esc(v||'—')+'</b></td>'; };
   const logo=DB.settings&&DB.settings.logo;
@@ -19783,6 +19783,8 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.62', d:'2026-11-18', t:'Demand Sheet Total এ ৳ চিহ্ন নেই', li:[
+  'Demand Sheet Print/PDF এর নিচের Total সারিতে Amount এর ঘরে ৳ চিহ্ন আর নেই — শুধু সংখ্যা']},
  {v:'19.61', d:'2026-11-18', t:'Demand Sheet Print এর Layout ঠিক', li:[
   '<b>সই করার জায়গা:</b> সইয়ের দাগের ওপরে ফাঁকা জায়গা, আর সইয়ের অংশে কোনো Border নেই',
   '<b>Company নাম এক লাইনে:</b> Company নাম আর Factory ঠিকানা ওপরে; তার নিচে পুরো চওড়া teal পট্টিতে “PURCHASE REQUISITION — ধরন” আর মাসের নাম — Portrait পাতাতেও ভাঙে না',
@@ -22610,6 +22612,8 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.62', d:'2026-11-18', t:'No ৳ sign in demand sheet total', li:[
+  'The amount cell of the total row in demand sheet print/PDF now shows the number only, without the ৳ sign']},
  {v:'19.61', d:'2026-11-18', t:'Demand sheet print layout fixed', li:[
   '<b>Room to sign:</b> blank space above each signature line, and no borders around the signature area',
   '<b>Company name on one line:</b> company name and factory address on top; below them a full-width teal bar with “PURCHASE REQUISITION — type” and the month — no wrapping on portrait pages',
