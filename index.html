@@ -10699,6 +10699,30 @@ function demCalc(r){ const act=Math.max(0,n(r.need)-n(r.stock)); return {act:act
 function demVal(r,k){ if(k==='act'||k==='amt') return demCalc(r)[k]; return (k==='need'||k==='stock'||k==='rate')?n(r[k]):(r[k]||''); }
 function demSums(sh){ const t={need:0,act:0,amt:0}; sh.rows.forEach(function(r){ const c=demCalc(r); t.need+=n(r.need); t.act+=c.act; t.amt+=c.amt; }); return t; }
 function demFmt(sp,v){ if(sp.t==='s') return String(v==null?'':v); if(sp.k==='rate') return money(v,2); return money(v,sp.k==='amt'?0:3).replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,''); }
+/* v19.59 — Purchase Requisition: PR No / Department / Required By, টাকা কথায় */
+function demPrCode(type){ const T=demT(type), m={carton:'CTN',sticker:'STK',foil:'FOL',tray:'TRY',boyom:'BYM'}; return m[type]||String(T.l||type).replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()||'PM'; }
+function demPrInfo(type,sh){
+  const o=orderPlan(); let ch=false;
+  if(!sh.pr){ const d=new Date(), ym=String(d.getFullYear()).slice(2)+('0'+(d.getMonth()+1)).slice(-2);
+    const ix=Math.max(0,(DB.orders||[]).findIndex(function(x){return x.id===o.id;}))+1;
+    sh.pr='PR-'+demPrCode(type)+'-'+ym+'-'+('00'+ix).slice(-3); ch=true; }
+  if(sh.dept===undefined){ sh.dept='Production / Store'; ch=true; }
+  if(sh.req===undefined){ sh.req=''; ch=true; }
+  if(ch) saveDB();
+  return {pr:sh.pr, dept:sh.dept, req:sh.req};
+}
+function demInfoSet(k,v){ const sh=demSheet(DEM_CUR); if(!sh) return; sh[k]=String(v||'').trim(); orderPlan().updatedAt=nowISO(); saveDB(); }
+function demDMY(iso){ if(!iso) return ''; const d=new Date(iso+'T00:00:00'); if(isNaN(d)) return iso; return ('0'+d.getDate()).slice(-2)+'-'+d.toLocaleDateString('en-US',{month:'short'})+'-'+d.getFullYear(); }
+function demWords(num){
+  num=Math.round(n(num)); if(num===0) return 'Zero Taka Only';
+  const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],
+        b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  const h=function(x){ let t=''; if(x>=100){ t+=a[Math.floor(x/100)]+' Hundred'; x%=100; if(x) t+=' '; } if(x>=20){ t+=b[Math.floor(x/10)]; if(x%10) t+=' '+a[x%10]; } else if(x) t+=a[x]; return t; };
+  let w=[], x=Math.abs(num);
+  const cr=Math.floor(x/10000000); x%=10000000; const lk=Math.floor(x/100000); x%=100000; const th=Math.floor(x/1000); x%=1000;
+  if(cr) w.push(h(cr)+' Crore'); if(lk) w.push(h(lk)+' Lakh'); if(th) w.push(h(th)+' Thousand'); if(x) w.push(h(x));
+  return (num<0?'Minus ':'')+w.join(' ')+' Taka Only';
+}
 function demDateTxt(){ return new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}); }
 function demMonthTxt(){ return new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
 function demTitleTxt(type,sh){ return (sh.title||demT(type).t)+' for '+demMonthTxt(); }
@@ -10706,37 +10730,46 @@ function demTitleTxt(type,sh){ return (sh.title||demT(type).t)+' for '+demMonthT
 /* ---- Print ---- */
 function demPrintHTML(type){
   const sh=demSheet(type); if(!sh) return '';
-  const o=orderPlan(), hdr=o.demand.hdr||{}, sp=demSpec(type), L=demT(type).lay, T=demSums(sh);
-  const S="font-family:'Times New Roman',serif;color:#000;", bd='border:1px solid #000;', c='padding:3px 5px;'+bd;
-  const hasG=L==='carton', nc=sp.length+1;
+  const o=orderPlan(), hdr=o.demand.hdr||{}, sp=demSpec(type), L=demT(type).lay, T=demSums(sh), I=demPrInfo(type,sh);
+  const TL='#0b5e57', S="font-family:Arial,Helvetica,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;";
+  const c='padding:4px 5px;border:1px solid #9fc7c2;', hc='padding:7px 6px;border:1px solid #0a4a44;background:#0a4f49;color:#fff;font-weight:800;font-size:12.5px;line-height:1.25;letter-spacing:.2px;text-align:center;vertical-align:middle;';
+  const hasG=L==='carton';
   let th='';
   if(hasG){
-    th+='<tr style="font-weight:bold;text-align:center;"><td style="'+c+'" rowspan="2">Sl No.</td>';
-    let gDone=false;
-    sp.forEach(function(x){
-      if(x.g){ if(!gDone){ th+='<td style="'+c+'" colspan="3">Size</td>'; gDone=true; } }
-      else th+='<td style="'+c+'" rowspan="2">'+x.h+'</td>'; });
-    th+='</tr><tr style="font-weight:bold;text-align:center;">'+sp.filter(function(x){return x.g;}).map(function(x){return '<td style="'+c+'">'+x.h+'</td>';}).join('')+'</tr>';
-  } else th='<tr style="font-weight:bold;text-align:center;"><td style="'+c+'">'+(L==='boyom'?'Sl No.':'SL')+'</td>'+sp.map(function(x){return '<td style="'+c+'">'+x.h+'</td>';}).join('')+'</tr>';
-  const body=sh.rows.map(function(r,i){
-    return '<tr><td style="'+c+'text-align:center;">'+(i+1)+'</td>'+sp.map(function(x){
-      const v=demVal(r,x.k); return '<td style="'+c+(x.t==='s'?(x.k==='name'?'':'text-align:center;'):'text-align:right;')+(x.k==='amt'&&L!=='carton'?'font-weight:bold;':'')+'">'+esc(x.t==='s'?v:demFmt(x,v))+'</td>'; }).join('')+'</tr>'; }).join('');
-  let tot='';
-  if(L==='carton'){
-    tot='<tr style="font-weight:bold;">'+sp.map(function(x,i){
-      let v=''; if(x.k==='unit') v='Total'; else if(x.k==='need') v=demFmt(x,T.need); else if(x.k==='act') v=demFmt(x,T.act); else if(x.k==='amt') v=demFmt(x,T.amt);
-      return (i===0?'<td style="'+c+'"></td>':'')+'<td style="'+c+(x.k==='unit'||x.k==='name'?'text-align:center;':'text-align:right;')+'">'+v+'</td>'; }).join('')+'</tr>';
-  } else tot='<tr><td colspan="'+(nc-1)+'" style="border:none;"></td><td style="'+c+'text-align:right;font-weight:bold;">'+money(T.amt,0)+'</td></tr>';
-  const note='<table style="width:100%;border-collapse:collapse;'+S+'font-size:13px;margin-top:14px;"><tr><td style="'+bd+'padding:4px 6px;width:1%;color:#c00000;font-weight:bold;white-space:nowrap;">Note :</td>'+
-    '<td style="'+bd+'padding:4px 6px;color:#c00000;font-weight:bold;">'+DEM_NOTE+'</td></tr></table>';
-  return '<div style="'+S+'max-width:'+(L==='carton'?'1050':'950')+'px;margin:0 auto;">'+
-    '<div style="text-align:center;"><div style="font-size:24px;font-weight:bold;">'+esc(hdr.co||DEM_CO)+'</div>'+
-    '<div style="font-size:13px;font-weight:bold;">'+esc(hdr.fac||DEM_FAC)+'</div>'+
-    '<div style="font-size:13px;font-weight:bold;margin-top:8px;">'+esc(demTitleTxt(type,sh))+'</div></div>'+
-    '<div style="font-size:15px;font-weight:bold;margin:10px 0 6px;">Date : '+demDateTxt()+'</div>'+
-    '<table style="width:100%;border-collapse:collapse;'+S+'font-size:12px;">'+th+body+tot+'</table>'+
-    (L==='pack'?'<div style="text-align:center;font-weight:bold;font-size:13px;margin-top:12px;border-bottom:1px solid #000;border-top:1px solid #000;padding:2px;">Please Take Necessary Step As Soon As Possible</div>':'')+
-    (L==='carton'?'':note)+demSigPrintHTML(S)+'</div>';
+    th+='<tr><th style="'+hc+'" rowspan="2">SL</th>'; let g=false;
+    sp.forEach(function(x){ if(x.g){ if(!g){ th+='<th style="'+hc+'" colspan="3">Size (cm)</th>'; g=true; } } else th+='<th style="'+hc+'" rowspan="2">'+x.h+(x.k==='amt'?' (৳)':'')+'</th>'; });
+    th+='</tr><tr>'+sp.filter(function(x){return x.g;}).map(function(x){return '<th style="'+hc+'">'+x.h+'</th>';}).join('')+'</tr>';
+  } else th='<tr><th style="'+hc+'">SL</th>'+sp.map(function(x){return '<th style="'+hc+'">'+x.h+(x.k==='amt'?' (৳)':'')+'</th>';}).join('')+'</tr>';
+  const chip=function(v){ if(!v) return ''; const ho=v==='Head Office'; return '<span style="font-size:10px;font-weight:bold;padding:1px 7px;border-radius:9px;white-space:nowrap;background:'+(ho?'#e3f1ef':'#fdf0dc')+';color:'+(ho?TL:'#9a5b00')+';">'+esc(v)+'</span>'; };
+  const body=sh.rows.map(function(r,i){ const bg=i%2?'background:#f6fbfa;':'';
+    return '<tr><td style="'+c+bg+'text-align:center;">'+(i+1)+'</td>'+sp.map(function(x){
+      const v=demVal(r,x.k);
+      if(x.k==='buy') return '<td style="'+c+bg+'text-align:center;">'+chip(v)+'</td>';
+      return '<td style="'+c+bg+(x.t==='s'?(x.k==='name'?'font-weight:bold;':'text-align:center;'):'text-align:right;')+(x.k==='act'?'font-weight:bold;':'')+'">'+esc(x.t==='s'?v:demFmt(x,v))+'</td>'; }).join('')+'</tr>'; }).join('');
+  const tc='padding:5px;border:1px solid #9fc7c2;border-top:2px solid '+TL+';background:#e3f1ef;color:'+TL+';font-weight:bold;';
+  const ia=sp.findIndex(function(x){return x.k==='act';}), ma=sp.findIndex(function(x){return x.k==='amt';});
+  let tot='<tr><td style="'+tc+'text-align:right;" colspan="'+(ia+1)+'">Total</td>';
+  for(let k=ia;k<sp.length;k++){ const x=sp[k]; tot+='<td style="'+tc+'text-align:right;">'+(x.k==='act'?demFmt(x,T.act):x.k==='amt'?'৳ '+money(T.amt,0):'')+'</td>'; }
+  tot+='</tr>';
+  const cell=function(k,v){ return '<td style="border:1px solid #b9d6d2;padding:6px 10px;background:#fbfdfd;font-size:12.5px;"><span style="color:#24423f;font-weight:600;">'+k+':</span> <b style="color:#000;">'+esc(v||'—')+'</b></td>'; };
+  const logo=DB.settings&&DB.settings.logo;
+  const g=demSigGet(), on=DEM_SIG.filter(function(x){return g[x[0]];});
+  const sig=on.length?('<table style="width:100%;border-collapse:collapse;margin-top:54px;font-size:12px;page-break-inside:avoid;"><tr>'+on.map(function(x){
+      return '<td style="width:'+(100/on.length)+'%;text-align:center;padding:0 16px;vertical-align:bottom;">'+(x[0]==='p'&&psOn()?psImgFlow():'')+
+        '<div style="min-height:15px;font-weight:bold;">'+esc(g[x[0]+'n']||'')+'</div><div style="border-top:1.5px solid '+TL+';padding-top:4px;"><b>'+x[1]+'</b><br><span style="font-size:10px;color:#666;">Name / Date</span></div></td>'; }).join('')+'</tr></table>'):'';
+  return '<div style="'+S+'max-width:'+(hasG?'1080':'980')+'px;margin:0 auto;">'+
+    '<table style="width:100%;border-collapse:collapse;border-bottom:3px solid '+TL+';"><tr><td style="padding:0 0 8px;vertical-align:bottom;">'+
+      '<table style="border-collapse:collapse;"><tr>'+(logo?'<td style="padding-right:12px;"><img src="'+logo+'" alt="" style="max-height:56px;max-width:140px;object-fit:contain;"></td>':'')+
+      '<td><div style="font-size:22px;font-weight:800;color:#000;">'+esc(hdr.co||DEM_CO)+'</div><div style="font-size:13px;color:#222;font-weight:600;">'+esc(hdr.fac||DEM_FAC)+'</div></td></tr></table></td>'+
+    '<td style="padding:0 0 8px;text-align:right;vertical-align:bottom;"><div style="font-size:18px;font-weight:800;color:#0a4f49;letter-spacing:.4px;">PURCHASE REQUISITION — '+esc(String(demT(type).l).toUpperCase())+'</div>'+
+      '<div style="font-size:12.5px;color:#222;font-weight:600;">'+esc(demTitleTxt(type,sh))+'</div></td></tr></table>'+
+    '<table style="width:100%;border-collapse:collapse;margin:10px 0 10px;"><tr>'+cell('PR No',I.pr)+cell('Date',demDMY(new Date().toISOString().slice(0,10)))+cell('Order Ref',o.ref||o.buyer||'')+'</tr>'+
+      '<tr>'+cell('Department',I.dept)+cell('Required By',demDMY(I.req))+cell('Demand',DEM_DEC)+'</tr></table>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;color:#000;">'+th+body+tot+'</table>'+
+    '<p style="font-size:12px;margin:9px 0 3px;"><b style="color:'+TL+';">In Words:</b> '+demWords(T.amt)+'</p>'+
+    '<p style="font-size:10.5px;margin:0;color:#555;"><i>Note: '+DEM_NOTE+'</i></p>'+
+    (L==='pack'?'<p style="font-size:11.5px;margin:6px 0 0;font-weight:bold;color:'+TL+';">Please take necessary steps as soon as possible.</p>':'')+
+    sig+'</div>';
 }
 function demPrint(type){
   if(!needTool('print','Print')) return;
@@ -10759,11 +10792,19 @@ function demExcel(type){
   const mid={vertical:'middle',horizontal:'center',wrapText:true};
   function line(txt,sz,al){ const r=ws.addRow([txt]); ws.mergeCells(r.number,1,r.number,nc); const c=r.getCell(1);
     c.font={name:F,size:sz,bold:true}; c.alignment={horizontal:al||'center',vertical:'middle'}; return r; }
-  line(hdr.co||DEM_CO,20).height=28; line(hdr.fac||DEM_FAC,12); ws.addRow([]);
-  line(demTitleTxt(type,sh),12); ws.addRow([]);
-  line('Date : '+demDateTxt(),13,'left'); 
+  const TL='FF0B5E57', I=demPrInfo(type,sh);
+  line(hdr.co||DEM_CO,18).height=26; line(hdr.fac||DEM_FAC,11);
+  const tr=line('PURCHASE REQUISITION — '+String(demT(type).l).toUpperCase(),14); tr.getCell(1).font={name:F,size:14,bold:true,color:{argb:TL}}; tr.height=22;
+  line(demTitleTxt(type,sh),11).getCell(1).border={bottom:{style:'medium',color:{argb:TL}}}; ws.addRow([]);
+  const half=Math.ceil(nc/2);
+  [[['PR No',I.pr],['Date',demDMY(new Date().toISOString().slice(0,10))]],[['Order Ref',o.ref||o.buyer||''],['Department',I.dept]],[['Required By',demDMY(I.req)],['Demand',DEM_DEC]]].forEach(function(pr){
+    const r=ws.addRow([]); r.getCell(1).value=pr[0][0]+': '+(pr[0][1]||'—'); r.getCell(half+1).value=pr[1][0]+': '+(pr[1][1]||'—');
+    ws.mergeCells(r.number,1,r.number,half); ws.mergeCells(r.number,half+1,r.number,nc);
+    [1,half+1].forEach(function(ci){ const c=r.getCell(ci); c.font={name:F,size:11,bold:true}; c.border={top:{style:'thin',color:{argb:'FFCFE3E1'}},left:{style:'thin',color:{argb:'FFCFE3E1'}},bottom:{style:'thin',color:{argb:'FFCFE3E1'}},right:{style:'thin',color:{argb:'FFCFE3E1'}}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFBFDFD'}}; });
+  });
+  ws.addRow([]);
   const hr=ws.rowCount+1;
-  const hb=function(r){ r.eachCell({includeEmpty:true},function(c){ c.font={name:F,size:11,bold:true}; c.alignment=mid; c.border=B; }); };
+  const hb=function(r){ r.eachCell({includeEmpty:true},function(c){ c.font={name:F,size:12,bold:true,color:{argb:'FFFFFFFF'}}; c.alignment=mid; c.border=B; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0A4F49'}}; }); };
   if(L==='carton'){
     const r1=ws.addRow(['Sl No.'].concat(sp.map(function(x){return x.g?(x.k==='L'?'Size':''):x.h;})));
     const r2=ws.addRow([''].concat(sp.map(function(x){return x.g?x.h:'';}))); hb(r1); hb(r2);
@@ -10774,7 +10815,8 @@ function demExcel(type){
   sh.rows.forEach(function(r,i){
     const row=ws.addRow([i+1].concat(sp.map(function(x){ const v=demVal(r,x.k); return x.t==='s'?v:+n(v).toFixed(x.k==='rate'?2:3); })));
     row.height=L==='carton'?18:30;
-    row.eachCell({includeEmpty:true},function(c,ci){ const x=sp[ci-2]; c.border=B; c.font={name:F,size:11,bold:ci>1&&x&&x.k==='amt'&&L!=='carton'};
+    row.eachCell({includeEmpty:true},function(c,ci){ const x=sp[ci-2]; c.border=B; c.font={name:F,size:11,bold:ci>1&&x&&(x.k==='act'||x.k==='name')};
+      if(i%2) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF6FBFA'}};
       c.alignment={vertical:'middle',wrapText:true,horizontal:ci===1||(x&&x.t==='s'&&x.k!=='name')?'center':(x&&x.t!=='s'?'right':'left')};
       if(x&&x.t!=='s') c.numFmt=x.k==='rate'?'0.00':(x.k==='amt'?'#,##0':'#,##0.###'); });
   });
@@ -10782,15 +10824,24 @@ function demExcel(type){
     const r=ws.addRow(['']), set=function(k,v){ const i=sp.findIndex(function(x){return x.k===k;}); r.getCell(i+2).value=v; };
     set('unit','Total'); set('need',+T.need.toFixed(3)); set('act',+T.act.toFixed(3)); set('amt',+T.amt.toFixed(0));
     r.eachCell({includeEmpty:true},function(c){ c.border=B; c.font={name:F,size:11,bold:true}; c.numFmt='#,##0.###'; c.alignment={horizontal:'center'}; });
-    for(let i=1;i<=nc;i++) r.getCell(i).border=B;
+    for(let i=1;i<=nc;i++){ r.getCell(i).border=B; r.getCell(i).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE3F1EF'}}; r.getCell(i).font={name:F,size:11,bold:true,color:{argb:TL}}; }
   } else {
-    const r=ws.addRow([]); const c=r.getCell(nc); c.value=+T.amt.toFixed(0); c.numFmt='#,##0'; c.border=B; c.font={name:F,size:12,bold:true};
+    const r=ws.addRow([]), ia=sp.findIndex(function(x){return x.k==='act';});
+    r.getCell(1).value='Total'; r.getCell(ia+2).value=+T.act.toFixed(3); r.getCell(nc).value=+T.amt.toFixed(0);
+    for(let i=1;i<=nc;i++){ const c=r.getCell(i); c.border=B; c.font={name:F,size:11,bold:true,color:{argb:TL}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE3F1EF'}}; if(i>1) c.numFmt='#,##0.###'; }
+    r.getCell(nc).numFmt='#,##0';
   }
-  if(L==='pack'){ ws.addRow([]); const r=line('Please Take Necessary Step As Soon As Possible',12); r.eachCell({includeEmpty:true},function(c){c.border={top:{style:'thin'},bottom:{style:'thin'}};}); }
-  if(L!=='carton'){
-    ws.addRow([]); const r=ws.addRow(['Note :',DEM_NOTE]); ws.mergeCells(r.number,2,r.number,nc); r.height=34;
-    r.eachCell({includeEmpty:true},function(c){ c.font={name:F,size:12,bold:true,color:{argb:'FFFF0000'}}; c.border=B; c.alignment={vertical:'middle',wrapText:true}; });
-  }
+  ws.addRow([]);
+  const wr=line('In Words: '+demWords(T.amt),11,'left'); wr.getCell(1).font={name:F,size:11,bold:true,color:{argb:TL}};
+  const nr=line('Note: '+DEM_NOTE,10,'left'); nr.getCell(1).font={name:F,size:10,italic:true,color:{argb:'FF555555'}}; nr.getCell(1).alignment={wrapText:true,vertical:'middle'}; nr.height=28;
+  if(L==='pack') line('Please take necessary steps as soon as possible.',11,'left').getCell(1).font={name:F,size:11,bold:true,color:{argb:TL}};
+  const g=demSigGet(), on=DEM_SIG.filter(function(x){return g[x[0]];});
+  if(on.length){ ws.addRow([]); ws.addRow([]); ws.addRow([]);
+    const sr=ws.addRow([]), w=Math.floor(nc/on.length);
+    on.forEach(function(x,k){ const a=1+k*w, b=k===on.length-1?nc:a+w-1; ws.mergeCells(sr.number,a,sr.number,b);
+      const c=sr.getCell(a); c.value=(g[x[0]+'n']?g[x[0]+'n']+'\n':'')+x[1]; c.font={name:F,size:11,bold:true}; c.alignment={horizontal:'center',vertical:'top',wrapText:true};
+      c.border={top:{style:'medium',color:{argb:TL}}}; });
+    sr.height=g.pn||g.cn||g.rn||g.an?32:18; }
   ws.pageSetup={orientation:L==='carton'?'landscape':'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0};
   xlsDL(wb, demT(type).l.replace(/[^A-Za-z]/g,'')+'_Demand_'+((o.ref||'Order').replace(/[^A-Za-z0-9]/g,'_').slice(0,20))+'.xlsx');
 }
@@ -10819,6 +10870,9 @@ function demRender(){
   document.getElementById('demBody').innerHTML=
     '<div class="field-row cols-2" style="margin-bottom:10px;"><div class="field"><label>Sheet এর Title</label><input type="text" value="'+esc(sh.title||demT(type).t)+'" onchange="demTitle(this.value)"></div>'+
     '<div class="field"><label>Company / Factory লাইন</label><input type="text" value="'+esc((orderPlan().demand.hdr||{}).fac||DEM_FAC)+'" onchange="demHdr(this.value)"></div></div>'+
+    (function(){ const I=demPrInfo(type,sh); return '<div class="field-row cols-3" style="margin-bottom:10px;"><div class="field"><label>PR No</label><input type="text" value="'+esc(I.pr)+'" onchange="demInfoSet(\'pr\',this.value)"></div>'+
+      '<div class="field"><label>Department</label><input type="text" value="'+esc(I.dept)+'" onchange="demInfoSet(\'dept\',this.value)"></div>'+
+      '<div class="field"><label>Required By (কবে লাগবে)</label><input type="date" value="'+esc(I.req)+'" onchange="demInfoSet(\'req\',this.value)"></div></div>'; })()+
     demSigEditHTML()+
     '<datalist id="demPmDL">'+(DB.packaging||[]).map(function(m){ return '<option value="'+esc(m.name)+'"></option>'; }).join('')+'</datalist>'+
     (sh.rows.length?'':'<div class="hint" style="padding:14px;text-align:center;border:1px dashed var(--border);border-radius:8px;margin-bottom:10px;">এই Sheet এ কোনো Item নেই — নিচের <b>"+ PM List থেকে Item"</b> চেপে বাছাই করুন।</div>')+
@@ -10911,8 +10965,8 @@ function demPickAdd(){
 function demAdd(){ demPickOpen(); }
 function demDel(i){ const sh=demSheet(DEM_CUR); if(!sh||!sh.rows[i]) return; const r=sh.rows[i]; if(r.pmId){ sh.removed=sh.removed||[]; if(sh.removed.indexOf(r.pmId)<0) sh.removed.push(r.pmId); } sh.rows.splice(i,1); saveDB(); demRender(); }
 function demTitle(v){ const sh=demSheet(DEM_CUR); if(sh){ sh.title=v.trim()||demT(DEM_CUR).t; saveDB(); } }
-var DEM_SIG=[['p','Prepared By'],['c','Checked By'],['a','Approved By']];
-function demSigGet(){ const o=orderPlan(); o.demand=o.demand||{hdr:{co:DEM_CO,fac:DEM_FAC},sheets:{}}; o.demand.hdr=o.demand.hdr||{}; if(!o.demand.hdr.sg) o.demand.hdr.sg={p:1,c:0,a:1,pn:'',cn:'',an:''}; return o.demand.hdr.sg; }
+var DEM_SIG=[['p','Prepared By'],['c','Checked By (Store)'],['r','Recommended By'],['a','Approved By']];
+function demSigGet(){ const o=orderPlan(); o.demand=o.demand||{hdr:{co:DEM_CO,fac:DEM_FAC},sheets:{}}; o.demand.hdr=o.demand.hdr||{}; if(!o.demand.hdr.sg) o.demand.hdr.sg={p:1,c:1,r:1,a:1,pn:'',cn:'',rn:'',an:''}; if(o.demand.hdr.sg.r===undefined) o.demand.hdr.sg.r=1; return o.demand.hdr.sg; }
 function demSigSet(k,v){ demSigGet()[k]=v; saveDB(); }
 function demSigEditHTML(){
   const g=demSigGet();
@@ -19728,6 +19782,15 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.60', d:'2026-11-18', t:'Demand Sheet Print এর লেখা আরও স্পষ্ট', li:[
+  '<b>Table এর Heading:</b> লেখা বড় (12.5px) ও মোটা, পেছনের teal আরও গাঢ় — সাদা লেখা পরিষ্কার পড়া যায়; Excel এর Heading ও বড়',
+  '<b>ওপরের অংশ:</b> Company নাম, Factory ঠিকানা, Sheet এর Title আর PR No / Date / Order Ref / Department / Required By box এর লেখা বড় ও গাঢ়']},
+ {v:'19.59', d:'2026-11-18', t:'Demand Sheet এর নতুন Purchase Requisition Format', li:[
+  '<b>নতুন Print / PDF Design:</b> ওপরে Logo (Settings এ দেওয়া থাকলে), Company নাম ও Factory ঠিকানা; ডানে “PURCHASE REQUISITION — ধরন”; teal রঙের Table, এক row পর পর হালকা রং, Purchase By রঙিন chip (Head Office সবুজ, Factory কমলা)',
+  '<b>নতুন তথ্য:</b> PR No (নিজে বানায়, বদলানো যায়), Department, Required By (কবে লাগবে) — Demand Sheet Edit এ বসান; Print এ Date, Order Ref, Demand সহ ওপরে box এ দেখায়',
+  '<b>In Words:</b> মোট টাকা কথায় (Lakh/Crore সহ) Table এর নিচে',
+  '<b>৪টি সই:</b> Prepared By, Checked By (Store), Recommended By, Approved By — যেকোনোটি টিক তুলে বাদ দেওয়া যায়',
+  'Excel এও একই রং, PR তথ্য, In Words ও সই']},
  {v:'19.58', d:'2026-11-18', t:'PM Demand এ Head Office ও Factory দুই Item ই + Purchase By ঘর', li:[
   '<b>দুই ধরনের Item ই আসে:</b> Head Office Purchase আর Factory Purchase — দুই রকম PM ই এখন Order অনুযায়ী Demand Sheet এ নিজে বসে; “শুধু Head Office Purchase” টিক আর নেই',
   '<b>নতুন ঘর “Purchase By”:</b> প্রতিটি Demand Sheet এ (Carton, Sticker, Foil, Tray, Boyom ও নিজের ধরন) কে কিনবে তা দেখায় — Head Office / Factory; PM List এর “কে কিনবে” থেকে নিজে আসে, Sheet এ বদলানোও যায়; Print, PDF ও Excel এ যায়']},
@@ -22541,6 +22604,15 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.60', d:'2026-11-18', t:'Clearer text in demand sheet print', li:[
+  '<b>Table heading:</b> larger (12.5px), bolder text on a darker teal so the white labels read clearly; Excel heading also larger',
+  '<b>Top section:</b> company name, factory address, sheet title and the PR No / Date / Order Ref / Department / Required By box are larger and darker']},
+ {v:'19.59', d:'2026-11-18', t:'New purchase requisition format for demand sheets', li:[
+  '<b>New print / PDF design:</b> logo (if set in Settings), company name and factory address on top; “PURCHASE REQUISITION — type” on the right; teal table with alternating rows and coloured Purchase By chips (Head Office green, Factory orange)',
+  '<b>New fields:</b> PR No (auto, editable), Department and Required By, entered in the demand sheet editor and shown with Date, Order Ref and Demand in the info box',
+  '<b>In Words:</b> total amount in words (with Lakh/Crore) under the table',
+  '<b>Four signatures:</b> Prepared By, Checked By (Store), Recommended By, Approved By — each can be switched off',
+  'Excel export uses the same colours, PR info, In Words and signatures']},
  {v:'19.58', d:'2026-11-18', t:'PM demand includes Head Office and factory items + Purchase By column', li:[
   '<b>Both kinds of item:</b> Head Office purchase and factory purchase PMs now both fill the demand sheets from the order; the “Head Office purchase only” filter is gone',
   '<b>New “Purchase By” column:</b> every demand sheet (Carton, Sticker, Foil, Tray, Boyom and custom types) shows Head Office / Factory, taken from the PM list and editable in the sheet; included in print, PDF and Excel']},
