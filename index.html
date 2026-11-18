@@ -3901,15 +3901,7 @@ function pdfFromPrintArea(name, land){
             pdf.text(L, Math.max(mh,6), y); pdf.text('Page '+i+' of '+N+'   |   '+STAMP_RIGHT, W-Math.max(mh,6), y, {align:'right'}); }
         }catch(e){ console.error(e); }
       }).outputPdf('blob').then(function(blob){
-        const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
-        const file=new File([blob],fname,{type:'application/pdf'});
-        if(mobile && navigator.canShare && navigator.canShare({files:[file]})){
-          navigator.share({files:[file],title:name||'Document'}).catch(function(){});
-        } else {
-          const u=URL.createObjectURL(blob), a=document.createElement('a'); a.href=u; a.download=fname; a.click();
-          setTimeout(function(){URL.revokeObjectURL(u);},2000);
-        }
-        toast('PDF তৈরি হয়েছে');
+        fileOut(blob,fname,'PDF');
       }).catch(function(e){ console.error(e); toast('PDF তৈরিতে সমস্যা হয়েছে',true); });
   };
   /* ছবি (লোগো) লোড হওয়ার পর মাপ নেওয়া */
@@ -4331,8 +4323,9 @@ function abRun(manual){
     const d=new Date(), p=function(x){return String(x).padStart(2,'0');};
     const stamp=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes());
     const b=new Blob([JSON.stringify(DB)],{type:'application/json'});
-    const u=URL.createObjectURL(b), a=document.createElement('a');
-    a.href=u; a.download='amaz_costing_'+(manual?'backup_':'AUTO_backup_')+stamp+'.json'; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},2000);
+    const fn='amaz_costing_'+(manual?'backup_':'AUTO_backup_')+stamp+'.json';
+    if(manual) fileOut(b,fn,'Backup');
+    else { const u=URL.createObjectURL(b), a=document.createElement('a'); a.href=u; a.download=fn; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(u);},60000); }
     const st=abState(); st.cnt=0; st.day=d.toISOString().slice(0,10); st.at=Date.now(); abPut(st);
     toast((manual?'':'Auto ')+'Backup Download হয়েছে');
     const e=document.getElementById('abLast'); if(e) e.textContent=abLastTxt();
@@ -14295,8 +14288,7 @@ function exportReadable(){
       sheets+
       '<script>function f(q){q=q.toLowerCase();document.querySelectorAll("table.ix tbody tr").forEach(function(r,i){var m=!q||r.textContent.toLowerCase().indexOf(q)>-1;r.style.display=m?"":"none";var s=document.getElementById("c"+i);if(s)s.style.display=m?"":"none";});}<\/script>'+
       '</body></html>';
-    const u=URL.createObjectURL(new Blob([html],{type:'text/html'})), a=document.createElement('a');
-    a.href=u; a.download=pdfSafe((DB.settings.companyName||'AMAZ')+' Costing Book '+now.toISOString().slice(0,10))+'.html'; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},3000);
+    fileOut(new Blob([html],{type:'text/html'}), pdfSafe((DB.settings.companyName||'AMAZ')+' Costing Book '+now.toISOString().slice(0,10))+'.html','HTML');
     audit('backup','data','HTML Backup',list.length+' Costing — পড়ার মতো কপি');
     toast('HTML Backup নামানো হয়েছে — '+list.length+' টি Costing');
   },30);
@@ -14736,11 +14728,40 @@ function printTopSheet(){
 
 /* ---------- COSTING SHEET -> EXCEL (PRINT LAYOUT, FORMULAS + BORDERS) ---------- */
 const XT={thin:{style:'thin',color:{argb:'FF808080'}}, med:{style:'medium',color:{argb:'FF000000'}}};
+/* v19.65 — মোবাইলে ফাইল নামানো: PDF/Excel বানাতে সময় লাগে, ততক্ষণে ফোনের ব্রাউজার "ক্লিক" ভুলে যায় — তাই সরাসরি
+   Download আটকে যেত (বিশেষ করে Home Screen App, WhatsApp/Facebook এর ভেতরের ব্রাউজার)। এখন ফাইল তৈরি হলে একটা ছোট
+   বাক্স আসে — Download / Share (WhatsApp ইত্যাদি) / খুলুন — চাপলেই নতুন করে অনুমতি পায় আর নামে। কম্পিউটারে আগের মতোই সরাসরি। */
+function isMobileDev(){ return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'') || (navigator.maxTouchPoints>1 && /Macintosh/.test(navigator.userAgent||'')); }
+function fileSave(blob,fname){
+  const u=URL.createObjectURL(blob), a=document.createElement('a'); a.href=u; a.download=fname; a.rel='noopener';
+  a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); },120000);
+}
+function fileOut(blob,fname,kind){
+  if(!isMobileDev()){ fileSave(blob,fname); toast((kind||'ফাইল')+' তৈরি হয়েছে'); return; }
+  let file=null; try{ file=new File([blob],fname,{type:blob.type||'application/octet-stream'}); }catch(e){}
+  const canSh=!!(file && navigator.canShare && (function(){ try{ return navigator.canShare({files:[file]}); }catch(e){ return false; } })());
+  const old=document.getElementById('fileOutModal'); if(old) old.remove();
+  const u=URL.createObjectURL(blob);
+  const ov=document.createElement('div'); ov.className='modal-overlay open'; ov.id='fileOutModal'; ov.style.zIndex=3000;
+  ov.innerHTML='<div class="modal" style="max-width:420px;"><div class="modal-head"><h3>'+esc(kind||'ফাইল')+' তৈরি হয়েছে</h3><button class="close-x" id="foX">&#10005;</button></div>'+
+    '<div class="modal-body"><p style="margin:0 0 12px;word-break:break-all;"><b>'+esc(fname)+'</b> <span class="muted" style="font-size:12px;">('+money(blob.size/1024,0)+' KB)</span></p>'+
+    '<div style="display:flex;flex-direction:column;gap:9px;">'+
+    '<a class="btn btn-primary" id="foDl" href="'+u+'" download="'+esc(fname)+'" style="text-align:center;text-decoration:none;">&#8681; Download (ফোনে রাখুন)</a>'+
+    (canSh?'<button class="btn btn-accent" id="foSh">📤 Share — WhatsApp / Drive / Email</button>':'')+
+    '<a class="btn btn-ghost" id="foOp" href="'+u+'" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;">👁 খুলে দেখুন</a></div>'+
+    '<p class="hint" style="margin:12px 0 0;">Download না হলে <b>Share</b> চেপে Drive/WhatsApp এ রাখুন, অথবা <b>খুলে দেখুন</b> থেকে ফোনের Download চিহ্ন চাপুন। Home Screen App বা WhatsApp/Facebook এর ভেতরের ব্রাউজারে Download আটকে যেতে পারে — তখন Chrome এ খুলুন।</p></div></div>';
+  document.body.appendChild(ov);
+  const close=function(){ ov.remove(); setTimeout(function(){ URL.revokeObjectURL(u); },120000); };
+  ov.querySelector('#foX').onclick=close;
+  ov.onclick=function(e){ if(e.target===ov) close(); };
+  ov.querySelector('#foDl').addEventListener('click',function(){ setTimeout(close,400); toast('Download শুরু হয়েছে — ফোনের Downloads এ দেখুন'); });
+  const sh=ov.querySelector('#foSh');
+  if(sh) sh.onclick=function(){ navigator.share({files:[file],title:fname}).then(close).catch(function(e){ if(e&&e.name!=='AbortError') toast('Share হয়নি — Download চাপুন',true); }); };
+}
 function xlsDL(wb, fname){
   wb.xlsx.writeBuffer().then(function(buf){
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob), a=document.createElement('a');
-    a.href=url; a.download=fname; a.click(); setTimeout(function(){URL.revokeObjectURL(url);},1500);
+    fileOut(blob,fname,'Excel');
   }).catch(function(e){ console.error(e); toast('Excel তৈরিতে সমস্যা হয়েছে',true); });
 }
 function buildCostingWS(wb, p, sheetName, refs){
@@ -15886,8 +15907,7 @@ function exportBackup(){
   if(!needTool('backup','Backup নেওয়া')) return;
   audit('backup','data','Backup','ফাইল নামানো হয়েছে');
   const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
-  const u=URL.createObjectURL(b), a=document.createElement('a');
-  a.href=u; a.download='amaz_costing_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); URL.revokeObjectURL(u);
+  fileOut(b,'amaz_costing_backup_'+new Date().toISOString().slice(0,10)+'.json','Backup');
   try{ localStorage.setItem('amaz_costing_lastbk',String(Date.now())); }catch(e){}
   try{ const st=abState(); st.cnt=0; st.day=new Date().toISOString().slice(0,10); st.at=Date.now(); abPut(st); }catch(e){}
   toast('Backup Download হয়েছে');
@@ -19454,7 +19474,7 @@ function rkShow(key){
   document.getElementById('rkDl').onclick=function(){
     const txt='AMAZ Product Costing — Admin Recovery Key\r\n'+(co?('Company: '+co+'\r\n'):'')+'Created: '+new Date().toLocaleString('en-GB')+'\r\n\r\n'+key+
       '\r\n\r\nIf the Admin password is forgotten: Login page > "Forgot password?" > enter Admin username, this key and a new password.\r\nKeep this file private.\r\n';
-    const u=URL.createObjectURL(new Blob([txt],{type:'text/plain'})), a=document.createElement('a'); a.href=u; a.download='AMAZ_Costing_Recovery_Key.txt'; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},1500); };
+    fileOut(new Blob([txt],{type:'text/plain'}),'AMAZ_Costing_Recovery_Key.txt','Recovery Key'); };
   document.getElementById('rkOk').onchange=function(){ document.getElementById('rkDone').disabled=!this.checked; };
   document.getElementById('rkDone').onclick=function(){ ov.remove(); };
 }
@@ -19803,6 +19823,10 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.65', d:'2026-11-18', t:'মোবাইলে PDF / Excel Download ঠিক', li:[
+  '<b>সমস্যা:</b> PDF বানাতে কয়েক সেকেন্ড লাগে — ততক্ষণে ফোনের ব্রাউজার আপনার “চাপ” ভুলে যায়, তাই “PDF তৈরি হয়েছে” দেখালেও ফাইল নামত না',
+  '<b>এখন:</b> মোবাইলে ফাইল তৈরি হলে একটা বাক্স আসে — <b>Download</b> (ফোনে রাখুন), <b>Share</b> (WhatsApp / Drive / Email), <b>খুলে দেখুন</b>; চাপলেই নামে',
+  'PDF, Excel, Backup, Costing Book আর Recovery Key — সবগুলোতেই; কম্পিউটারে আগের মতো সরাসরি Download']},
  {v:'19.64', d:'2026-11-18', t:'Demand Sheet এ সই বড়, নাম পদবির নিচে', li:[
   '<b>সই এর ছবি বড়:</b> Settings এ আপলোড করা সই এখন দাগের ঠিক ওপরে বড় করে বসে',
   '<b>নাম পদবির নিচে:</b> Prepared By / Checked By এর নিচে নাম লেখা হয়; দাগের ওপরে আর নাম বসে না',
@@ -22640,6 +22664,10 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.65', d:'2026-11-18', t:'PDF / Excel download fixed on mobile', li:[
+  '<b>Problem:</b> building a PDF takes a few seconds, and by then the phone browser no longer treats it as your tap, so “PDF created” showed but nothing downloaded',
+  '<b>Now:</b> on mobile a small box appears when the file is ready — <b>Download</b>, <b>Share</b> (WhatsApp / Drive / Email) and <b>Open</b>; tapping one saves it',
+  'Applies to PDF, Excel, backup, costing book and recovery key; on a computer it still downloads directly']},
  {v:'19.64', d:'2026-11-18', t:'Larger signature, name under the title in demand sheets', li:[
   '<b>Larger signature:</b> the signature uploaded in Settings now sits right above the line at a larger size',
   '<b>Name under the title:</b> the name is printed below Prepared By / Checked By, no longer above the line',
