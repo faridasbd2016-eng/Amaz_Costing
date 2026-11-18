@@ -10754,9 +10754,12 @@ function demPrintHTML(type){
   const cell=function(k,v){ return '<td style="border:1px solid #b9d6d2;padding:6px 10px;background:#fbfdfd;font-size:12.5px;"><span style="color:#24423f;font-weight:600;">'+k+':</span> <b style="color:#000;">'+esc(v||'—')+'</b></td>'; };
   const logo=DB.settings&&DB.settings.logo;
   const g=demSigGet(), on=DEM_SIG.filter(function(x){return g[x[0]];});
-  const sig=on.length?('<table class="nogrid" style="width:100%;border-collapse:collapse;margin-top:40px;font-size:12px;page-break-inside:avoid;"><tr>'+on.map(function(x){
-      return '<td style="width:'+(100/on.length)+'%;text-align:center;padding:0 14px;vertical-align:bottom;height:70px;">'+(x[0]==='p'&&psOn()?psImgFlow():'<div style="height:44px;"></div>')+
-        '<div style="min-height:15px;font-weight:bold;">'+esc(g[x[0]+'n']||'')+'</div><div style="border-top:1.5px solid '+TL+';padding-top:4px;"><b>'+x[1]+'</b><br><span style="font-size:10px;color:#666;">Name / Date</span></div></td>'; }).join('')+'</tr></table>'):'';
+  const sig=on.length?('<table class="nogrid" style="width:100%;border-collapse:collapse;table-layout:fixed;margin-top:40px;font-size:12px;page-break-inside:avoid;"><tr>'+on.map(function(x){
+      /* v19.64 — সই এর ছবি দাগের ঠিক ওপরে বড় করে; নাম "Prepared By" এর নিচে */
+      const img=(x[0]==='p'&&psOn())?('<img src="'+DB.settings.sign+'" alt="" style="display:block;margin:0 auto -4px;max-height:66px;max-width:200px;width:auto;height:auto;object-fit:contain;">'):'';
+      return '<td style="width:'+(100/on.length)+'%;text-align:center;padding:0 14px;vertical-align:top;">'+
+        '<div style="height:70px;display:flex;align-items:flex-end;justify-content:center;">'+img+'</div>'+
+        '<div style="border-top:1.5px solid '+TL+';padding-top:4px;"><b>'+x[1]+'</b>'+(g[x[0]+'n']?('<div style="font-size:11.5px;margin-top:2px;">'+esc(g[x[0]+'n'])+'</div>'):'')+'</div></td>'; }).join('')+'</tr></table>'):'';
   return '<div style="'+S+'max-width:'+(hasG?'1080':'760')+'px;margin:0 auto;">'+
     '<table class="nogrid" style="width:100%;border-collapse:collapse;"><tr>'+(logo?'<td style="width:1%;padding:0 12px 6px 0;vertical-align:middle;"><img src="'+logo+'" alt="" style="max-height:54px;max-width:130px;object-fit:contain;"></td>':'')+
       '<td style="padding:0 0 6px;vertical-align:middle;"><div style="font-size:22px;font-weight:800;color:#000;white-space:nowrap;">'+esc(hdr.co||DEM_CO)+'</div>'+
@@ -10840,7 +10843,7 @@ function demExcel(type){
   if(on.length){ ws.addRow([]); ws.addRow([]); ws.addRow([]);
     const sr=ws.addRow([]), w=Math.floor(nc/on.length);
     on.forEach(function(x,k){ const a=1+k*w, b=k===on.length-1?nc:a+w-1; ws.mergeCells(sr.number,a,sr.number,b);
-      const c=sr.getCell(a); c.value=(g[x[0]+'n']?g[x[0]+'n']+'\n':'')+x[1]; c.font={name:F,size:11,bold:true}; c.alignment={horizontal:'center',vertical:'top',wrapText:true};
+      const c=sr.getCell(a); c.value=x[1]+(g[x[0]+'n']?'\n'+g[x[0]+'n']:''); c.font={name:F,size:11,bold:true}; c.alignment={horizontal:'center',vertical:'top',wrapText:true};
       c.border={top:{style:'medium',color:{argb:TL}}}; });
     sr.height=g.pn||g.cn||g.rn||g.an?32:18; }
   ws.pageSetup={orientation:L==='carton'?'landscape':'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0};
@@ -11049,7 +11052,7 @@ function demandPanelHTML(d){
       '<button class="btn btn-ghost btn-sm" onclick="demPrint(\''+T.v+'\')">&#128424; Print</button> '+
       '<button class="btn btn-ghost btn-sm" onclick="demExcel(\''+T.v+'\')">&#8681; Excel</button></td></tr>'; }).join('');
   const hid=DEM_HO_ONLY?(d.pk||[]).filter(function(x){ return x.need>0.0005 && x.buyBy!=='ho' && pmDemandType(pmMasterOf(x.id),x.name); }).length:0;
-  return '<div class="panel" id="demPanel" style="margin-bottom:16px;"><div class="panel-head"><h3>PM Demand Sheet (Head Office ও Factory)</h3><span style="flex:1"></span>'+
+  return '<div class="panel" id="demPanel" data-ortab="dem" style="margin-bottom:16px;"><div class="panel-head"><h3>PM Demand Sheet (Head Office ও Factory)</h3><span style="flex:1"></span>'+
     (hid?'<span class="hint" style="margin-right:10px;color:var(--warning,#B45309);" title="এই PM গুলোর “কে কিনবে” Head Office দেওয়া নেই — টিক তুলে দিলে বা PM List এ Head Office বাছলে Sheet এ আসবে">⚠ '+hid+' টি PM Head Office বাছা নেই — দেখাচ্ছে না</span>':'')+
     '</div>'+
     '<div class="table-wrap"><table><thead><tr><th>ধরন</th><th class="num">Item</th><th class="num">মোট টাকা</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
@@ -11388,7 +11391,8 @@ function renderOrderForm(o){
    (dlv?('<p class="hint" style="margin:0 0 12px;background:#DCE8F7;color:#1D4E89;padding:8px 12px;border-radius:8px;">'+
      '🚚 এই Order <b>Delivered</b> — তারিখ '+esc(showDate(o.deliveryDate)||fmtDate(o.deliveredAt))+' · Challan No. <b>'+esc(o.challanNo||'-')+'</b>'+
      (o.vehicle?(' · গাড়ি '+esc(o.vehicle)):'')+(o.deliveredBy?(' — '+esc(o.deliveredBy)):'')+'</p>'):'')+
-   '<div class="panel" style="margin-bottom:16px;"><div class="panel-body">'+
+   orVTabsHTML(isExp)+'<div id="orWrap">'+
+   '<div class="panel" data-ortab="lines" style="margin-bottom:16px;"><div class="panel-body">'+
    (lk?('<p class="hint" style="margin:-2px 0 12px;background:var(--ok-bg);color:var(--ok);padding:8px 12px;border-radius:8px;">'+
      '🔒 এই Order চূড়ান্ত করা হয়েছে '+fmtDate(o.lockedAt)+(o.lockedBy?(' — '+esc(o.lockedBy)):'')+'। '+
      'নিচের সব দর ও হিসাব ওই সময়ের অবস্থা অনুযায়ী হিমায়িত। বদলাতে হলে আগে "আবার খুলুন" চাপুন।</p>'):'')+
@@ -11414,7 +11418,23 @@ function renderOrderForm(o){
    '<th style="width:120px" class="num">মোট বিক্রয় ৳</th><th style="width:120px" class="num">লাভ/লোকসান ৳</th><th style="width:110px" class="mid">Action</th></tr></thead>'+
    '<tbody id="orBody"></tbody><tfoot id="orFoot"></tfoot></table></div></div></div>'+
    '<datalist id="orProdDL"></datalist>'+
-   '<div id="orSummary"></div>';
+   '<div id="orSummary"></div></div>';
+}
+/* v19.63 — Order Requirement ট্যাব আকারে: প্রথমে "সব" (আগের মতো পুরোটা), তারপর আলাদা আলাদা অংশ */
+var OR_VTAB='all';
+function orVTabList(isExp){ return [['all','সব'],['lines','Product ও Qty'],['sum','সারাংশ ও খরচ'],['pl','পণ্যভিত্তিক লাভ-ক্ষতি']]
+  .concat(isExp?[['fwd','Forwarding']]:[]).concat([['rm','RM চাহিদা'],['pk','PM চাহিদা'],['dem','PM Demand Sheet'],['buy','ক্রয় সারাংশ']]); }
+function orVTabsHTML(isExp){
+  const L=orVTabList(isExp); if(!L.some(function(t){return t[0]===OR_VTAB;})) OR_VTAB='all';
+  return '<div class="tabs" id="orVTabs" style="margin-bottom:14px;border-radius:10px;">'+L.map(function(t){
+    return '<button class="tab'+(OR_VTAB===t[0]?' active':'')+'" data-v="'+t[0]+'" onclick="orVTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>'+
+    '<style id="orVCss">'+orVCss()+'</style>';
+}
+function orVCss(){ return OR_VTAB==='all'?'':('#orWrap [data-ortab]:not([data-ortab~="'+OR_VTAB+'"]){display:none !important;}'); }
+function orVTab(v){
+  OR_VTAB=v; const st=document.getElementById('orVCss'); if(st) st.textContent=orVCss();
+  document.querySelectorAll('#orVTabs .tab').forEach(function(b){ b.classList.toggle('active',b.getAttribute('data-v')===v); });
+  const t=document.getElementById('orVTabs'); if(t){ const y=t.getBoundingClientRect().top+window.scrollY-80; if(window.scrollY>y) window.scrollTo(0,Math.max(0,y)); }
 }
 function orMeta(){
   const o=orderPlan(); if(!o.id || ordIsLocked(o)) return;
@@ -11777,7 +11797,7 @@ function buyPanelHTML(d){
 
   const noneTot=M.filter(function(r){return !r.k;}).reduce(function(a,r){return a+r.tot;},0);
   const sub=function(t){ return '<div class="muted" style="padding:12px 16px 6px;font-size:12px;font-weight:600;">'+t+'</div>'; };
-  return '<div class="panel" data-buypanel="1" style="margin-bottom:16px;"><div class="panel-head"><h3>ক্রয় সারাংশ</h3>'+
+  return '<div class="panel" data-buypanel="1" data-ortab="buy" style="margin-bottom:16px;"><div class="panel-head"><h3>ক্রয় সারাংশ</h3>'+
     '<span style="flex:1"></span>'+
     ((d.plan&&d.plan.stock&&Object.keys(d.plan.stock).length)?
       '<button class="btn btn-sm btn-ghost" onclick="ordClearStock()" title="বসানো সব Physical Stock মুছুন">Stock মুছুন</button>':'')+
@@ -11808,7 +11828,7 @@ function renderOrderReqStock(){
 }
 function renderOrSummary(d){
   const w=document.getElementById('orSummary'); if(!w) return;
-  if(!d.totCtn){ w.innerHTML='<div class="panel"><div class="panel-body">'+
+  if(!d.totCtn){ w.innerHTML='<div class="panel" data-ortab="sum pl fwd rm pk dem buy"><div class="panel-body">'+
     emptyState('Product বেছে Order Qty দিন — তারপর সব কাঁচামাল ও প্যাকিং এর সমন্বিত চাহিদা এখানে দেখাবে।')+'</div></div>'; return; }
   /* v15.1 — টেবিলের নিচে শুধু একটাই TOTAL সারি, আর প্রতিটি টাকার কলামের
      যোগফল ঠিক সেই কলামের নিচেই বসে। কে কিনবে কত — সেই ভাগটা আর প্রতিটি
@@ -11818,7 +11838,7 @@ function renderOrSummary(d){
     const T=function(f){ return rows.reduce(function(a,x){ return a+n(x[f]); },0); };
     const tVal=T('value'), tStk=T('stockVal'), tNeed=T('needVal');
     const M=' style="padding:9px 12px;"';
-    return '<div class="panel" style="margin-bottom:16px;"><div class="panel-head"><h3>'+title+'</h3>'+
+    return '<div class="panel" data-ortab="'+pfx+'" style="margin-bottom:16px;"><div class="panel-head"><h3>'+title+'</h3>'+
       '<span class="muted" style="font-size:12.5px;">'+rows.length+' টি আইটেম</span>'+
       '<span style="flex:1"></span>'+
       '<span style="font-size:12.5px;">প্রয়োজন <b>৳'+money(tVal,0)+'</b>'+
@@ -11859,7 +11879,7 @@ function renderOrSummary(d){
   function buyPanel(){ return buyPanelHTML(d); }
   /* Forwarding পুল ভাঙানো */
   const poolHTML = (d.isExport && d.preset)
-    ? ('<div class="panel" style="margin-bottom:16px;"><div class="panel-head"><h3>Forwarding পুল — এই অর্ডারের আসল হিসাব</h3>'+
+    ? ('<div class="panel" data-ortab="fwd" style="margin-bottom:16px;"><div class="panel-head"><h3>Forwarding পুল — এই অর্ডারের আসল হিসাব</h3>'+
        '<span class="muted" style="font-size:12.5px;">'+esc(d.preset.name||'')+'</span></div><div class="table-wrap"><table>'+
        '<thead><tr><th>Cost Head</th><th>ভিত্তি</th><th class="num">মোট ৳</th><th class="num">প্রতি CBM ৳</th></tr></thead><tbody>'+
        d.ccLines.map(function(c){
@@ -11880,7 +11900,7 @@ function renderOrSummary(d){
        (d.contTotal>0?('<p class="hint" style="margin:8px 16px 12px;"><b>Container ভরাট:</b> '+money(d.totCbm,2)+' / '+money(d.contTotal,2)+
          ' CBM = <b>'+money(d.util*100,1)+'%</b>। খালি জায়গার Freight ভাগও এই পণ্যের উপরেই পড়ে — container যত ভালো ভরবে, প্রতি কার্টনে Freight তত কমবে।</p>'):'')+
        '</div>')
-    : (d.isExport ? '<div class="panel" style="margin-bottom:16px;"><div class="panel-body"><p class="hint" style="margin:0;">উপরে <b>গন্তব্য</b> বাছুন — তাহলে Forwarding ও Freight এই অর্ডারের আসল কার্টন ও CBM অনুযায়ী হিসাব হবে।</p></div></div>' : '');
+    : (d.isExport ? '<div class="panel" data-ortab="fwd" style="margin-bottom:16px;"><div class="panel-body"><p class="hint" style="margin:0;">উপরে <b>গন্তব্য</b> বাছুন — তাহলে Forwarding ও Freight এই অর্ডারের আসল কার্টন ও CBM অনুযায়ী হিসাব হবে।</p></div></div>' : '');
   const mPct=d.totSale>0?(d.totNet/d.totSale*100):0;
   /* v18.57 — Production শেষ হতে মোট কত দিন (প্রতিটি Product এর Batch ÷ দৈনিক Batch এর যোগফল) */
   let pdBatch=0, pdDays=0, pdMiss=0;
@@ -11890,10 +11910,10 @@ function renderOrSummary(d){
     (pdDays>0?(money(pdDays,1)+' দিন'):'—')+'</div><div class="sub">'+(pdDays>0?('≈ '+pdWork+' কার্যদিবস · '+money(pdBatch,1)+' Batch'):'Batch/দিন বসানো নেই')+
     (pdMiss?(' · '+pdMiss+' টির তথ্য নেই'):'')+'</div></div>';
   const rdf=ordRateDiffs(d.plan);
-  const rateBar=rdf.length?('<div class="panel" style="margin-bottom:12px;border-left:4px solid var(--accent,#c9a227);"><div class="panel-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;">'+
+  const rateBar=rdf.length?('<div class="panel" data-ortab="sum lines" style="margin-bottom:12px;border-left:4px solid var(--accent,#c9a227);"><div class="panel-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;">'+
     '<span style="font-size:13px;">&#9888; <b>'+rdf.length+' টি</b> RM/PM এর দর Master এ বদলেছে — এই Order এ আগের দরই ধরা আছে, নিজে থেকে বদলাবে না।</span><span style="flex:1"></span>'+
     '<button class="btn btn-accent btn-sm" onclick="ordRateModal()">📋 কোনগুলো বদলেছে দেখুন</button></div></div>'):'';
-  w.innerHTML=rateBar+'<div class="grid-kpi" style="grid-template-columns:repeat(5,1fr);">'+
+  w.innerHTML=rateBar+'<div data-ortab="sum"><div class="grid-kpi" style="grid-template-columns:repeat(5,1fr);">'+
     '<div class="kpi primary"><div class="label">মোট Order</div><div class="value">'+money(d.totCtn,0)+'</div><div class="sub">unit · '+d.rows.length+' টি Product'+(ordHasCbm(d.ctype)?(' · '+money(d.totCbm,2)+' CBM'):'')+'</div></div>'+
     '<div class="kpi accent"><div class="label">মোট খরচ</div><div class="value" style="font-size:19px;">৳'+money(d.totCost)+'</div><div class="sub">Material ৳'+money(d.totRmVal+d.totPkVal)+'</div></div>'+
     '<div class="kpi"><div class="label">মোট বিক্রয়</div><div class="value" style="font-size:19px;">৳'+money(d.totSale)+'</div>'+(d.isExport?('<div class="sub">$'+money(d.invUsd,2)+'</div>'):'')+'</div>'+
@@ -11918,9 +11938,9 @@ function renderOrSummary(d){
     '<div class="srow grand"><span>মোট খরচ</span><span>৳ '+money(d.totCost)+'</span></div>'+
     '<div class="srow"><span>মোট বিক্রয়</span><span>৳ '+money(d.totSale)+'</span></div>'+
     '<div class="srow grand '+(d.totNet>=0?'profit-pos':'profit-neg')+'"><span>নিট লাভ / (ক্ষতি)</span><span>৳ '+money(d.totNet)+'</span></div>'+
-    '</div></div></div>'+
+    '</div></div></div></div>'+
     /* পণ্যভিত্তিক লাভ-ক্ষতি */
-    '<div class="panel" style="margin-bottom:16px;"><div class="panel-head"><h3>পণ্যভিত্তিক লাভ-ক্ষতি</h3></div><div class="table-wrap"><table>'+
+    '<div class="panel" data-ortab="pl" style="margin-bottom:16px;"><div class="panel-head"><h3>পণ্যভিত্তিক লাভ-ক্ষতি</h3></div><div class="table-wrap"><table>'+
     '<thead><tr><th>Product</th><th class="num">Qty</th><th class="num">খরচ/Unit</th><th class="num">বিক্রয়/Unit</th>'+
     '<th class="num">মোট বিক্রয়</th><th class="num">Gross Profit</th><th class="num">মোট খরচ</th>'+
     '<th class="num">Net Profit</th><th class="num">Net/Unit</th><th class="num">Margin</th></tr></thead><tbody>'+
@@ -19783,6 +19803,14 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.64', d:'2026-11-18', t:'Demand Sheet এ সই বড়, নাম পদবির নিচে', li:[
+  '<b>সই এর ছবি বড়:</b> Settings এ আপলোড করা সই এখন দাগের ঠিক ওপরে বড় করে বসে',
+  '<b>নাম পদবির নিচে:</b> Prepared By / Checked By এর নিচে নাম লেখা হয়; দাগের ওপরে আর নাম বসে না',
+  '“Name / Date” লেখা বাদ; চারটি সইয়ের দাগ এক সারিতে সমান চওড়া; Excel এও পদবির নিচে নাম']},
+ {v:'19.63', d:'2026-11-18', t:'Order Requirement এখন ট্যাব আকারে', li:[
+  '<b>ট্যাব:</b> Order খুললে ওপরে ট্যাব — সব · Product ও Qty · সারাংশ ও খরচ · পণ্যভিত্তিক লাভ-ক্ষতি · Forwarding (Export এ) · RM চাহিদা · PM চাহিদা · PM Demand Sheet · ক্রয় সারাংশ',
+  '<b>“সব” আগের মতো:</b> প্রথম ট্যাব “সব” — এখানে আগের মতোই পুরো পাতা একসাথে দেখায়; অন্য ট্যাবে শুধু সেই অংশ',
+  'Stock বসানো বা Save করার পরেও যে ট্যাবে ছিলেন সেটাতেই থাকে']},
  {v:'19.62', d:'2026-11-18', t:'Demand Sheet Total এ ৳ চিহ্ন নেই', li:[
   'Demand Sheet Print/PDF এর নিচের Total সারিতে Amount এর ঘরে ৳ চিহ্ন আর নেই — শুধু সংখ্যা']},
  {v:'19.61', d:'2026-11-18', t:'Demand Sheet Print এর Layout ঠিক', li:[
@@ -22612,6 +22640,14 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.64', d:'2026-11-18', t:'Larger signature, name under the title in demand sheets', li:[
+  '<b>Larger signature:</b> the signature uploaded in Settings now sits right above the line at a larger size',
+  '<b>Name under the title:</b> the name is printed below Prepared By / Checked By, no longer above the line',
+  '“Name / Date” removed; the four signature lines are equal width on one row; Excel also shows the name under the title']},
+ {v:'19.63', d:'2026-11-18', t:'Order requirement now in tabs', li:[
+  '<b>Tabs:</b> an opened order shows tabs — All · Products & Qty · Summary & cost · Product-wise P/L · Forwarding (export) · RM requirement · PM requirement · PM demand sheet · Purchase summary',
+  '<b>“All” unchanged:</b> the first tab “All” shows the whole page exactly as before; the other tabs show only that section',
+  'The selected tab stays after entering stock or saving']},
  {v:'19.62', d:'2026-11-18', t:'No ৳ sign in demand sheet total', li:[
   'The amount cell of the total row in demand sheet print/PDF now shows the number only, without the ৳ sign']},
  {v:'19.61', d:'2026-11-18', t:'Demand sheet print layout fixed', li:[
