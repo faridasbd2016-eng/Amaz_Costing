@@ -10688,7 +10688,7 @@ function demSpec(type){
     {k:'need',h:'Need',t:'n',w:8},{k:'stock',h:'Present Stock',t:'n',w:8},{k:'act',h:'Actual Need',t:'c',w:8},
     {k:'country',h:'Country',t:'s',w:10},{k:'buy',h:'Purchase By',t:'s',w:10},{k:'rate',h:'Rate',t:'n',w:8,d:2},{k:'amt',h:'Amount',t:'c',w:10}];
   if(L==='boyom') return [
-    {k:'name',h:'Particulars of the CTN',t:'s',w:36},{k:'need',h:'Need',t:'n',w:8},{k:'stock',h:'Stock',t:'n',w:8},{k:'act',h:'Need',t:'c',w:8},
+    {k:'name',h:'Particulars of Item',t:'s',w:36},{k:'need',h:'Need',t:'n',w:8},{k:'stock',h:'Stock',t:'n',w:8},{k:'act',h:'Actual Need',t:'c',w:8},
     {k:'demand',h:'Demand',t:'s',w:16},{k:'party',h:'Party Name',t:'s',w:22},{k:'buy',h:'Purchase By',t:'s',w:11},{k:'rate',h:'Last Rate',t:'n',w:8,d:2},{k:'amt',h:'Total',t:'c',w:11}];
   return [
     {k:'name',h:'Name of item',t:'s',w:38},{k:'unit',h:'Unit',t:'s',w:6},{k:'need',h:'Need',t:'n',w:8},{k:'stock',h:'Present Stock',t:'n',w:8},
@@ -10754,15 +10754,16 @@ function demPrintHTML(type){
   const cell=function(k,v){ return '<td style="border:1px solid #b9d6d2;padding:6px 10px;background:#fbfdfd;font-size:12.5px;"><span style="color:#24423f;font-weight:600;">'+k+':</span> <b style="color:#000;">'+esc(v||'—')+'</b></td>'; };
   const logo=DB.settings&&DB.settings.logo;
   const g=demSigGet(), on=DEM_SIG.filter(function(x){return g[x[0]];});
-  const sig=on.length?('<table style="width:100%;border-collapse:collapse;margin-top:54px;font-size:12px;page-break-inside:avoid;"><tr>'+on.map(function(x){
-      return '<td style="width:'+(100/on.length)+'%;text-align:center;padding:0 16px;vertical-align:bottom;">'+(x[0]==='p'&&psOn()?psImgFlow():'')+
+  const sig=on.length?('<table class="nogrid" style="width:100%;border-collapse:collapse;margin-top:40px;font-size:12px;page-break-inside:avoid;"><tr>'+on.map(function(x){
+      return '<td style="width:'+(100/on.length)+'%;text-align:center;padding:0 14px;vertical-align:bottom;height:70px;">'+(x[0]==='p'&&psOn()?psImgFlow():'<div style="height:44px;"></div>')+
         '<div style="min-height:15px;font-weight:bold;">'+esc(g[x[0]+'n']||'')+'</div><div style="border-top:1.5px solid '+TL+';padding-top:4px;"><b>'+x[1]+'</b><br><span style="font-size:10px;color:#666;">Name / Date</span></div></td>'; }).join('')+'</tr></table>'):'';
-  return '<div style="'+S+'max-width:'+(hasG?'1080':'980')+'px;margin:0 auto;">'+
-    '<table style="width:100%;border-collapse:collapse;border-bottom:3px solid '+TL+';"><tr><td style="padding:0 0 8px;vertical-align:bottom;">'+
-      '<table style="border-collapse:collapse;"><tr>'+(logo?'<td style="padding-right:12px;"><img src="'+logo+'" alt="" style="max-height:56px;max-width:140px;object-fit:contain;"></td>':'')+
-      '<td><div style="font-size:22px;font-weight:800;color:#000;">'+esc(hdr.co||DEM_CO)+'</div><div style="font-size:13px;color:#222;font-weight:600;">'+esc(hdr.fac||DEM_FAC)+'</div></td></tr></table></td>'+
-    '<td style="padding:0 0 8px;text-align:right;vertical-align:bottom;"><div style="font-size:18px;font-weight:800;color:#0a4f49;letter-spacing:.4px;">PURCHASE REQUISITION — '+esc(String(demT(type).l).toUpperCase())+'</div>'+
-      '<div style="font-size:12.5px;color:#222;font-weight:600;">'+esc(demTitleTxt(type,sh))+'</div></td></tr></table>'+
+  return '<div style="'+S+'max-width:'+(hasG?'1080':'760')+'px;margin:0 auto;">'+
+    '<table class="nogrid" style="width:100%;border-collapse:collapse;"><tr>'+(logo?'<td style="width:1%;padding:0 12px 6px 0;vertical-align:middle;"><img src="'+logo+'" alt="" style="max-height:54px;max-width:130px;object-fit:contain;"></td>':'')+
+      '<td style="padding:0 0 6px;vertical-align:middle;"><div style="font-size:22px;font-weight:800;color:#000;white-space:nowrap;">'+esc(hdr.co||DEM_CO)+'</div>'+
+      '<div style="font-size:13px;color:#222;font-weight:600;">'+esc(hdr.fac||DEM_FAC)+'</div></td></tr></table>'+
+    '<table class="nogrid" style="width:100%;border-collapse:collapse;background:#0a4f49;"><tr>'+
+      '<td style="padding:6px 10px;color:#fff;font-size:15px;font-weight:800;letter-spacing:.4px;background:#0a4f49;">PURCHASE REQUISITION — '+esc(String(demT(type).l).toUpperCase())+'</td>'+
+      '<td style="padding:6px 10px;color:#fff;font-size:12px;font-weight:600;text-align:right;white-space:nowrap;background:#0a4f49;">'+esc(demTitleTxt(type,sh))+'</td></tr></table>'+
     '<table style="width:100%;border-collapse:collapse;margin:10px 0 10px;"><tr>'+cell('PR No',I.pr)+cell('Date',demDMY(new Date().toISOString().slice(0,10)))+cell('Order Ref',o.ref||o.buyer||'')+'</tr>'+
       '<tr>'+cell('Department',I.dept)+cell('Required By',demDMY(I.req))+cell('Demand',DEM_DEC)+'</tr></table>'+
     '<table style="width:100%;border-collapse:collapse;font-size:12px;color:#000;">'+th+body+tot+'</table>'+
@@ -19782,6 +19783,11 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.61', d:'2026-11-18', t:'Demand Sheet Print এর Layout ঠিক', li:[
+  '<b>সই করার জায়গা:</b> সইয়ের দাগের ওপরে ফাঁকা জায়গা, আর সইয়ের অংশে কোনো Border নেই',
+  '<b>Company নাম এক লাইনে:</b> Company নাম আর Factory ঠিকানা ওপরে; তার নিচে পুরো চওড়া teal পট্টিতে “PURCHASE REQUISITION — ধরন” আর মাসের নাম — Portrait পাতাতেও ভাঙে না',
+  '<b>Page Layout:</b> ওপরের অংশে বাড়তি Border নেই, Portrait (Boyom/Foil/Sticker/Tray) আর Landscape (Carton) দুটোতেই পুরো পাতা জুড়ে সুন্দর বসে',
+  'Boyom Sheet এ কলামের নাম “Particulars of Item” আর “Actual Need”']},
  {v:'19.60', d:'2026-11-18', t:'Demand Sheet Print এর লেখা আরও স্পষ্ট', li:[
   '<b>Table এর Heading:</b> লেখা বড় (12.5px) ও মোটা, পেছনের teal আরও গাঢ় — সাদা লেখা পরিষ্কার পড়া যায়; Excel এর Heading ও বড়',
   '<b>ওপরের অংশ:</b> Company নাম, Factory ঠিকানা, Sheet এর Title আর PR No / Date / Order Ref / Department / Required By box এর লেখা বড় ও গাঢ়']},
@@ -22604,6 +22610,11 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.61', d:'2026-11-18', t:'Demand sheet print layout fixed', li:[
+  '<b>Room to sign:</b> blank space above each signature line, and no borders around the signature area',
+  '<b>Company name on one line:</b> company name and factory address on top; below them a full-width teal bar with “PURCHASE REQUISITION — type” and the month — no wrapping on portrait pages',
+  '<b>Page layout:</b> no extra borders in the header; fits the page well in both portrait (Boyom/Foil/Sticker/Tray) and landscape (Carton)',
+  'Boyom sheet columns renamed to “Particulars of Item” and “Actual Need”']},
  {v:'19.60', d:'2026-11-18', t:'Clearer text in demand sheet print', li:[
   '<b>Table heading:</b> larger (12.5px), bolder text on a darker teal so the white labels read clearly; Excel heading also larger',
   '<b>Top section:</b> company name, factory address, sheet title and the PR No / Date / Order Ref / Department / Required By box are larger and darker']},
