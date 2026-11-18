@@ -42,6 +42,19 @@
   background-color:var(--panel-2); color:var(--text); border-color:var(--border);}
 [data-theme="dark"] select option{background:var(--panel); color:var(--text);}
 /* ============ v18.86 — Login: স্ট্যান্ডার্ড প্রফেশনাল থিম (Navy ব্র্যান্ড প্যানেল + সাদা কার্ড) ============ */
+/* v19.52 — চলমান নেটওয়ার্ক পটভূমি (Login + Menu) */
+.fx-tgs{display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:13px;}
+.fx-tgs b{flex:1 1 100%; font-size:12.5px; color:var(--text-dim); font-weight:600;}
+.fx-tgs label{display:inline-flex; gap:6px; align-items:center; cursor:pointer;}
+.net-fx{position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; z-index:1;}
+#loginOverlay > .net-fx{position:fixed;}
+#loginOverlay.ln .ln-main{position:relative; z-index:2;}
+#sidebar{position:relative;}
+#sidebar > .net-fx{z-index:0;}
+#sidebar > *:not(.net-fx){position:relative; z-index:1;}
+#sidebar > .sidebar-collapse-btn{position:absolute; z-index:3;}
+html:not(.ui-modern) .net-fx, html.fx-off .net-fx, html.fx-login-off #lnNet, html.fx-menu-off #sbNet{display:none;}   /* শুধু আধুনিক (Modern) চেহারায় — Classic আগের মতো */
+@media print{ .net-fx{display:none!important;} }
 #loginOverlay.ln{position:fixed; inset:0; z-index:200; display:flex; padding:0; gap:0; align-items:stretch; justify-content:flex-start; flex-direction:row; overflow:auto; background:var(--bg);
   font-family:"Segoe UI","Inter","Nirmala UI","Noto Sans Bengali","Hind Siliguri",system-ui,-apple-system,Roboto,Arial,sans-serif; animation:none;}
 .ln-brand{flex:0 0 46%; position:relative; color:#E8EEF7; overflow:hidden;
@@ -49,7 +62,7 @@
 .ln-brand::before{content:""; position:absolute; inset:0; opacity:.07;
   background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px); background-size:34px 34px;}
 .ln-brand::after{content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:linear-gradient(90deg,#E0A030,#F2B94B);}
-.ln-brand-in{position:relative; height:100%; display:flex; flex-direction:column; padding:48px 56px 36px; max-width:620px;}
+.ln-brand-in{position:relative; z-index:2; height:100%; display:flex; flex-direction:column; padding:48px 56px 36px; max-width:620px;}
 .ln-logo{display:flex; align-items:center; gap:13px;}
 .ln-logo b{display:block; font-size:19px; font-weight:700; color:#fff; letter-spacing:.2px;}
 .ln-logo small{display:block; font-size:12px; color:#A9BEDB; margin-top:1px;}
@@ -1640,6 +1653,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
 <body>
 <div id="app">
   <aside id="sidebar">
+    <canvas id="sbNet" class="net-fx" aria-hidden="true"></canvas>
     <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="মেনু ছোট/বড় করুন" onclick="toggleSidebarCollapse()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
@@ -2355,6 +2369,7 @@ html.ui-modern[data-theme="dark"] #printArea, html.ui-modern[data-theme="dark"] 
 </div></div>
 
 <div id="loginOverlay" class="ln">
+  <canvas id="lnNet" class="net-fx" aria-hidden="true"></canvas>
   <aside class="ln-brand">
     <div class="ln-brand-in">
       <div class="ln-logo"><span class="ln-mark">AC</span><div><b>AMAZ Costing <span class="ln-vtag" id="lgVerTag"></span></b><small id="lgCo">Product Costing System</small></div></div>
@@ -3185,6 +3200,69 @@ function effProduct(p){
   return applyFgLink(c);
 }
 
+/* ===== v19.52 — চলমান নেটওয়ার্ক পটভূমি =====
+   বিন্দু আস্তে নড়ে, কাছাকাছি বিন্দুতে রেখা; মাউস/আঙুল নিলে কাছের বিন্দু সরে যায়, রেখা গাঢ় হয়, মাউসের সাথে রেখা জোড়ে।
+   স্ক্রিনে না থাকলে বা ট্যাব লুকানো থাকলে থেমে থাকে। “কম নড়াচড়া” চালু ডিভাইসে স্থির ছবি। Settings এ বন্ধ করা যায়। */
+function fxPref(k){ try{ return localStorage.getItem('amazFx_'+k)!=='off'; }catch(e){ return true; } }
+function fxApplyPrefs(){ const r=document.documentElement; r.classList.toggle('fx-login-off',!fxPref('login')); r.classList.toggle('fx-menu-off',!fxPref('menu')); }
+function setFxPref(k,on){ try{ localStorage.setItem('amazFx_'+k,on?'on':'off'); }catch(e){} fxApplyPrefs(); NETFX.forEach(function(n){ n.kick(); }); }
+function fxHex(c,fb){ c=String(c||'').trim(); let m=c.match(/^#([0-9a-f]{6})$/i); if(m) return [parseInt(m[1].slice(0,2),16),parseInt(m[1].slice(2,4),16),parseInt(m[1].slice(4,6),16)];
+  m=c.match(/^#([0-9a-f]{3})$/i); if(m) return m[1].split('').map(function(x){ return parseInt(x+x,16); });
+  m=c.match(/rgba?\(([^)]+)\)/); if(m){ const p=m[1].split(',').map(parseFloat); return [p[0],p[1],p[2]]; } return fb; }
+const NETFX=[];
+function NetFX(cv, host, o){
+  const me=this, x=cv.getContext('2d'); let W=0,H=0,P=[],run=false,raf=0,last=0, M={x:-1e4,y:-1e4,on:false};
+  const reduce=(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function visible(){ if(document.hidden || !cv.clientWidth || !cv.getClientRects().length) return false; if(cv.checkVisibility && !cv.checkVisibility()) return false;
+    const r=cv.getBoundingClientRect(); return r.right>0 && r.left<innerWidth && r.bottom>0 && r.top<innerHeight; }   /* মোবাইলে লুকানো মেনু (পর্দার বাইরে) হলে থামে */
+  function size(){ const dpr=Math.min(2,window.devicePixelRatio||1); const w=cv.clientWidth, h=cv.clientHeight; if(!w||!h) return false;
+    if(w!==W||h!==H){ W=w; H=h; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); x.setTransform(dpr,0,0,dpr,0,0);
+      const n=Math.round(Math.min(o.max, Math.max(o.min, W*H/o.area))); P=[];
+      for(let i=0;i<n;i++){ const px=(o.bias?Math.pow(Math.random(),o.bias):Math.random())*W*1.04, py=Math.random()*H;
+        P.push({x:px,y:py,vx:(Math.random()-.5)*o.speed,vy:(Math.random()-.5)*o.speed,r:1+Math.random()*2.4}); } }
+    return true; }
+  function draw(){
+    x.clearRect(0,0,W,H); const L=o.link, MR=o.mr, col=o.color, BO=o.boost||1;
+    if(!reduce) for(const p of P){ p.x+=p.vx; p.y+=p.vy; if(p.x<-30||p.x>W+30) p.vx*=-1; if(p.y<-30||p.y>H+30) p.vy*=-1;
+      if(M.on){ const dx=p.x-M.x, dy=p.y-M.y, d=Math.hypot(dx,dy); if(d<MR&&d>.1){ const f=(1-d/MR)*1.5; p.x+=dx/d*f; p.y+=dy/d*f; } } }
+    for(let i=0;i<P.length;i++){ const a=P[i], ca=col(a.x,W);
+      for(let j=i+1;j<P.length;j++){ const b=P[j], dx=a.x-b.x; if(dx>L||dx<-L) continue; const d=Math.hypot(dx,a.y-b.y); if(d>=L) continue;
+        let near=0; if(M.on){ const dm=Math.hypot((a.x+b.x)/2-M.x,(a.y+b.y)/2-M.y); if(dm<MR) near=1-dm/MR; }
+        const c=col((a.x+b.x)/2,W); x.strokeStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+Math.min(.95,(1-d/L)*c[3]+near*.45*BO)+')';
+        x.lineWidth=.8+near*1.1*BO; x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); }
+      if(M.on){ const dm=Math.hypot(a.x-M.x,a.y-M.y); if(dm<MR){ x.strokeStyle='rgba('+ca[0]+','+ca[1]+','+ca[2]+','+(.5*BO*(1-dm/MR))+')'; x.lineWidth=1; x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(M.x,M.y); x.stroke(); } } }
+    for(const p of P){ const c=col(p.x,W); x.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+Math.min(1,c[3]*1.5)+')'; x.beginPath(); x.arc(p.x,p.y,p.r,0,6.3); x.fill();
+      x.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+(c[3]*.22)+')'; x.beginPath(); x.arc(p.x,p.y,p.r*3,0,6.3); x.fill(); } }
+  function loop(t){ raf=0; if(!run) return; if(!visible()){ run=false; return; }
+    if(t-last>=o.frame){ last=t; size(); draw(); }
+    if(!reduce) raf=requestAnimationFrame(loop); else run=false; }
+  me.kick=function(){ if(run) return; if(!visible()) return; if(!size()) return; run=true; last=0; raf=requestAnimationFrame(loop); };
+  me.recolor=function(){ if(!run&&visible()&&size()) draw(); };
+  host.addEventListener('pointermove',function(e){ const r=cv.getBoundingClientRect(); M.x=e.clientX-r.left; M.y=e.clientY-r.top; M.on=true; me.kick(); },{passive:true});
+  host.addEventListener('pointerleave',function(){ M.on=false; },{passive:true});
+  host.addEventListener('touchend',function(){ M.on=false; },{passive:true});
+  NETFX.push(me);
+}
+function fxStart(){
+  if(fxStart.done) return; fxStart.done=true; fxApplyPrefs();
+  const css=function(v,fb){ return fxHex(getComputedStyle(document.documentElement).getPropertyValue(v),fb); };
+  const dark=function(){ return document.documentElement.getAttribute('data-theme')==='dark'; };
+  const lc=document.getElementById('lnNet'), lo=document.getElementById('loginOverlay');
+  if(lc&&lo) new NetFX(lc, lo, {min:55,max:150,area:9000,link:150,mr:170,speed:.28,bias:1.25,frame:16,
+    color:(function(){ return function(px){ const br=document.querySelector('#loginOverlay .ln-brand'); const bw=br&&br.offsetWidth&&getComputedStyle(br).display!=='none'?br.getBoundingClientRect().right:0;
+      if(px<bw) return [255,255,255,.34];
+      const c=css('--primary-2',[8,145,178]); return dark()?[150,195,235,.32]:[c[0],c[1],c[2],.46]; }; })()});
+  const sc=document.getElementById('sbNet'), sb=document.getElementById('sidebar');
+  if(sc&&sb) new NetFX(sc, sb, {min:16,max:46,area:5200,link:110,mr:120,speed:.18,bias:0,frame:33,boost:.45,
+    color:function(){ const modern=document.documentElement.classList.contains('ui-modern');
+      if(dark()) return [150,195,235,.22];
+      if(modern){ const c=css('--primary-2',[8,145,178]); return [c[0],c[1],c[2],.26]; }
+      return [255,255,255,.22]; }});
+  const kick=function(){ NETFX.forEach(function(n){ n.kick(); }); };
+  document.addEventListener('visibilitychange',kick); addEventListener('resize',kick);
+  setInterval(kick,1500);          /* Login দেখালে / মেনু খুললে আবার চালু */
+  kick();
+}
 /* ===== v19.45 — Product এর ছবি =====
    আলাদা তালিকায় থাকে (DB.photos — {id:'ph-'+pid, pid, img}) — Costing এর ভার্সন-ইতিহাসে ছবি ঢোকে না,
    Sync এ নিজের সারি (Google Sheet এর এক ঘরে ৫০ হাজার অক্ষরের সীমা — তাই ছবি ~৩০ KB এর মধ্যে রাখা হয়),
@@ -16694,7 +16772,11 @@ function renderSettings(){
   h+='<div class="panel" style="margin-bottom:14px;"><div class="panel-head"><h3>'+TT('চেহারা','Look')+'</h3></div><div class="panel-body">'+
      '<p class="hint" style="margin:-4px 0 10px;">'+TT('শুধু এই ডিভাইসের জন্য — অন্যদের স্ক্রিন বদলায় না। Print / PDF / Excel একই থাকে।','For this device only — other people’s screens do not change. Print / PDF / Excel stay the same.')+'</p>'+
      '<div class="ui-looks">'+lk('modern',TT('আধুনিক','Modern'),TT('সাদা sidebar, teal রং, গোল বোতাম','White sidebar, teal colours, round buttons'),'pm')+
-       lk('classic',TT('ক্লাসিক','Classic'),TT('আগের চেহারা','The previous look'),'pc')+'</div></div></div>';
+       lk('classic',TT('ক্লাসিক','Classic'),TT('আগের চেহারা','The previous look'),'pc')+'</div>'+
+     '<div class="fx-tgs"><b>'+TT('চলমান নেটওয়ার্ক পটভূমি (শুধু আধুনিক চেহারায়)','Moving network background (Modern look only)')+'</b>'+
+       '<label><input type="checkbox"'+(fxPref('login')?' checked':'')+' onchange="setFxPref(\'login\',this.checked)"> '+TT('Login পাতায়','On the login page')+'</label>'+
+       '<label><input type="checkbox"'+(fxPref('menu')?' checked':'')+' onchange="setFxPref(\'menu\',this.checked)"> '+TT('বাম পাশের Menu তে','In the left menu')+'</label></div>'+
+     '</div></div>';
 
   /* ---- কোম্পানির তথ্য ---- */
   h+='<div class="panel"><div class="panel-head"><h3>কোম্পানির তথ্য</h3></div>'+
@@ -19534,6 +19616,10 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.52', d:'2026-11-18', t:'চলমান নেটওয়ার্ক পটভূমি — Login ও Menu (আধুনিক চেহারায়)', li:[
+  '<b>Login পাতা:</b> আগের নকশা একই আছে, পেছনে এখন চলমান নেটওয়ার্ক — বিন্দুগুলো আস্তে নড়ে, কাছের বিন্দুতে রেখা জোড়ে। মাউস (মোবাইলে আঙুল) নিলে কাছের বিন্দু সরে যায়, রেখা গাঢ় হয়, মাউসের সাথে রেখা জুড়ে যায়। বাম রঙিন অংশে সাদা, ডান অংশে Theme এর রঙে; Dark এও মানানসই',
+  '<b>বাম পাশের Menu:</b> হালকা করে একই চলমান নেটওয়ার্ক — মাউস নিলে হালকা সাড়া দেয়, লেখা পড়তে অসুবিধা হয় না',
+  '<b>শুধু আধুনিক (Modern) চেহারায়</b> — Classic আগের মতোই। Settings → চেহারা থেকে Login আর Menu আলাদা চালু / বন্ধ। কম্পিউটার ধীর করে না: লগইনের পর Login এর অ্যানিমেশন থামে, অন্য ট্যাবে গেলে বা মোবাইলে Menu বন্ধ থাকলে থেমে থাকে; “কম নড়াচড়া” চালু থাকা ডিভাইসে স্থির ছবি। Print / PDF এ আসে না']},
  {v:'19.51', d:'2026-11-18', t:'নতুন Costing খুললে সবসময় উপর থেকে', li:[
   '<b>স্ক্রল-অবস্থান ঠিক করা:</b> আগে একটা Costing এ কোনো ট্যাবে নিচে স্ক্রল করে বেরিয়ে অন্য Costing খুললে “1. Product Info” ট্যাব নিচের দিক থেকে দেখাত। এখন যেকোনো Costing খুললে উপর থেকে দেখায় — পাশের Assistant প্যানেলও উপর থেকে',
   '<b>অন্য ট্যাবে গেলে</b> সেই ট্যাবও তার উপর থেকে দেখায় (আগের ট্যাবের স্ক্রল ধরে রাখত না)। “Costing এ ফিরুন” দিয়ে ফেরার সময় আগের মতোই যে ট্যাবে ছিলেন সেখানে ফেরে']},
@@ -22317,6 +22403,10 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.52', d:'2026-11-18', t:'Moving network background — login and menu (Modern look)', li:[
+  '<b>Login page:</b> the same design, now with a moving network behind it — dots drift slowly and nearby dots join with lines. Move the mouse (or a finger on mobile) and nearby dots move away, lines darken and join the cursor. White on the coloured left part, theme colour on the right; suits Dark too',
+  '<b>Left menu:</b> the same moving network, faint — reacts lightly to the mouse without hurting readability',
+  '<b>Modern look only</b> — Classic stays as before. Settings → Look turns the login and the menu on / off separately. It does not slow the computer: the login animation stops after you log in, everything pauses in another tab or while the mobile menu is closed, and devices with “reduce motion” get a still picture. Not in print / PDF']},
  {v:'19.51', d:'2026-11-18', t:'A costing always opens at the top', li:[
   '<b>Scroll position fixed:</b> before, if you scrolled down a tab in one costing and left, the next costing opened with “1. Product Info” scrolled down. Now every costing opens at the top — the side assistant panel too',
   '<b>Switching tabs</b> also shows the new tab from its top (it no longer keeps the previous tab’s scroll). Coming back with “Back to costing” still returns to the tab you were on']},
@@ -25861,6 +25951,7 @@ function bootApp(){
   if(ME){ document.getElementById('loginOverlay').style.display='none'; startApp(); }
   else { if(IDLE_OUT) idleNote(); setTimeout(function(){ const e=document.getElementById('lgUser'); if(e) e.focus(); },250); }
   window.__BOOTED=true;
+  try{ fxStart(); }catch(e){ console.error(e); }     /* v19.52 */
 }
 /* v18.42 — Login এ কোম্পানির নাম Settings থেকেই আসে (hardcode নয়)। v19.06 — Cloud থেকে ডাটা আনার পরেও আবার চলে */
 function lgInfoRefresh(){
