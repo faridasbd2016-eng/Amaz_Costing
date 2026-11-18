@@ -1,1 +1,1 @@
-{"version": "19.55", "date": "2026-11-18", "notes": "PM Demand Sheet এ Physical Stock নিজে থেকে বসে (দুই দিকেই মিলে থাকে)", "notes_en": "Physical stock fills the PM demand sheet automatically (kept in sync both ways)"}
+{"version": "19.58", "date": "2026-11-18", "notes": "PM Demand এ Head Office ও Factory দুই Item ই আসে; নতুন Purchase By ঘর", "notes_en": "PM demand includes Head Office and factory items; new Purchase By column"}

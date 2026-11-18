@@ -10593,7 +10593,7 @@ const DEMAND_TYPES=[
   {v:'carton', l:'Carton',         t:'CARTON Demand sheet', lay:'carton'},
   {v:'sticker',l:'Sticker',        t:'Packaging Demand sheet', lay:'pack'},
   {v:'tray',   l:'Tray',           t:'Tray Demand sheet', lay:'pack'}];
-var DEM_HO_ONLY=true, DEM_CUR='';
+var DEM_HO_ONLY=false, DEM_CUR='';   /* v19.58 — Head Office আর Factory দুই ধরনের Item ই Demand Sheet এ আসে; কে কিনবে তা Purchase By ঘরে */
 const DEM_CO='AMIN SQUARE ( BD ) LIMITED', DEM_FAC='Factory : Noyamati, Kutubpur,Fotullah,Narayangonj.';
 const DEM_DEC='As per Management Decision';
 const DEM_NOTE='The calculation here is based on the last purchase price. If the price increases, the calculation must be based on the current price.';
@@ -10627,9 +10627,10 @@ function demandItems(d,type){
 function demRowFrom(r){
   const m=r.m, x=r.x, sz=String(m.dSize||'').split(/\s*[x×*]\s*/i);
   return {pmId:x.id||m.id||'', name:x.name, L:sz[0]||'', W:sz[1]||'', H:sz[2]||'', ply:m.dPly||'', paper:m.dPaper||'', liner:m.dLiner||'',
-    country:m.dCountry||'', unit:x.unit||'', need:+n(x.qty).toFixed(3), stock:+n(x.stock).toFixed(3),
-    demand:DEM_DEC, party:m.supplier||'', rate:+n(x.rate).toFixed(4)};
+    country:m.dCountry||'', unit:x.unit||m.unit||'', need:+n(x.qty).toFixed(3), stock:+n(x.stock).toFixed(3),
+    demand:DEM_DEC, party:m.supplier||'', buy:demBuyTxt(m.buyBy||x.buyBy), rate:+(n(x.rate)||n(m.unitPrice)).toFixed(4)};
 }
+function demBuyTxt(b){ return b==='ho'?'Head Office':(b==='fac'||b==='factory')?'Factory':''; }
 function demBlankRow(){ return {name:'',L:'',W:'',H:'',ply:'',paper:'',liner:'',country:'',unit:'Pcs',need:0,stock:0,demand:DEM_DEC,party:'',rate:0}; }
 /* Order এর সেভ করা Sheet; না থাকলে Order থেকে বানায় */
 function demSheet(type,force){
@@ -10645,18 +10646,30 @@ function demSheet(type,force){
 /* v19.54 — সেভ করা Sheet কে Order এর সাথে মিলিয়ে রাখা: Order এর পণ্য/পরিমাণ/স্টক/দর বদলালে Need, Stock, Rate নতুন হয়;
    নতুন PM এলে যোগ হয়, Order থেকে বাদ গেলে নিজে থেকে আসা row সরে যায়। হাতে বদলানো ঘর, Size/Paper/Party/Demand লেখা,
    হাতে যোগ করা row আর হাতে মোছা row — এগুলো যেমন আছে থাকে। Delivery হয়ে Lock হলে Sheet আর বদলায় না। */
+const DEM_MKEYS=['L','W','H','ply','paper','liner','country','party','buy'];
 function demSync(sh,type){
   if(!sh || !Array.isArray(sh.rows)) return false;
-  const live=demandItems(orderCalc(),type), byId={};
+  const d=orderCalc(), live=demandItems(d,type), byId={}, allById={};
   live.forEach(function(r){ const id=r.x.id||(r.m&&r.m.id); if(id) byId[id]=r; });
+  /* v19.56 — হাতে যোগ করা Item (যেমন Factory Purchase বা অন্য ধরনের) Order এ থাকলে তার Need/Stock/Rate ও Order থেকেই আসে */
+  (d.pk||[]).forEach(function(x){ if(x.id) allById[x.id]={x:x, m:pmMasterOf(x.id)}; });
   const removed=sh.removed||[], seen={}; let ch=false;
   const keep=[];
   sh.rows.forEach(function(row){
     const id=row.pmId; if(row.auto===undefined) row.auto=id?1:0;           /* আগের সেভ করা Sheet */
     const man=row.man||{};
+    if(id){ const M=pmMasterOf(id); if(M && M.id){                         /* v19.57 — Size/Ply/Paper/Liner/Country/Party PM List থেকে */
+      const f=demRowFrom({m:M, x:{id:id, name:row.name, unit:row.unit}});
+      DEM_MKEYS.forEach(function(k){ if(man[k] || !f[k]) return; if(String(row[k]||'')===String(f[k])) return;
+        if(row.mv || !String(row[k]||'').trim()){ row[k]=f[k]; ch=true; }
+        else { row.man=row.man||{}; row.man[k]=true; man[k]=true; } });     /* আগের Sheet এ হাতে লেখা মান থাকে */
+      row.mv=1; } }
     if(id && byId[id]){ seen[id]=1; const fresh=demRowFrom(byId[id]);
       ['need','stock','rate','unit'].forEach(function(k){ if(!man[k] && String(row[k])!==String(fresh[k])){ row[k]=fresh[k]; ch=true; } });
       if(!row.name && fresh.name){ row.name=fresh.name; ch=true; }
+      keep.push(row); return; }
+    if(id && !row.auto && allById[id]){ seen[id]=1; const fresh=demRowFrom(allById[id]);
+      ['need','stock','rate','unit'].forEach(function(k){ if(!man[k] && String(row[k])!==String(fresh[k])){ row[k]=fresh[k]; ch=true; } });
       keep.push(row); return; }
     if(id && row.auto && !man.need && !man.stock && !man.rate){ ch=true; return; }   /* Order এ আর নেই — নিজে থেকে আসা row সরাই */
     if(id && !man.need && n(row.need)!==0 && !row.auto){ row.need=0; ch=true; }        /* হাতে যোগ করা — Order এ নেই তাই Need ০ */
@@ -10673,13 +10686,13 @@ function demSpec(type){
     {k:'name',h:'Particulars of the CTN',t:'s',w:34},{k:'L',h:'L',t:'s',w:7,g:'Size'},{k:'W',h:'W',t:'s',w:7,g:'Size'},{k:'H',h:'H',t:'s',w:7,g:'Size'},
     {k:'ply',h:'Ply',t:'s',w:5},{k:'paper',h:'Paper',t:'s',w:9},{k:'liner',h:'Liner',t:'s',w:8},{k:'unit',h:'Unit',t:'s',w:6},
     {k:'need',h:'Need',t:'n',w:8},{k:'stock',h:'Present Stock',t:'n',w:8},{k:'act',h:'Actual Need',t:'c',w:8},
-    {k:'country',h:'Country',t:'s',w:10},{k:'rate',h:'Rate',t:'n',w:8,d:2},{k:'amt',h:'Amount',t:'c',w:10}];
+    {k:'country',h:'Country',t:'s',w:10},{k:'buy',h:'Purchase By',t:'s',w:10},{k:'rate',h:'Rate',t:'n',w:8,d:2},{k:'amt',h:'Amount',t:'c',w:10}];
   if(L==='boyom') return [
     {k:'name',h:'Particulars of the CTN',t:'s',w:36},{k:'need',h:'Need',t:'n',w:8},{k:'stock',h:'Stock',t:'n',w:8},{k:'act',h:'Need',t:'c',w:8},
-    {k:'demand',h:'Demand',t:'s',w:16},{k:'party',h:'Party Name',t:'s',w:24},{k:'rate',h:'Last Rate',t:'n',w:8,d:2},{k:'amt',h:'Total',t:'c',w:11}];
+    {k:'demand',h:'Demand',t:'s',w:16},{k:'party',h:'Party Name',t:'s',w:22},{k:'buy',h:'Purchase By',t:'s',w:11},{k:'rate',h:'Last Rate',t:'n',w:8,d:2},{k:'amt',h:'Total',t:'c',w:11}];
   return [
     {k:'name',h:'Name of item',t:'s',w:38},{k:'unit',h:'Unit',t:'s',w:6},{k:'need',h:'Need',t:'n',w:8},{k:'stock',h:'Present Stock',t:'n',w:8},
-    {k:'act',h:'Actual Need',t:'c',w:8},{k:'demand',h:'Demand',t:'s',w:18},{k:'party',h:'Party Name',t:'s',w:24},
+    {k:'act',h:'Actual Need',t:'c',w:8},{k:'demand',h:'Demand',t:'s',w:18},{k:'party',h:'Party Name',t:'s',w:22},{k:'buy',h:'Purchase By',t:'s',w:11},
     {k:'rate',h:'Last Rate',t:'n',w:8,d:2},{k:'amt',h:'Total',t:'c',w:11}];
 }
 function demCalc(r){ const act=Math.max(0,n(r.need)-n(r.stock)); return {act:act, amt:act*n(r.rate)}; }
@@ -10797,7 +10810,10 @@ function demRender(){
       if(pm&&pm.id) return '<div style="min-width:230px;"><b>'+esc(r.name||pm.name)+'</b> <span class="tag" style="font-size:10px;">PM</span>'+
         (pm.category?'<div class="muted" style="font-size:11px;">'+esc(pm.category)+'</div>':'')+'</div>';
       return '<input class="rate-inline" list="demPmDL" style="min-width:230px;" value="'+esc(v||'')+'" placeholder="PM List থেকে বাছুন…" onchange="demLinkPm('+i+',this)">';
-    } const w=x.k==='name'?'min-width:230px;':(x.t==='n'?'width:76px;text-align:right;':'width:'+(x.k==='party'||x.k==='demand'?150:62)+'px;');
+    }
+    if(x.k==='buy') return '<select class="rate-inline" style="width:110px;" onchange="demSet('+i+',\'buy\',this.value)">'+
+      ['','Head Office','Factory'].map(function(o){ return '<option value="'+o+'"'+(String(v||'')===o?' selected':'')+'>'+(o||'—')+'</option>'; }).join('')+'</select>';
+    const w=x.k==='name'?'min-width:230px;':(x.t==='n'?'width:76px;text-align:right;':'width:'+(x.k==='party'||x.k==='demand'?150:62)+'px;');
     return '<input class="rate-inline" style="'+w+'" value="'+esc(v==null?'':(x.t==='n'&&!n(v)?'':v))+'"'+(x.t==='n'?' placeholder="0" onfocus="this.select()"':'')+
       ' onchange="demSet('+i+',\''+x.k+'\',this.value)">'; };
   document.getElementById('demBody').innerHTML=
@@ -10827,7 +10843,7 @@ function demSet(i,k,v){
     const T=demSums(sh); setTxt('dm_tot',money(T.act,0)+' / ৳'+money(T.amt,0)); return;
   }
   sh.rows[i][k]= (sp&&sp.t==='n') ? n(v) : String(v).trim();
-  if(k==='need'||k==='stock'||k==='rate'){ sh.rows[i].man=sh.rows[i].man||{}; sh.rows[i].man[k]=String(v).trim()!==''; }   /* হাতে বদলানো — Order বদলালেও থাকে; খালি করলে আবার Order থেকে */
+  if(k==='need'||k==='stock'||k==='rate'||DEM_MKEYS.indexOf(k)>=0){ sh.rows[i].man=sh.rows[i].man||{}; sh.rows[i].man[k]=String(v).trim()!==''; }   /* হাতে বদলানো — Order বদলালেও থাকে; খালি করলে আবার Order থেকে */
   const o=orderPlan(); o.updatedAt=nowISO(); saveDB();
   const c=demCalc(sh.rows[i]); setTxt('dm_act_'+i,demFmt({t:'n',k:'act'},c.act)); setTxt('dm_amt_'+i,demFmt({t:'n',k:'amt'},c.amt));
   const T=demSums(sh); setTxt('dm_tot',money(T.act,0)+' / ৳'+money(T.amt,0));
@@ -10918,7 +10934,7 @@ function demReload(){
   demSheet(DEM_CUR,true); demRender();
 }
 function demClose(){ closeModal('demModal'); const d=orderCalc(); if(d) renderOrSummary(d); }
-function demandHoToggle(v){ DEM_HO_ONLY=!!v; renderOrSummary(orderCalc()); }
+function demandHoToggle(v){ DEM_HO_ONLY=false; renderOrSummary(orderCalc()); }
 /* ---- নিজের Demand ধরন: তৈরি / বদল / মুছা ---- */
 function demTypeOpen(v){
   if(!need('orderreq','e','Demand ধরন যোগ')) return;
@@ -10969,17 +10985,18 @@ function demandPanelHTML(d){
     const live=sh?null:{rows:demandItems(d,T.v).map(demRowFrom)};       /* v19.54 — Sheet না খুললেও মোট টাকা দেখায় */
     const cnt=sh?sh.rows.length:live.rows.length;
     const amt=demSums(sh||live).amt;
+    const hidT=DEM_HO_ONLY?(d.pk||[]).filter(function(x){ return x.need>0.0005 && x.buyBy!=='ho' && pmDemandType(pmMasterOf(x.id),x.name)===T.v && !(sh&&sh.rows.some(function(r){return r.pmId===x.id;})); }).length:0;
     return '<tr><td style="padding:9px 14px;"><b>'+esc(T.l)+'</b>'+(T.custom?' <span class="tag" style="font-size:10px;">নিজের</span>':'')+(sh?' <span class="muted" style="font-size:11px;">(সেভ করা)</span>':'')+
-      (T.custom&&ed?' <button class="btn btn-ghost btn-sm" style="padding:1px 6px;" title="ধরন বদলান" onclick="demTypeOpen(\''+T.v+'\')">&#9998;</button>':'')+'</td><td class="num">'+cnt+' টি item</td>'+
+      (T.custom&&ed?' <button class="btn btn-ghost btn-sm" style="padding:1px 6px;" title="ধরন বদলান" onclick="demTypeOpen(\''+T.v+'\')">&#9998;</button>':'')+(hidT?' <span class="hint" style="color:var(--warning,#B45309);cursor:pointer;" title="এই Item গুলোর “কে কিনবে” Head Office নয় (যেমন Factory Purchase) — তাই Sheet এ নিজে আসেনি। চাপলে “শুধু Head Office Purchase” টিক উঠে যাবে" onclick="demandHoToggle(false)">⚠ '+hidT+' টি Factory/অন্য Purchase — লুকানো</span>':'')+'</td><td class="num">'+cnt+' টি item</td>'+
       '<td class="num">'+(amt>0?('৳'+money(amt,0)):'—')+'</td><td style="text-align:right;padding-right:14px;white-space:nowrap;">'+
       '<button class="btn btn-primary btn-sm" onclick="demOpen(\''+T.v+'\')">&#9998; Edit</button> '+
       '<button class="btn btn-ghost btn-sm" onclick="pdfRun(function(){demPrint(\''+T.v+'\')},function(){return pdfOrdName(\''+T.v+'_Demand\')})">PDF</button> '+
       '<button class="btn btn-ghost btn-sm" onclick="demPrint(\''+T.v+'\')">&#128424; Print</button> '+
       '<button class="btn btn-ghost btn-sm" onclick="demExcel(\''+T.v+'\')">&#8681; Excel</button></td></tr>'; }).join('');
   const hid=DEM_HO_ONLY?(d.pk||[]).filter(function(x){ return x.need>0.0005 && x.buyBy!=='ho' && pmDemandType(pmMasterOf(x.id),x.name); }).length:0;
-  return '<div class="panel" id="demPanel" style="margin-bottom:16px;"><div class="panel-head"><h3>PM Demand Sheet (Head Office এ পাঠানোর জন্য)</h3><span style="flex:1"></span>'+
+  return '<div class="panel" id="demPanel" style="margin-bottom:16px;"><div class="panel-head"><h3>PM Demand Sheet (Head Office ও Factory)</h3><span style="flex:1"></span>'+
     (hid?'<span class="hint" style="margin-right:10px;color:var(--warning,#B45309);" title="এই PM গুলোর “কে কিনবে” Head Office দেওয়া নেই — টিক তুলে দিলে বা PM List এ Head Office বাছলে Sheet এ আসবে">⚠ '+hid+' টি PM Head Office বাছা নেই — দেখাচ্ছে না</span>':'')+
-    '<label style="font-size:12.5px;display:flex;gap:6px;align-items:center;cursor:pointer;"><input type="checkbox" '+(DEM_HO_ONLY?'checked ':'')+'onchange="demandHoToggle(this.checked)"> শুধু Head Office Purchase</label></div>'+
+    '</div>'+
     '<div class="table-wrap"><table><thead><tr><th>ধরন</th><th class="num">Item</th><th class="num">মোট টাকা</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<p style="margin:8px 16px 0;">'+(ed?'<button class="btn btn-primary btn-sm" onclick="demTypeOpen()">+ নতুন Demand ধরন</button> ':'')+'<button class="btn btn-ghost btn-sm" onclick="openDM()">Demand Master (Size/Paper/Party/Rate + Excel Import)</button></p><p class="hint" style="margin:8px 16px 12px;">Edit চেপে Qty, Stock, Rate, Party বদলান; নতুন row যোগ করুন বা মুছুন — এই Order এর জন্য সেভ থাকে এবং Print/Excel এ সেটাই যায়। Item কোন ধরনে যাবে তা নাম/Category থেকে নিজে ধরা হয় — ঠিক না হলে Packing Material Edit এ <b>Demand Sheet ধরন</b> বদলান; Carton এর Size/Ply/Paper/Liner/Country সেখানেই বসান।</p></div>';
 }
@@ -19711,6 +19728,18 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.58', d:'2026-11-18', t:'PM Demand এ Head Office ও Factory দুই Item ই + Purchase By ঘর', li:[
+  '<b>দুই ধরনের Item ই আসে:</b> Head Office Purchase আর Factory Purchase — দুই রকম PM ই এখন Order অনুযায়ী Demand Sheet এ নিজে বসে; “শুধু Head Office Purchase” টিক আর নেই',
+  '<b>নতুন ঘর “Purchase By”:</b> প্রতিটি Demand Sheet এ (Carton, Sticker, Foil, Tray, Boyom ও নিজের ধরন) কে কিনবে তা দেখায় — Head Office / Factory; PM List এর “কে কিনবে” থেকে নিজে আসে, Sheet এ বদলানোও যায়; Print, PDF ও Excel এ যায়']},
+ {v:'19.57', d:'2026-11-18', t:'Demand Sheet এ Carton এর Size/Ply/Paper/Party PM List থেকে নিজে', li:[
+  '<b>PM List বদলালে Demand Sheet ও বদলায়:</b> Packing Material Edit এ Size, Ply, Paper, Liner, Country বা Supplier পরে বসালে বা বদলালে, আগে সেভ করা Demand Sheet এও সেটা নিজে বসে — আগে Sheet একবার সেভ হয়ে গেলে ঘরগুলো ফাঁকা থেকে যেত',
+  '<b>হাতে লেখা থাকে:</b> Demand Sheet এ নিজে কোনো ঘর বদলালে সেটাই থাকে; ঘর খালি করলে আবার PM List থেকে আসে',
+  'Order এ Rate ০ থাকলে PM List এর Rate বসে']},
+ {v:'19.56', d:'2026-11-18', t:'PM Demand — Factory Purchase Item ও নিজের বাছা Item ঠিকমতো', li:[
+  '<b>হাতে যোগ করা Item এর Qty আর Stock:</b> “PM List থেকে Item” দিয়ে যোগ করা Item এর Need এখন Order থেকেই আসে, আর Order Requirement এ বসানো Physical Stock ও নিজে বসে — আগে Factory Purchase Item যোগ করলে Need ০ হয়ে যেত',
+  '<b>কেন নিজে আসে না, সেটা দেখায়:</b> কোনো ধরনের Item এর “কে কিনবে” Head Office না হলে (যেমন Factory Purchase), সেই ধরনের পাশেই “⚠ লুকানো” লেখা দেখায় — চাপলে “শুধু Head Office Purchase” টিক উঠে যায় আর Item গুলো নিজে Sheet এ আসে',
+  '<b>টিক মনে থাকে:</b> “শুধু Head Office Purchase” টিক তুলে দিলে পরে App খুললেও সেভাবেই থাকে',
+  'Order এর PM এ Unit খালি থাকলে PM List এর Unit বসে']},
  {v:'19.55', d:'2026-11-18', t:'PM Demand এ Physical Stock নিজে থেকে', li:[
   '<b>Physical Stock একটাই জায়গা:</b> Order Requirement এর PM চাহিদার টেবিলে যে Physical Stock বসান, সেটা নিজে থেকেই PM Demand Sheet এর Stock ঘরে বসে — আর Actual Need ও টাকা সাথে সাথে বদলায়',
   '<b>উল্টোটাও:</b> Demand Sheet এ Stock লিখলে Order এর Physical Stock ও বদলে যায় — দুই জায়গায় আলাদা হিসাব থাকে না',
@@ -22512,6 +22541,18 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.58', d:'2026-11-18', t:'PM demand includes Head Office and factory items + Purchase By column', li:[
+  '<b>Both kinds of item:</b> Head Office purchase and factory purchase PMs now both fill the demand sheets from the order; the “Head Office purchase only” filter is gone',
+  '<b>New “Purchase By” column:</b> every demand sheet (Carton, Sticker, Foil, Tray, Boyom and custom types) shows Head Office / Factory, taken from the PM list and editable in the sheet; included in print, PDF and Excel']},
+ {v:'19.57', d:'2026-11-18', t:'Carton size/ply/paper/party in the demand sheet come from the PM list', li:[
+  '<b>PM list changes reach the demand sheet:</b> size, ply, paper, liner, country or supplier entered later in Packing Material Edit now fill already-saved demand sheets — before, those cells stayed blank once a sheet was saved',
+  '<b>Manual entries are kept:</b> a cell edited in the demand sheet keeps its value; clearing it brings back the PM list value',
+  'Rate falls back to the PM list rate when the order rate is 0']},
+ {v:'19.56', d:'2026-11-18', t:'PM demand — factory-purchase and hand-picked items fixed', li:[
+  '<b>Qty and stock for hand-picked items:</b> items added with “PM List থেকে Item” now take their need from the order and their physical stock from the order requirement — before, a factory-purchase item added this way dropped to need 0',
+  '<b>Shows why items are missing:</b> when items of a type are not bought by Head Office (e.g. factory purchase), the type row shows a “hidden” warning; clicking it clears the “Head Office purchase only” filter so they appear',
+  '<b>Filter remembered:</b> the “Head Office purchase only” choice is kept after reopening the app',
+  'Unit falls back to the PM list unit when the order line has none']},
  {v:'19.55', d:'2026-11-18', t:'Physical stock fills the PM demand sheet automatically', li:[
   '<b>One physical stock:</b> the physical stock entered in the order requirement PM table now goes straight into the stock column of the PM demand sheet — actual need and amount update at once',
   '<b>Both ways:</b> typing stock in the demand sheet also updates the order’s physical stock — no two separate figures',
