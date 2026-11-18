@@ -7175,6 +7175,7 @@ function openProductModal(id, forceType){
   renderStatusBar();
   fohModeUI(); hoModeUI();
   switchTab(0); renderAllLines(); openModal('productModal'); try{ permPriceUI(); }catch(e){}
+  pmScrollTop(true);     /* v19.51 — আগের Costing এর স্ক্রল-অবস্থান নয়, নতুনটা সবসময় উপর থেকে */
   try{ pmPhotoLoad(CUR&&CUR.id||''); }catch(e){}
   if(PM_RESTORE){ const base=PM_RESTORE_BASE; PM_RESTORE=null; PM_RESTORE_BASE=null; PM_FP=base; pmPill(true); pmDraftSave(); }
   else { pmSnap(); pmDraftClear(); }
@@ -7213,11 +7214,20 @@ function pmViewApply(){
 }
 function editProduct(id){ openProductModal(id); }
 function openTopSheet(id){ openProductModal(id); switchTab(5); }
+/* v19.51 — Costing ফর্মের স্ক্রল উপরে: all=true হলে পুরো ফর্ম (নতুন খোলা), নইলে শুধু ট্যাবের ভেতরের অংশ */
+function pmScrollTop(all){
+  const m=document.getElementById('productModal'); if(!m) return;
+  const go=function(){ if(all){ m.scrollTop=0; m.querySelectorAll('*').forEach(function(e){ if(e.scrollTop) e.scrollTop=0; }); }
+    else { const b=document.getElementById('prodBody'); if(b) b.scrollTop=0; } };
+  go(); requestAnimationFrame(go);
+}
 function switchTab(i){
+  let was=-1; try{ was=activeTabIndex(); }catch(e){}
   const btns=document.querySelectorAll('#prodTabs button');
   for(let k=0;k<btns.length;k++) btns[k].classList.toggle('active',k===i);
   const panes=document.querySelectorAll('.tab-pane');
   for(let k=0;k<panes.length;k++) panes[k].classList.toggle('active',k===i);
+  if(was!==i) pmScrollTop(false);      /* অন্য ট্যাবে গেলে সেটার উপর থেকে দেখায় */
   recalc();
 }
 function activeTabIndex(){
@@ -19524,6 +19534,9 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.51', d:'2026-11-18', t:'নতুন Costing খুললে সবসময় উপর থেকে', li:[
+  '<b>স্ক্রল-অবস্থান ঠিক করা:</b> আগে একটা Costing এ কোনো ট্যাবে নিচে স্ক্রল করে বেরিয়ে অন্য Costing খুললে “1. Product Info” ট্যাব নিচের দিক থেকে দেখাত। এখন যেকোনো Costing খুললে উপর থেকে দেখায় — পাশের Assistant প্যানেলও উপর থেকে',
+  '<b>অন্য ট্যাবে গেলে</b> সেই ট্যাবও তার উপর থেকে দেখায় (আগের ট্যাবের স্ক্রল ধরে রাখত না)। “Costing এ ফিরুন” দিয়ে ফেরার সময় আগের মতোই যে ট্যাবে ছিলেন সেখানে ফেরে']},
  {v:'19.50', d:'2026-11-17', t:'মোবাইলে Costing দেখার জায়গা বেশি', li:[
   '<b>উপরের বার আর আটকে থাকে না (মোবাইলে):</b> আগে Section ট্যাব + সব বোতাম + বাছাই বার স্ক্রল করলেও উপরে আটকে থাকত — স্ক্রিনের অর্ধেকের বেশি ঢেকে যেত। এখন স্ক্রল করলে উপরে চলে যায়, শুধু ছোট মাথার বার থাকে',
   '<b>বোতাম গুছানো:</b> মোবাইলে শুধু খোঁজার ঘর, “+ নতুন Costing” আর (থাকলে) “Break-even পুরোনো” দেখায়; বাকিগুলো (Mix Carton, Summary, সব Print, Costing Excel, Section, কোড সাজান, বাছাই করে PDF) “⋯ আরও” চাপলে আসে',
@@ -22304,6 +22317,9 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.51', d:'2026-11-18', t:'A costing always opens at the top', li:[
+  '<b>Scroll position fixed:</b> before, if you scrolled down a tab in one costing and left, the next costing opened with “1. Product Info” scrolled down. Now every costing opens at the top — the side assistant panel too',
+  '<b>Switching tabs</b> also shows the new tab from its top (it no longer keeps the previous tab’s scroll). Coming back with “Back to costing” still returns to the tab you were on']},
  {v:'19.50', d:'2026-11-17', t:'More room to see costings on mobile', li:[
   '<b>The top bar no longer sticks (on mobile):</b> before, the section tabs + all buttons + the selection bar stayed pinned while scrolling — covering more than half the screen. Now they scroll away; only the small header stays',
   '<b>Buttons tidied:</b> on mobile only search, “+ New Costing” and (when present) “Break-even outdated” show; the rest (Mix Carton, Summary, Print all, Costing Excel, Section, Sort codes, select-and-PDF) come up with “⋯ More”',
