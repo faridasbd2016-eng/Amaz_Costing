@@ -1878,6 +1878,59 @@ html.ui-modern .tag:not(#printArea *):not(.pdfbox *){font-size:11px;}
   html.appm .product-card:active, html.appm table.m-cards tr:active{transform:scale(.99);}
 }
 
+
+/* ===================== v19.75 — মোবাইলে Costing সহজ: RM/PM বাছার পুরো-পর্দা তালিকা, লাইন কার্ডে ===================== */
+#mpk{display:none;}
+@media (max-width:760px){
+  html.appm .modal-overlay > .modal .modal-body{max-height:none !important; height:auto !important; overflow:visible !important;}
+  html.appm .modal-overlay > .modal > #asstWrap{flex:1 0 auto; display:flex; flex-direction:column;}
+  html.appm .modal-overlay > .modal > #asstWrap > #prodBody{flex:1 0 auto;}
+  html.appm .modal-overlay > .modal > :not(#asstWrap){flex-shrink:0;}
+  html.appm #productModal .tab-pane > .hint{position:relative; max-height:3.1em; overflow:hidden; font-size:12px; padding-right:58px; cursor:pointer;}
+  html.appm #productModal .tab-pane > .hint::after{content:"আরও ▾"; position:absolute; right:0; bottom:0; padding-left:18px; font-weight:700; color:var(--primary); background:linear-gradient(90deg,transparent,var(--panel) 16px);}
+  html.appm #productModal .tab-pane > .hint.hopen{max-height:none; padding-right:0;}
+  html.appm #productModal .tab-pane > .hint.hopen::after{content:"কম ▴"; position:static; display:block; text-align:right; background:none;}
+  html[lang=en].appm #productModal .tab-pane > .hint::after{content:"More ▾";}
+  html[lang=en].appm #productModal .tab-pane > .hint.hopen::after{content:"Less ▴";}
+  html.appm #productModal .mpk-addln{display:block; width:100%; margin:10px 0 4px; height:48px; border-radius:14px; border:1.5px dashed var(--primary-2); background:transparent; color:var(--primary); font:inherit; font-weight:800; font-size:15px; cursor:pointer;}
+  /* লাইন টেবিল → ২ কলামের কার্ড */
+  html.appm table.line-table.m-cards{min-width:0 !important; width:100% !important;}
+  html.appm div:has(> table.line-table.m-cards){overflow:visible !important;}
+  html.appm table.line-table.m-cards tbody tr{display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; padding:12px 14px 10px;}
+  html.appm table.line-table.m-cards td{flex-direction:column; align-items:stretch; justify-content:flex-start; text-align:left; gap:3px; padding:0 !important; min-width:0 !important; width:auto !important;}
+  html.appm table.line-table.m-cards td::before{max-width:none; font-size:11.5px;}
+  html.appm table.line-table.m-cards td.mc-title{grid-column:1 / -1; display:flex; flex-direction:row; align-items:center; gap:8px; border-bottom:0 !important; margin:0; padding:0 0 4px !important;}
+  html.appm table.line-table.m-cards td.mc-title input{flex:1 1 auto; width:auto !important; max-width:none !important; min-width:0 !important; text-align:left !important; font-weight:700;}
+  html.appm table.line-table.m-cards td.mc-act{grid-column:1 / -1; flex-direction:row; justify-content:flex-end; border-top:1px dashed var(--border) !important; padding-top:6px !important; margin-top:2px;}
+  html.appm table.line-table.m-cards td input:not([type=checkbox]):not([type=radio]), html.appm table.line-table.m-cards td select{width:100% !important; max-width:none !important; text-align:left !important;}
+  html.appm table.line-table.m-cards td.num-cell{font-weight:700; font-size:14.5px;}
+  html.appm table.line-table.m-cards td.mc-empty{display:none;}
+  html.appm table.line-table.m-cards tbody tr td[colspan]{grid-column:1 / -1;}
+  html.appm table.line-table.m-cards tfoot tr{display:grid; grid-template-columns:1fr 1fr; gap:4px 14px;}
+  html.appm table.line-table.m-cards tfoot td{flex-direction:column; align-items:flex-start; text-align:left;}
+  html.appm table.line-table.m-cards tfoot td:first-child{grid-column:1 / -1;}
+  html.appm input.matac{caret-color:transparent; cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364787d' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important; background-repeat:no-repeat !important; background-position:right 10px center !important; background-size:18px !important; padding-right:34px !important;}
+  /* RM / PM বাছার পুরো-পর্দা তালিকা */
+  #mpk.open{display:flex; flex-direction:column; position:fixed; inset:0; z-index:100400; background:var(--bg); animation:appmIn .2s cubic-bezier(.2,.85,.3,1);}
+  #mpk .mpk-h{display:flex; align-items:center; gap:6px; padding:calc(8px + env(safe-area-inset-top)) 10px 8px 6px; background:var(--panel); box-shadow:0 1px 0 var(--border);}
+  #mpk .mpk-h h3{flex:1; margin:0; font-size:16.5px; font-weight:800;}
+  #mpk .mpk-back{width:42px; height:42px; border:0; background:none; border-radius:50%; font-size:24px; color:var(--text); cursor:pointer;}
+  #mpk .mpk-s{padding:10px 12px; background:var(--panel); border-bottom:1px solid var(--border);}
+  #mpk .mpk-s input{width:100%; height:48px; border-radius:14px; border:1px solid var(--border); background:var(--panel-2); padding:0 14px; font-size:16px; color:var(--text);}
+  #mpk .mpk-chips{display:flex; gap:6px; overflow-x:auto; padding:8px 12px 0; scrollbar-width:none;}
+  #mpk .mpk-chips button{flex:0 0 auto; border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:999px; padding:5px 12px; font:inherit; font-size:12.5px;}
+  #mpk .mpk-chips button.on{background:var(--primary); border-color:var(--primary); color:#fff;}
+  #mpk .mpk-l{flex:1; overflow:auto; padding:6px 10px calc(16px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch;}
+  #mpk .mpk-i{display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; background:var(--panel); color:var(--text); font:inherit; padding:12px 14px; border-radius:14px; margin:0 0 8px; box-shadow:0 1px 2px rgba(16,40,46,.05); cursor:pointer;}
+  #mpk .mpk-i:active{transform:scale(.985); background:var(--panel-2);}
+  #mpk .mpk-i.cur{outline:2px solid var(--primary); outline-offset:-2px;}
+  #mpk .mpk-av{width:40px; height:40px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; background:rgba(13,148,136,.12); color:var(--primary);}
+  #mpk .mpk-t{flex:1; min-width:0;} #mpk .mpk-t b{display:block; font-size:15px; line-height:1.3;} #mpk .mpk-t small{display:block; color:var(--text-dim); font-size:12px; margin-top:2px;}
+  #mpk .mpk-r{text-align:right; font-weight:800; font-size:14px; white-space:nowrap;} #mpk .mpk-r small{display:block; font-weight:600; color:var(--text-dim); font-size:11px;}
+  #mpk .mpk-add{border:1.5px dashed var(--primary-2); color:var(--primary); background:transparent; box-shadow:none; justify-content:center; font-weight:700;}
+  #mpk .mpk-none{padding:30px 16px; text-align:center; color:var(--text-dim);}
+}
+
 body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0,0,0,.5) !important;caret-color:transparent;pointer-events:none;user-select:none;}
 </style>
 </head>
@@ -1903,6 +1956,7 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
   </aside>
   <div id="pmBack" role="status"></div>
   <nav id="bnav" aria-label="App"></nav>
+  <div id="mpk" role="dialog" aria-modal="true"></div>
   <button type="button" id="appmFab" onclick="appmFabGo()" aria-label="নতুন"></button>
   <div id="appmSheet" onclick="if(event.target===this) appmSheetClose()"></div>
   <div id="ptrInd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg></div>
@@ -5061,6 +5115,7 @@ function appmCloseTop(){
 function appmOnPop(e){
   if(!appmOn()) return;
   const st=(e&&e.state)||{};
+  const mk=document.getElementById('mpk'); if(mk && mk.classList.contains('open')){ APPM_CLOSING=true; mpkClose(); APPM_CLOSING=false; return; }
   const shOpen=(document.getElementById('appmSheet')||{classList:{contains:function(){return false;}}}).classList.contains('open');
   if(appmCount()>0 || shOpen){
     const before=appmCount();
@@ -8103,6 +8158,10 @@ function addLine(t){
   if(t==='cc') CUR.commonCosts.push({label:'',mode:'fixed',amount:''});
   if(t==='soh'){ CUR.sellingOH=CUR.sellingOH||[]; CUR.sellingOH.push({label:'',mode:'pctSale',rate:'',basis:'',note:''}); }
   renderAllLines();
+  if((t==='rm'||t==='pk') && typeof appmOn==='function' && appmOn()){   /* v19.75 — মোবাইলে নতুন সারি খুললেই তালিকা */
+    const n=(t==='rm'?CUR.rmLines:CUR.pkLines).length-1, el=document.querySelector('#productModal input.matac[data-t="'+t+'"][data-i="'+n+'"]');
+    if(el){ try{ el.scrollIntoView({block:'center'}); }catch(e){} setTimeout(function(){ mpkOpen(el); },60); }
+  }
 }
 function removeLine(t,i){
   if(t==='rm') CUR.rmLines.splice(i,1);
@@ -8321,6 +8380,47 @@ function acBox(){
   }
   return b;
 }
+/* ================= v19.75 — মোবাইলে RM / PM বাছার পুরো-পর্দা তালিকা ================= */
+var MPK={t:'',i:-1,el:null,q:'',cat:''};
+function mpkOpen(el){
+  if(!el) return; const box=document.getElementById('mpk'); if(!box) return;
+  if(box.classList.contains('open') && MPK.el===el) return;
+  try{ el.blur(); }catch(e){}
+  MPK={t:el.getAttribute('data-t'), i:+el.getAttribute('data-i'), el:el, q:'', cat:''};
+  const T=MPK.t==='rm'?TT('Raw Material বাছুন','Choose raw material'):TT('Packing Material বাছুন','Choose packing material');
+  const list=(MPK.t==='rm'?DB.rawMaterials:DB.packaging)||[];
+  const cats=[]; list.forEach(function(m){ const c=String(m.category||'').trim(); if(c && cats.indexOf(c)<0) cats.push(c); }); cats.sort();
+  box.innerHTML='<div class="mpk-h"><button type="button" class="mpk-back close-x" onclick="mpkClose()" aria-label="Back">&#8592;</button><h3>'+esc(T)+'</h3></div>'+
+    '<div class="mpk-s"><input type="search" id="mpkQ" placeholder="'+esc(TT('নাম লিখে খুঁজুন… (যেমন: car 350)','Search… (e.g. car 350)'))+'" autocomplete="off" oninput="MPK.q=this.value;mpkPaint()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();mpkEnter();}"></div>'+
+    (cats.length>1?'<div class="mpk-chips"><button type="button" class="on" data-c="" onclick="mpkCat(this)">'+esc(TT('সব','All'))+'</button>'+cats.slice(0,40).map(function(c){ return '<button type="button" data-c="'+esc(c)+'" onclick="mpkCat(this)">'+esc(c)+'</button>'; }).join('')+'</div>':'')+
+    '<div class="mpk-l" id="mpkL"></div>';
+  box.classList.add('open');
+  try{ history.pushState({amzM:1,ap:currentPage},''); }catch(e){}
+  mpkPaint();
+}
+document.addEventListener('click',function(e){ const h=e.target&&e.target.closest&&e.target.closest('#productModal .tab-pane > .hint'); if(h && typeof appmOn==='function' && appmOn() && !e.target.closest('a,button,input')) h.classList.toggle('hopen'); });
+function mpkCat(b){ MPK.cat=b.getAttribute('data-c')||''; document.querySelectorAll('#mpk .mpk-chips button').forEach(function(x){ x.classList.toggle('on',x===b); }); mpkPaint(); }
+function mpkList(){ let L=acMatches(MPK.t, MPK.q); if(MPK.cat) L=L.filter(function(m){ return String(m.category||'').trim()===MPK.cat; }); return L; }
+function mpkPaint(){
+  const L=document.getElementById('mpkL'); if(!L) return;
+  const arr=mpkList(), arrL=(MPK.t==='rm'?CUR.rmLines:CUR.pkLines)||[], curId=(arrL[MPK.i]||{}).matId;
+  const used={}; arrL.forEach(function(l,k){ if(k!==MPK.i && l.matId) used[l.matId]=1; });
+  L.innerHTML=(arr.length?arr.map(function(m){
+      const ini=String(m.name||'?').trim().charAt(0).toUpperCase();
+      return '<button type="button" class="mpk-i'+(m.id===curId?' cur':'')+'" onclick="mpkPick(\''+m.id+'\')"><span class="mpk-av">'+esc(ini)+'</span>'+
+        '<span class="mpk-t"><b>'+esc(m.name||'')+'</b><small>'+[m.category, m.buyBy?buyByShort(m.buyBy):'', m.supplier, used[m.id]?TT('এই Costing এ আছে','already in this costing'):''].filter(Boolean).map(esc).join(' · ')+'</small></span>'+
+        '<span class="mpk-r">৳'+money(m.unitPrice)+'<small>/ '+esc(m.unit||'')+'</small></span></button>'; }).join('')
+    :'<div class="mpk-none">'+esc(TT('কিছু মিলল না','No match'))+'</div>')+
+    (qaCanAdd(MPK.t)?'<button type="button" class="mpk-i mpk-add" onclick="mpkAdd()">+ '+esc(MPK.q.trim()?TT('“'+MPK.q.trim()+'” নতুন যোগ করুন','Add “'+MPK.q.trim()+'”'):TT('নতুন Material যোগ করুন','Add new material'))+'</button>':'');
+}
+function mpkEnter(){ const L=mpkList(); if(L.length) mpkPick(L[0].id); else if(qaCanAdd(MPK.t)) mpkAdd(); }
+function mpkPick(id){ const t=MPK.t, i=MPK.i; mpkClose(true); acPickId(null,id,t,i); }
+function mpkAdd(){ const t=MPK.t, i=MPK.i, el=MPK.el, q=MPK.q.trim(); mpkClose(true); if(el && q) el.value=q; try{ qaOpen(null,t,i,'add'); }catch(e){ console.error(e); } }
+function mpkClose(byPick){
+  const box=document.getElementById('mpk'); if(!box || !box.classList.contains('open')) return;
+  box.classList.remove('open'); box.innerHTML='';
+  if(!APPM_CLOSING){ try{ if(history.state && history.state.amzM) history.replaceState({dead:1,ap:currentPage},''); }catch(e){} }
+}
 function acClose(){
   AC_OPEN=false; AC_EL=null; AC_LIST=[];
   const b=document.getElementById('matAC'); if(b) b.style.display='none';
@@ -8367,6 +8467,7 @@ function acPaint(){
 }
 function acShow(el){
   if(!el) return;
+  if(typeof appmOn==='function' && appmOn()){ mpkOpen(el); return; }    /* v19.75 — মোবাইলে পুরো-পর্দা তালিকা */
   AC_T=el.getAttribute('data-t'); AC_I=+el.getAttribute('data-i'); AC_EL=el;
   AC_LIST=acMatches(AC_T, el.value); AC_SEL=0;
   acPaint();
@@ -8428,6 +8529,34 @@ function focusCell(t,i,k){
    তাই এটা এখন খালি রাখা হলো। */
 function lineKey(e,t,i,k){ return; }
 function renderAllLines(){
+  renderAllLines0(); try{ appmLineCards(); }catch(e){ console.error(e); }
+}
+/* v19.75 — মোবাইলে Costing এর লাইন টেবিল (RM, PM, মজুরি, মেশিন…) কার্ডে */
+function appmLineCards(){
+  const on=(typeof appmOn==='function' && appmOn());
+  document.querySelectorAll('#productModal table.line-table').forEach(function(tb){
+    if(!on){ return; }
+    const hr=tb.tHead&&tb.tHead.rows.length?tb.tHead.rows[tb.tHead.rows.length-1]:null; if(!hr) return;
+    const H=[]; [].forEach.call(hr.cells,function(th){ const t=(th.textContent||'').trim(); for(let k=0;k<(th.colSpan||1);k++) H.push(t); });
+    tb.classList.add('m-cards');
+    [].slice.call(tb.tBodies).concat(tb.tFoot?[tb.tFoot]:[]).forEach(function(tbd){ [].forEach.call(tbd.rows,function(r){
+      if(r.cells.length===1 && (r.cells[0].colSpan||1)>1){ r.cells[0].classList.add('mc-nolab'); return; }
+      let k=0; [].forEach.call(r.cells,function(td,ci){
+        td.setAttribute('data-label',H[k]||''); td.classList.remove('mc-title','mc-act','mc-empty','mc-nolab');
+        const txt=(td.textContent||'').trim(), btns=td.querySelectorAll('button'), ins=td.querySelectorAll('input:not([type=hidden]),select,textarea');
+        if(ci===0 && tbd!==tb.tFoot) td.classList.add('mc-title');
+        else if(btns.length && !ins.length && ci===r.cells.length-1) td.classList.add('mc-act');
+        else if(!txt && !ins.length && !btns.length) td.classList.add('mc-empty');
+        if(!H[k]) td.classList.add('mc-nolab');
+        k+=td.colSpan||1; });
+    }); });
+  });
+  ['rm','pk'].forEach(function(t){ const tb=document.getElementById(t==='rm'?'rmLinesTable':'pkLinesTable'); if(!tb||!tb.parentNode) return; let b=tb.parentNode.nextElementSibling;
+    if(on){ if(!b||!b.classList.contains('mpk-addln')){ b=document.createElement('button'); b.type='button'; b.className='mpk-addln'; b.onclick=function(){ addLine(t); }; tb.parentNode.parentNode.insertBefore(b,tb.parentNode.nextSibling); } b.textContent='+ '+(t==='rm'?TT('আরেকটা Raw Material','Add raw material'):TT('আরেকটা Packing Material','Add packing material')); }
+    else if(b&&b.classList.contains('mpk-addln')) b.remove(); });
+  document.querySelectorAll('#productModal input.matac').forEach(function(i){ if(on){ i.setAttribute('readonly',''); i.setAttribute('inputmode','none'); if(!i.__mpk){ i.__mpk=1; i.addEventListener('click',function(){ if(appmOn()) mpkOpen(i); }); } } else { i.removeAttribute('readonly'); i.removeAttribute('inputmode'); } });
+}
+function renderAllLines0(){
   pullForm(); fillDatalists(); const r=calc(CUR);
   const DEMO_LINES = (CUR && CUR.ctype==='demo');   /* ✎ সুইচ শুধু DEMO তে */
   const rmB=document.getElementById('rmLinesBody');
@@ -20790,6 +20919,14 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.75', d:'2026-11-19', t:'মোবাইলে Costing এ RM / PM বাছা সহজ — App এর মতো', li:[
+  '<b>RM / PM বদলানো ঠিক হলো:</b> মোবাইলে Material ঘরে চাপলে কিবোর্ড ওঠার সাথে তালিকা বন্ধ হয়ে যেত — এখন পুরো পর্দার তালিকা খোলে',
+  '<b>বাছার তালিকা:</b> ওপরে খোঁজার ঘর, Category অনুযায়ী চিপ, বড় সারিতে নাম · Category · HO/Factory · Supplier আর দর/একক; এই Costing এ আগে থেকে থাকলে লেখা থাকে; চাপলেই বসে যায় আর Qty ঘরে চলে যায়',
+  '<b>তালিকায় না থাকলে:</b> নিচে “+ নতুন Material যোগ করুন” — খোঁজা নামটা নিয়েই নতুন Material খোলে',
+  '<b>লাইনগুলো কার্ডে:</b> RM, PM, মজুরি, মেশিনের লাইন আর পাশে সরাতে হয় না — প্রতিটা লাইন এক কার্ডে, ওপরে Material, নিচে Qty / Basis / Amount দুই সারিতে',
+  '<b>নিচে বড় “+ আরেকটা Raw / Packing Material” বোতাম:</b> চাপলে নতুন লাইন খুলে সরাসরি তালিকা আসে',
+  '<b>লম্বা নিয়মের লেখা ছোট:</b> দুই লাইন দেখায়, “আরও” চাপলে পুরোটা; ফোনের Back এ তালিকা বন্ধ হয়, Costing খোলাই থাকে',
+  'ভেতরের আলাদা Scroll আর Footer এর নিচের ফাঁকা জায়গা ঠিক হলো · কম্পিউটারের চেহারা আর কাজ আগের মতোই']},
  {v:'19.74', d:'2026-11-18', t:'মোবাইলে Login পাতা ও সব মেনু App এর মতো', li:[
   '<b>Login পাতা:</b> ওপরে রঙিন অংশে বড় App icon, নাম আর Company; নিচ থেকে ওঠা সাদা কার্ডে Username / Password — বড় ঘর, বড় “প্রবেশ করুন” বোতাম; Forgot আর Cloud Setup একই রকম; Dark এও মানানসই',
   '<b>ফোনের ওপরের Status bar:</b> Login এ App এর রঙে, ভেতরে সাদা (Dark এ গাঢ়) — App এর মতো',
@@ -23691,6 +23828,14 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.75', d:'2026-11-19', t:'Easier RM / PM picking in costing on mobile', li:[
+  '<b>Fixed changing RM / PM on mobile:</b> the suggestion list used to close as soon as the keyboard opened — tapping the Material box now opens a full-screen list',
+  '<b>Picker:</b> search box, category chips, large rows with name · category · HO/Factory · supplier and rate/unit; marks items already in this costing; one tap fills the line and moves to Qty',
+  '<b>Not in the list:</b> “+ Add new material” at the bottom opens the quick-add form with the searched name',
+  '<b>Lines as cards:</b> RM, PM, labour and machine lines no longer need sideways scrolling — each line is a card with the material on top and Qty / Basis / Amount in two columns',
+  '<b>Big “+ Add raw / packing material” button</b> under each list opens a new line straight into the picker',
+  '<b>Long help text folded</b> to two lines with “More”; the phone Back button closes the picker and keeps the costing open',
+  'Removed the inner scroll and empty space under the footer · desktop look and behaviour unchanged']},
  {v:'19.74', d:'2026-11-18', t:'App-style login and menus on mobile', li:[
   '<b>Login page:</b> large app icon, name and company on a coloured top area; username / password on a white sheet rising from the bottom — big fields and a big sign-in button; forgot-password and cloud setup match; works in dark mode',
   '<b>Phone status bar:</b> app colour on the login page, white (dark in dark mode) inside — like an app',
