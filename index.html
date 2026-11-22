@@ -4080,6 +4080,7 @@ function pdfMenuItems(key){
     if(dlv) it.push(['🚚 Delivery Challan','FACTORY DELIVERY CHALLAN',function(){printOrderStatement(true);},'Challan']);
     it.push(['🧱 সব পণ্যের Material একসাথে','প্রতিটা পণ্য আলাদা পাতায়',printOrEachProduct,'EachProduct'],
       ['📦 শুধু সমন্বিত Material','RM ও PM আলাদা পাতায়',printOrderReq,'MaterialReq'],
+      ['🏭 পণ্যভিত্তিক RM / PM','Factory ও Head Office ভাগ — প্রতিটা পণ্যের',printOrderMatSplit,'RM_PM_ProductWise'],
       ['💰 শুধু Costing ও লাভ-ক্ষতি','',printOrderPL,'ProfitLoss']);
     return it;
   }
@@ -12805,6 +12806,7 @@ function renderOrSummary(d){
     '<button class="btn btn-accent btn-sm" onclick="printOrEachProduct()" title="প্রতিটা পণ্যের নিজস্ব Material Requirement — আলাদা পাতায়, কিন্তু এক চাপেই সব একসাথে">🖨 সব পণ্যের Material একসাথে ('+d.rows.filter(function(x){return !x.missing && x.ctn>0;}).length+' টি)</button>'+
     '<button class="btn btn-accent btn-sm" onclick="pdfMenu(this,\'order\')" title="কোনটার PDF চান — বেছে নিন">PDF ▾</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="printOrderReq()">শুধু সমন্বিত Material</button>'+
+    '<button class="btn btn-ghost btn-sm" onclick="printOrderMatSplit()">পণ্যভিত্তিক RM / PM</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="printOrderPL()">শুধু Costing ও লাভ-ক্ষতি</button></div>'+
     '<div class="panel" style="margin-bottom:16px;"><div class="panel-head"><h3>খরচের ভাঙানো হিসাব</h3></div><div class="panel-body">'+
     '<div class="summary-box">'+
@@ -12971,7 +12973,7 @@ function orMatSplitHTML(d){
   return '<div class="panel" data-ortab="mv" style="margin-bottom:16px;"><div class="panel-head"><h3>পণ্যভিত্তিক RM / PM — Factory ও Head Office</h3>'+
     '<span style="flex:1"></span>'+
     '<span style="font-size:12.5px;">RM <b>৳'+money(T.rm,0)+'</b> &nbsp;·&nbsp; PM <b>৳'+money(T.pk,0)+'</b> &nbsp;·&nbsp; মোট <b style="color:var(--accent,#c9a227);">৳'+money(T.rm+T.pk,0)+'</b></span>'+
-    '<button class="btn btn-sm btn-ghost" style="margin-left:10px;" onclick="printOrderMatSplit()">&#128424; Print</button></div>'+
+    '<button class="btn btn-sm btn-ghost" style="margin-left:10px;" onclick="printOrderMatSplit()">&#128424; Print</button>'+'<button class="btn btn-sm btn-accent" style="margin-left:6px;" onclick="pdfOrderMatSplit()">PDF</button>'+'</div>'+
     '<div class="table-wrap"><table>'+
     '<thead><tr><th rowspan="2">#</th><th rowspan="2">Product</th><th rowspan="2" class="num">Qty</th>'+
       '<th colspan="'+(N?4:3)+'" '+grp+'>RM (Raw Material) ৳</th><th colspan="'+(N?4:3)+'" '+grp+'>PM (Packing Material) ৳</th><th rowspan="2" class="num">মোট Material ৳</th></tr>'+
@@ -13006,7 +13008,7 @@ function orMatSplitCards(D){
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+blk('RM',p.rmF,p.rmH,p.rmN,rm)+blk('PM',p.pkF,p.pkH,p.pkN,pk)+'</div>'+
     '<div style="display:flex;justify-content:space-between;margin-top:8px;font-weight:800;"><span>মোট Material</span><span style="color:var(--accent,#c9a227);">'+m(rm+pk)+'</span></div></div>'; };
   return '<div class="panel" data-ortab="mv" style="margin-bottom:16px;"><div class="panel-head"><h3>পণ্যভিত্তিক RM / PM</h3><span style="flex:1"></span>'+
-    '<button class="btn btn-sm btn-ghost" onclick="printOrderMatSplit()">&#128424; Print</button></div><div class="panel-body">'+
+    '<button class="btn btn-sm btn-ghost" onclick="printOrderMatSplit()">&#128424; Print</button>'+'<button class="btn btn-sm btn-accent" style="margin-left:6px;" onclick="pdfOrderMatSplit()">PDF</button>'+'</div><div class="panel-body">'+
     D.rows.map(function(x){ return card(esc(x.b.name), money(x.ctn,0)+' '+esc(x.b.uLab||''), x.sp||{}, x.rmVal, x.pkVal); }).join('')+
     card('TOTAL', 'Factory '+m(T.rmF+T.pkF)+' · HO '+m(T.rmH+T.pkH), T, T.rm, T.pk, true)+
     (N?'<p class="hint" style="margin:4px 0 0;">কিছু Material এ “কে কিনবে” বসানো নেই — সেগুলো “নির্ধারিত নয়”।</p>':'')+
@@ -13015,11 +13017,18 @@ function orMatSplitCards(D){
 function printOrderMatSplit(){
   if(!needTool('print','Print')) return;
   const d=orderCalc(); if(!d.totCtn){ toast('আগে Order Qty দিন',true); return; }
+  document.getElementById('printArea').innerHTML=orderMatSplitPrintHTML(d,false);
+  setPrintOrientation('portrait');
+  safePrint();
+}
+function orderMatSplitPrintHTML(d,pageBreak){
   const D=orderMatSplitDataSafe(d), T=D.T, N=D.hasN, o=d.plan;
-  const S="font-family:'Times New Roman',serif;", B='border:1px solid #000;padding:3px 5px;';
-  const R=function(v,b){ return '<td style="'+B+'text-align:right;white-space:nowrap;'+(b?'font-weight:bold;':'')+'">'+(Math.abs(v)<0.005?'-':money(v,0))+'</td>'; };
-  const H=function(t,x){ return '<th style="'+B+'background:#e9eef0;'+(x||'')+'">'+t+'</th>'; };
-  let h='<div style="'+S+'font-size:11px;color:#000;max-width:1000px;margin:0 auto;">'+
+  /* v19.83 — পণ্যের নাম এক লাইনে; টাকার কলাম শুধু অঙ্কের মাপে (width:1% + nowrap), বাকি জায়গা নামের */
+  const S="font-family:'Times New Roman',serif;", B='border:1px solid #000;padding:2px 4px;';
+  const R=function(v,b){ return '<td style="'+B+'width:1%;text-align:right;white-space:nowrap;'+(b?'font-weight:bold;':'')+'">'+(Math.abs(v)<0.005?'-':money(v,0))+'</td>'; };
+  const R2=function(v,b){ return '<td style="'+B+'text-align:right;white-space:nowrap;padding:3px 6px;'+(b?'font-weight:bold;':'')+'">'+(Math.abs(v)<0.005?'-':money(v,0))+'</td>'; };
+  const H=function(t,x){ return '<th style="'+B+'background:#e9eef0;color:#000;font-size:8.5px;font-weight:bold;line-height:1.15;letter-spacing:0;text-transform:none;white-space:normal;text-align:center;vertical-align:middle;'+(x||'')+'">'+t+'</th>'; };
+  let h='<div style="'+S+'font-size:11px;color:#000;max-width:1000px;margin:0 auto;'+(pageBreak?'page-break-after:always;':'')+'">'+
     '<div style="text-align:center;margin-bottom:8px;">'+printLogoHTML()+'<div style="font-size:16px;font-weight:bold;">'+esc(DB.settings.companyName||'')+'</div>'+
       (DB.settings.address?'<div style="font-size:10.5px;">'+esc(DB.settings.address)+'</div>':'')+
       '<div style="font-size:12.5px;font-weight:bold;text-decoration:underline;margin-top:3px;">Product-wise RM / PM Value — Factory &amp; Head Office</div>'+
@@ -13027,25 +13036,27 @@ function printOrderMatSplit(){
     '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;'+S+'font-size:11px;"><tr>'+
       '<td style="'+B+'"><b>Order Ref:</b> '+esc(o.ref||'-')+'</td><td style="'+B+'"><b>Buyer:</b> '+esc(o.buyer||'-')+'</td>'+
       '<td style="'+B+'"><b>Date:</b> '+esc(showDate(o.date)||fmtDate(o.createdAt))+'</td></tr></table>'+
-    '<table style="width:100%;border-collapse:collapse;'+S+'font-size:10px;"><thead>'+
-    '<tr>'+H('SL','width:4%;" rowspan="2')+H('Product','text-align:left;" rowspan="2')+H('Qty','" rowspan="2')+
-      H('Raw Material (BDT)','" colspan="'+(N?4:3))+H('Packing Material (BDT)','" colspan="'+(N?4:3))+H('Total Material (BDT)','" rowspan="2')+'</tr>'+
-    '<tr>'+H('Factory')+H('Head Office')+(N?H('Unassigned'):'')+H('Total RM')+H('Factory')+H('Head Office')+(N?H('Unassigned'):'')+H('Total PM')+'</tr></thead><tbody>'+
+    '<table class="mvs" style="width:100%;border-collapse:collapse;table-layout:auto;'+S+'font-size:9.5px;"><thead>'+
+    '<tr>'+H('SL','width:1%;" rowspan="2')+H('Product','text-align:left;" rowspan="2')+H('Qty','width:1%;" rowspan="2')+
+      H('Raw Material (BDT)','" colspan="'+(N?4:3))+H('Packing Material (BDT)','" colspan="'+(N?4:3))+H('Total<br>Material','width:1%;" rowspan="2')+'</tr>'+
+    '<tr>'+H('Factory','width:1%;')+H('Head<br>Office','width:1%;')+(N?H('Un-<br>assigned','width:1%;'):'')+H('Total<br>RM','width:1%;')+H('Factory','width:1%;')+H('Head<br>Office','width:1%;')+(N?H('Un-<br>assigned','width:1%;'):'')+H('Total<br>PM','width:1%;')+'</tr></thead><tbody>'+
     D.rows.map(function(x,i){ const p=x.sp||{};
-      return '<tr><td style="'+B+'text-align:center;">'+(i+1)+'</td><td style="'+B+'">'+esc(x.b.name)+(x.b.code?' ('+esc(x.b.code)+')':'')+'</td>'+
+      return '<tr><td style="'+B+'width:1%;text-align:center;">'+(i+1)+'</td><td style="'+B+'white-space:nowrap;">'+esc(x.b.name)+(x.b.code?' ('+esc(x.b.code)+')':'')+'</td>'+
         '<td style="'+B+'text-align:right;white-space:nowrap;">'+money(x.ctn,0)+' '+esc(x.b.uLab||'')+'</td>'+
         R(p.rmF)+R(p.rmH)+(N?R(p.rmN):'')+R(x.rmVal,true)+R(p.pkF)+R(p.pkH)+(N?R(p.pkN):'')+R(x.pkVal,true)+R(x.rmVal+x.pkVal,true)+'</tr>'; }).join('')+
     '</tbody><tfoot><tr style="background:#f3f3f3;"><td colspan="3" style="'+B+'font-weight:bold;">TOTAL</td>'+
       R(T.rmF,true)+R(T.rmH,true)+(N?R(T.rmN,true):'')+R(T.rm,true)+R(T.pkF,true)+R(T.pkH,true)+(N?R(T.pkN,true):'')+R(T.pk,true)+R(T.rm+T.pk,true)+'</tr></tfoot></table>'+
-    '<table style="width:60%;border-collapse:collapse;margin-top:10px;'+S+'font-size:11px;"><thead><tr>'+H('Purchase By','text-align:left;')+H('RM (BDT)')+H('PM (BDT)')+H('Total (BDT)')+'</tr></thead><tbody>'+
-      '<tr><td style="'+B+'">Factory</td>'+R(T.rmF)+R(T.pkF)+R(T.rmF+T.pkF,true)+'</tr>'+
-      '<tr><td style="'+B+'">Head Office</td>'+R(T.rmH)+R(T.pkH)+R(T.rmH+T.pkH,true)+'</tr>'+
-      (N?'<tr><td style="'+B+'">Unassigned</td>'+R(T.rmN)+R(T.pkN)+R(T.rmN+T.pkN,true)+'</tr>':'')+
-      '<tr style="background:#f3f3f3;"><td style="'+B+'font-weight:bold;">Total</td>'+R(T.rm,true)+R(T.pk,true)+R(T.rm+T.pk,true)+'</tr></tbody></table>'+
+    '<table style="width:auto;min-width:46%;border-collapse:collapse;margin-top:10px;'+S+'font-size:10.5px;"><thead><tr>'+H('Purchase By','text-align:left;width:34%;')+H('RM (BDT)','width:22%;')+H('PM (BDT)','width:22%;')+H('Total (BDT)','width:22%;')+'</tr></thead><tbody>'+
+      '<tr><td style="'+B+'">Factory</td>'+R2(T.rmF)+R2(T.pkF)+R2(T.rmF+T.pkF,true)+'</tr>'+
+      '<tr><td style="'+B+'">Head Office</td>'+R2(T.rmH)+R2(T.pkH)+R2(T.rmH+T.pkH,true)+'</tr>'+
+      (N?'<tr><td style="'+B+'">Unassigned</td>'+R2(T.rmN)+R2(T.pkN)+R2(T.rmN+T.pkN,true)+'</tr>':'')+
+      '<tr style="background:#f3f3f3;"><td style="'+B+'font-weight:bold;">Total</td>'+R2(T.rm,true)+R2(T.pk,true)+R2(T.rm+T.pk,true)+'</tr></tbody></table>'+
     '</div>';
-  document.getElementById('printArea').innerHTML=h;
-  setPrintOrientation('portrait');
-  safePrint();
+  return h;
+}
+function pdfOrderMatSplit(){
+  const o=orderPlan();
+  pdfRun(printOrderMatSplit, function(){ return pdfSafe('RM_PM_ProductWise'+(o&&o.ref?'_'+o.ref:'')+(o&&o.buyer?' '+o.buyer:'')); });
 }
 function orderMatSplitDataSafe(d){ return orMatSplitData(d); }
 function printOrderPL(){
@@ -13062,7 +13073,7 @@ function printOrderFull(){
   const d=orderCalc();
   if(!d.totCtn){ toast('আগে Order Qty দিন',true); return; }
   document.getElementById('printArea').innerHTML =
-    orderPLHTML(d,true) + orderReqHTML(d,false);
+    orderPLHTML(d,true) + orderMatSplitPrintHTML(d,true) + orderReqHTML(d,false);     /* v19.83 — পণ্যভিত্তিক RM / PM ও */
   setPrintOrientation('portrait');
   safePrint();
 }
@@ -21224,6 +21235,11 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.83', d:'2026-11-22', t:'পণ্যভিত্তিক RM / PM: Print ঠিক ও PDF যোগ', li:[
+  '<b>Print এ পণ্যের নাম এক লাইনে:</b> আগে নাম ৫–৬ লাইনে ভেঙে যেত আর টাকার কলামগুলো অনেক চওড়া ছিল — এখন টাকার কলাম শুধু অঙ্কের মাপে, বাকি জায়গা নামের; এক পাতায় অনেক বেশি পণ্য আঁটে',
+  'কলামের শিরোনাম ছোট ও দুই লাইনে (Head / Office, Total / RM) — বড় হাতের অক্ষরে টেনে চওড়া হয় না',
+  '<b>PDF:</b> ট্যাবে Print এর পাশে PDF বোতাম; Order এর “PDF ▾” তালিকায় “🏭 পণ্যভিত্তিক RM / PM”; “সম্পূর্ণ PDF” এও এখন এই পাতাটা থাকে (লাভ-ক্ষতির পরে)',
+  'সারাংশ ভাগের পাশে “পণ্যভিত্তিক RM / PM” Print বোতাম']},
  {v:'19.82', d:'2026-11-22', t:'Order Requirement: নতুন ট্যাব “পণ্যভিত্তিক RM / PM”', li:[
   '<b>নতুন ট্যাব:</b> Order Requirement এ “পণ্যভিত্তিক লাভ-ক্ষতি” এর পরে “পণ্যভিত্তিক RM / PM” — এই Order এর প্রতিটা পণ্যের Factory RM, Head Office RM, Total RM, Factory PM, Head Office PM, Total PM আর মোট Material ৳',
   'নিচে TOTAL সারি, আর আলাদা করে Factory মোট (RM + PM) ও Head Office মোট (RM + PM)',
@@ -24171,6 +24187,11 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.83', d:'2026-11-22', t:'Product-wise RM / PM: print fixed and PDF added', li:[
+  '<b>Product names on one line in print:</b> names used to wrap over 5–6 lines and the amount columns were very wide — amount columns are now only as wide as the figures and the rest goes to the name, so far more products fit on a page',
+  'Column headings are smaller and on two lines (Head / Office, Total / RM) — no longer widened by capital letters',
+  '<b>PDF:</b> a PDF button next to Print in the tab; “🏭 Product-wise RM / PM” in the order’s “PDF ▾” list; the “Full PDF” now includes this page too (after profit & loss)',
+  'A “Product-wise RM / PM” print button in the summary section']},
  {v:'19.82', d:'2026-11-22', t:'Order requirement: new “Product-wise RM / PM” tab', li:[
   '<b>New tab:</b> after “Product-wise profit & loss” in Order Requirement — for each product of the order: factory RM, head office RM, total RM, factory PM, head office PM, total PM and total material in BDT',
   'TOTAL row at the bottom, plus separate factory total (RM + PM) and head office total (RM + PM)',
