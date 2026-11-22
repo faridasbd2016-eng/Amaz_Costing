@@ -1886,6 +1886,9 @@ html.ui-modern .tag:not(#printArea *):not(.pdfbox *){font-size:11px;}
   html.appm .modal-overlay > .modal > #asstWrap{flex:1 0 auto; display:flex; flex-direction:column;}
   html.appm .modal-overlay > .modal > #asstWrap > #prodBody{flex:1 0 auto;}
   html.appm .modal-overlay > .modal > :not(#asstWrap){flex-shrink:0;}
+  /* v19.76 — Costing এ Scroll: Modal নিজের মাপে বাড়বে, পুরো পর্দা (overlay) Scroll হবে */
+  html.appm .modal-overlay{overflow-y:auto !important; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;}
+  html.appm .modal-overlay > .modal{align-self:flex-start !important; height:auto !important; max-height:none !important; overflow:visible !important; flex-shrink:0;}
   html.appm #productModal .tab-pane > .hint{position:relative; max-height:3.1em; overflow:hidden; font-size:12px; padding-right:58px; cursor:pointer;}
   html.appm #productModal .tab-pane > .hint::after{content:"আরও ▾"; position:absolute; right:0; bottom:0; padding-left:18px; font-weight:700; color:var(--primary); background:linear-gradient(90deg,transparent,var(--panel) 16px);}
   html.appm #productModal .tab-pane > .hint.hopen{max-height:none; padding-right:0;}
@@ -8075,6 +8078,7 @@ function pmScrollTop(all){
 }
 function switchTab(i){
   let was=-1; try{ was=activeTabIndex(); }catch(e){}
+  if(was!==i && typeof appmOn==='function' && appmOn()){ const ov=document.getElementById('productModal'); if(ov) ov.scrollTop=0; }   /* v19.76 — মোবাইলে নতুন Tab এ ওপর থেকে */
   const btns=document.querySelectorAll('#prodTabs button');
   for(let k=0;k<btns.length;k++) btns[k].classList.toggle('active',k===i);
   const panes=document.querySelectorAll('.tab-pane');
@@ -17095,7 +17099,7 @@ function remoteWins(rTs,rDev,lTs,lDev){
 
 /* v19.66 — Logo / সিল / স্বাক্ষর এখন Cloud Sync হয়: Product ছবির মতোই DB.photos এ আলাদা সারি
    (pid '__logo' / '__seal' / '__sign', ≤40,000 অক্ষর — দরকার হলে ছোট করে)। Settings এর ঘরে আগের মতোই থাকে।
-   Letter Head অনেক বড় (A4) — সেটা আগের মতো প্রতি ডিভাইসে আলাদা। */
+   Letter Head অনেক বড় (A4) — v19.76 থেকে সেটাও টুকরো করে Sync হয় (নিচে lhPush / lhApply)। */
 const MEDIA_KINDS=['logo','seal','sign'];
 function mediaState(){ DB._mediaAt=DB._mediaAt||{}; return DB._mediaAt; }
 function mediaFit(data,cb){
@@ -17125,9 +17129,39 @@ function mediaPush(kind){
     saveDB();
   });
 }
+/* v19.76 — Letter Head ও এখন Cloud Sync হয়: বড় ছবি তাই ৩৮,০০০ অক্ষরের টুকরো করে DB.photos এ
+   (pid '__lh.<ver>.<n>'), আর '__lhm' সারিতে হিসাব {v,n,len}। সব টুকরো এলে তবেই বসে — অর্ধেক কখনো না। */
+var LH_CH=38000;
+function lhMeta(){ const r=photoRec('__lhm'); if(!r||!r.img) return null; try{ const m=JSON.parse(String(r.img).replace(/^meta:/,'')); m.at=r.at; return m; }catch(e){ return null; } }
+function lhClear(keepV){ (DB.photos||[]).filter(function(x){ return x && /^__lh\./.test(x.pid||'') && (!keepV || x.pid.indexOf('__lh.'+keepV+'.')!==0); }).map(function(x){ return x.pid; }).forEach(function(pid){ photoPut(pid,''); }); }
+function lhPush(){
+  const st=DB.settings||{}, M=mediaState(), src=st.letterhead;
+  if(!src){ lhClear(); photoPut('__lhm',''); delete M.letterhead; delete M.letterheadV; return; }
+  const v=Date.now().toString(36), n=Math.ceil(src.length/LH_CH);
+  lhClear();
+  for(let i=0;i<n;i++) photoPut('__lh.'+v+'.'+i, src.slice(i*LH_CH,(i+1)*LH_CH));
+  photoPut('__lhm','meta:'+JSON.stringify({v:v,n:n,len:src.length}));
+  const r=photoRec('__lhm'); M.letterhead=r?r.at:nowISO(); M.letterheadV=v;
+}
+function lhApply(){
+  const st=DB.settings, M=mediaState(), m=lhMeta(); let ch=false;
+  if(m && m.v){
+    if(m.v===M.letterheadV) return false;
+    if(M.letterhead && String(m.at||'')<=String(M.letterhead)) return false;
+    let out=''; for(let i=0;i<m.n;i++){ const r=photoRec('__lh.'+m.v+'.'+i); if(!r||!r.img) return false; out+=r.img; }   /* সব টুকরো এখনো আসেনি — পরের Sync এ */
+    if(out.length!==m.len) return false;
+    st.letterhead=out; M.letterhead=m.at||nowISO(); M.letterheadV=m.v; ch=true;
+  } else if(M.letterhead && !photoRec('__lhm')){        /* অন্য ডিভাইসে সরানো হয়েছে */
+    delete st.letterhead; delete M.letterhead; delete M.letterheadV; ch=true;
+  } else if(st.letterhead && !M.letterhead && !M.letterheadPending){   /* আগে থেকে এই ডিভাইসে দেওয়া — এখন ক্লাউডে পাঠাই */
+    M.letterheadPending=1; setTimeout(function(){ delete M.letterheadPending; lhPush(); saveDB(); },60);
+  }
+  return ch;
+}
 function mediaApply(){
   if(!DB.settings) return false;
   const st=DB.settings, M=mediaState(); let ch=false;
+  try{ if(lhApply()) ch=true; }catch(e){ console.error(e); }
   MEDIA_KINDS.forEach(function(k){
     const r=photoRec('__'+k);
     if(r && r.img){
@@ -18010,6 +18044,7 @@ function onLogoFile(inp, which){
         DB.settings[kind]=data;
         saveDB(); render();
         if(MEDIA_KINDS.indexOf(kind)>=0) mediaPush(kind);
+        if(kind==='letterhead'){ lhPush(); saveDB(); }
         toast(lbl+' যোগ হয়েছে');
       }catch(err){ toast('ছবিটি পড়া গেল না',true); }
     };
@@ -18024,6 +18059,7 @@ function removeLogo(which){
   DB.settings=DB.settings||{};
   delete DB.settings[kind];
   if(MEDIA_KINDS.indexOf(kind)>=0) mediaPush(kind);
+  if(kind==='letterhead') lhPush();
   saveDB(); render();
   toast((kind==='seal'?'সিল':(kind==='sign'?'স্বাক্ষর':(kind==='letterhead'?'Letter Head':'লোগো')))+' সরানো হলো');
 }
@@ -19760,9 +19796,11 @@ function socFromEditor(){ if(!CUR) return; try{ pullForm(); }catch(e){} openSoc(
    দাম: Costing এর বিক্রয় মূল্য / Break-even / খরচ + আপনার Margin %। */
 var PL={};
 function plCfg(){ let c={}; try{ c=JSON.parse(localStorage.getItem('amazPriceListCfg')||'{}'); }catch(e){}
+  try{ if(DB.settings && DB.settings.priceListCfg && typeof DB.settings.priceListCfg==='object') c=Object.assign({},c,DB.settings.priceListCfg); }catch(e){}   /* v19.76 — Settings এ থাকে, তাই Cloud Sync হয় */
   return Object.assign({basis:'sell', margin:15, cur:'auto', dec:2, buyer:'', ref:'', valid:'', moq:'', terms:'Prices are ex-factory and exclude VAT / taxes.\nPayment and delivery terms as agreed.\nPrices may change with raw-material costs after the validity date.', perPc:true}, c); }
 function plPhotoDef(c){ return c.photo===undefined?photoOn('price'):!!c.photo; }
-function plSave(c){ try{ localStorage.setItem('amazPriceListCfg',JSON.stringify(c)); }catch(e){} }
+function plSave(c){ try{ localStorage.setItem('amazPriceListCfg',JSON.stringify(c)); }catch(e){}
+  try{ DB.settings=DB.settings||{}; const o=JSON.parse(JSON.stringify(c||{})); if(JSON.stringify(DB.settings.priceListCfg||{})!==JSON.stringify(o)){ DB.settings.priceListCfg=o; clearTimeout(window.__plSv); window.__plSv=setTimeout(function(){ try{ saveDB(); }catch(e){} },900); } }catch(e){ console.error(e); } }
 function plPackText(p){
   let pk=n(p.pktCtn); const kg=n(p.packKg);
   try{ const r=calc(p); if(!((r.uKey==='ctn')||/^ctn$/i.test(r.uLab||''))) pk=1; }catch(e){}
@@ -20919,6 +20957,12 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.76', d:'2026-11-22', t:'মোবাইলে Costing এ Scroll ঠিক · Letter Head ও Price List Sync', li:[
+  '<b>Scroll ঠিক হলো:</b> মোবাইলে Costing খুললে নিচে নামা যাচ্ছিল না, Footer এর নিচে লাইন আটকে থাকত — এখন পুরো পাতা আঙুল দিয়ে ওপর-নিচ করা যায়',
+  'ওপরের নাম আর Tab, নিচের Save / হিসাবের অংশ নিজের জায়গায় থাকে; শুধু মাঝের অংশ সরে',
+  'অন্য Tab এ গেলে পাতা ওপর থেকে শুরু হয় · কম্পিউটারে কোনো বদল নেই',
+  '<b>Letter Head এখন Cloud Sync হয়:</b> আগে শুধু যে ফোন/PC তে দেওয়া হতো সেখানেই থাকত; এখন বড় ছবিটা টুকরো করে পাঠায়, অন্য ডিভাইসে সব টুকরো এলে তবেই বসে (অর্ধেক ছবি কখনো না)। সরালে সব জায়গা থেকে সরে',
+  '<b>Buyer Price List এর ঘরগুলো (Margin, Buyer, Terms, MOQ…) এখন Cloud Sync হয়</b> — আগে শুধু ওই ডিভাইসে থাকত']},
  {v:'19.75', d:'2026-11-19', t:'মোবাইলে Costing এ RM / PM বাছা সহজ — App এর মতো', li:[
   '<b>RM / PM বদলানো ঠিক হলো:</b> মোবাইলে Material ঘরে চাপলে কিবোর্ড ওঠার সাথে তালিকা বন্ধ হয়ে যেত — এখন পুরো পর্দার তালিকা খোলে',
   '<b>বাছার তালিকা:</b> ওপরে খোঁজার ঘর, Category অনুযায়ী চিপ, বড় সারিতে নাম · Category · HO/Factory · Supplier আর দর/একক; এই Costing এ আগে থেকে থাকলে লেখা থাকে; চাপলেই বসে যায় আর Qty ঘরে চলে যায়',
@@ -23828,6 +23872,12 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.76', d:'2026-11-22', t:'Mobile costing scroll fixed · letter head and price list sync', li:[
+  '<b>Scrolling fixed:</b> on mobile the costing screen could not be scrolled and lines were stuck behind the footer — the whole page now scrolls with a finger',
+  'The title, tabs and the Save / totals footer stay in place; only the middle part moves',
+  'Switching tabs starts from the top · no change on desktop',
+  '<b>Letter head now syncs to the cloud:</b> it used to stay only on the device where it was added; the large image is now sent in pieces and is applied on other devices only when every piece has arrived. Removing it removes it everywhere',
+  '<b>Buyer price list settings (margin, buyer, terms, MOQ…) now sync</b> — they used to stay on one device']},
  {v:'19.75', d:'2026-11-19', t:'Easier RM / PM picking in costing on mobile', li:[
   '<b>Fixed changing RM / PM on mobile:</b> the suggestion list used to close as soon as the keyboard opened — tapping the Material box now opens a full-screen list',
   '<b>Picker:</b> search box, category chips, large rows with name · category · HO/Factory · supplier and rate/unit; marks items already in this costing; one tap fills the line and moves to Qty',
