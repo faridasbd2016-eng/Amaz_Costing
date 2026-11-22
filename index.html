@@ -12965,9 +12965,9 @@ function orMatSplitData(d){
   R.forEach(function(x){ const p=x.sp||{}; ['rmF','rmH','rmN','pkF','pkH','pkN'].forEach(function(k){ T[k]+=n(p[k]); }); T.rm+=n(x.rmVal); T.pk+=n(x.pkVal); });
   return {rows:R, T:T, hasN:(T.rmN>0.005||T.pkN>0.005)};
 }
-/* v19.84 — মোট Qty (একক অনুযায়ী আলাদা — Ctn, Pcs…) */
-function orMsQtyTot(D){ const u={}, ord=[]; D.rows.forEach(function(x){ const k=x.b.uLab||''; if(!(k in u)){ u[k]=0; ord.push(k); } u[k]+=n(x.ctn); });
-  return ord.map(function(k){ return money(u[k],0)+(k?' '+esc(k):''); }); }
+/* v19.85 — মোট Qty: সব পণ্যের পরিমাণ একসাথে এক অঙ্কে (একক সব একই হলে পাশে লেখা থাকে) */
+function orMsQtyTot(D){ let t=0; const u={}; D.rows.forEach(function(x){ t+=n(x.ctn); u[x.b.uLab||'']=1; });
+  const k=Object.keys(u); return [money(t,0)+(k.length===1&&k[0]?' '+esc(k[0]):'')]; }
 function orMatSplitHTML(d){
   const D=orMatSplitData(d), T=D.T, N=D.hasN;
   if(typeof appmOn==='function' && appmOn()) return orMatSplitCards(D);
@@ -21237,6 +21237,8 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.85', d:'2026-11-22', t:'পণ্যভিত্তিক RM / PM: মোট Qty এক অঙ্কে', li:[
+  'TOTAL সারিতে Ctn, Bag ইত্যাদি আর আলাদা লাইনে ভাগ হয় না — সব পণ্যের পরিমাণ একসাথে যোগ হয়ে এক অঙ্কে বসে (সব একই একক হলে পাশে এককের নাম থাকে)']},
  {v:'19.84', d:'2026-11-22', t:'পণ্যভিত্তিক RM / PM: মোট Qty আর Factory / Head Office মোট কলাম', li:[
   '<b>মোট Qty:</b> TOTAL সারিতে এখন মোট পরিমাণ (যেমন 1,290 Ctn); আলাদা একক থাকলে প্রতিটা আলাদা লাইনে',
   '<b>প্রতিটা পণ্যের জন্য দুটো নতুন কলাম:</b> Factory Total (Factory RM + Factory PM) আর Head Office Total (Head Office RM + Head Office PM) — Total PM আর মোট Material এর মাঝে; TOTAL সারিতে এদের যোগফলও',
@@ -24193,6 +24195,8 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.85', d:'2026-11-22', t:'Product-wise RM / PM: total quantity as one figure', li:[
+  'The TOTAL row no longer splits Ctn, Bag etc. onto separate lines — all quantities are added into one figure (the unit is shown when every product uses the same one)']},
  {v:'19.84', d:'2026-11-22', t:'Product-wise RM / PM: total quantity and factory / head office total columns', li:[
   '<b>Total quantity:</b> the TOTAL row now shows the total quantity (e.g. 1,290 Ctn); different units each on their own line',
   '<b>Two new columns for every product:</b> Factory Total (factory RM + factory PM) and Head Office Total (head office RM + head office PM) — between Total PM and Total Material, with their sums in the TOTAL row',
