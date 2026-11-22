@@ -17031,6 +17031,7 @@ const SYNC_COLLS = [
   {k:'photos',       l:'Product ছবি'},
   {k:'licDevices',   l:'License এর PC'},
   {k:'licenses',     l:'License'},
+  {k:'recycleBin',   l:'Recycle Bin'},                 /* v19.79 — এক ডিভাইসে মোছা জিনিস অন্য ডিভাইস থেকেও ফেরত আনা যায় */
   {k:'singles',      l:'Company Settings / Order Plan'}
 ];
 function collLabel(k){ const c=SYNC_COLLS.find(function(x){return x.k===k;}); return c?c.l:k; }
@@ -17042,6 +17043,7 @@ function collRecords(k){
     DB.settings.id='settings'; DB.orderPlan.id='orderPlan';
     return [DB.settings, DB.orderPlan];
   }
+  if(k==='recycleBin') return binList();
   if(!Array.isArray(DB[k])) DB[k]=[];
   return DB[k];
 }
@@ -17096,6 +17098,89 @@ function ensureSync(){
   if(S.supaTok===undefined) S.supaTok='';
   if(!S.dev) S.dev='dev_'+Math.random().toString(36).slice(2,9);
   return S;
+}
+/* v19.78 — Company Settings / Order Plan এক সারি; আগে পুরো সারিটা যেটা পরে বদলেছে সেটাই জিতত —
+   এক PC তে O/H Divisor বদলালে আর অন্য PC তে অন্য যেকোনো Setting বদলালে Divisor আগের মানে ফিরে যেত।
+   এখন ঘর-ধরে মেলানো (3-way): শেষ Sync এর অবস্থা (base) মনে রাখি; এখানে যে ঘর বদলেছে সেটা এখানকার,
+   বাকি সব ঘর ক্লাউডের। */
+var SG_KEEP={_ts:1,_dev:1,id:1,letterhead:1,logo:1,seal:1,sign:1};
+function sgBaseKey(id){ return 'singles|'+id; }
+function sgBaseSet(id,json){ const S=ensureSync(); S.base=S.base||{}; if(json) S.base[sgBaseKey(id)]=json; }
+function sgBaseGet(id){ const S=ensureSync(); S.base=S.base||{}; const j=S.base[sgBaseKey(id)]; if(!j) return null; try{ return JSON.parse(j); }catch(e){ return null; } }
+/* ===== v19.79 — সব রেকর্ডে ঘর-ধরে মেলানো (Costing, Order, RM, PM, FG, Budget, দরপত্র…) =====
+   আগে একটা Costing/Order দুই জায়গায় একসাথে বদলালে পুরো রেকর্ডটা যেটা পরে বদলেছে সেটাই জিতত —
+   এক জায়গার বদল (যেমন PC তে দর, ফোনে Stock) হারিয়ে যেত। এখন শেষ Sync এর রূপ (base) মনে রেখে
+   যে ঘর যেখানে বদলেছে সেটা সেখান থেকে নেয়; id আছে এমন তালিকা (Order এর লাইন, Template…) সারি ধরে মেলায়।
+   একই ঘর দুই জায়গায় আলাদা করে বদলালে শুধু তখনই পরেরটা জেতে, আর চাপা পড়া কপি Sync Conflict এ থাকে।
+   base আলাদা IndexedDB ঘরে ('base') — মূল ডাটার সাথে প্রতি সেভে লেখা হয় না। */
+var MG_SKIP={users:1,roles:1,audit:1,versions:1,photos:1,licenses:1,licDevices:1,recycleBin:1};
+var MG_META={_ts:1,_dev:1,id:1,letterhead:1,logo:1,seal:1,sign:1,lastLogin:1};
+var SB={}, SB_READY=false, SB_T=null;
+function mgOk(k){ return !MG_SKIP[k]; }
+function sbLoad(){ try{ if(!IDB_H){ SB_READY=false; return Promise.resolve(); }
+  return new Promise(function(res){ try{ const q=IDB_H.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get('base');
+    q.onsuccess=function(){ SB=(q.result&&typeof q.result==='object')?q.result:{}; SB_READY=true; res(); }; q.onerror=function(){ SB={}; SB_READY=false; res(); }; }catch(e){ SB_READY=false; res(); } }); }catch(e){ return Promise.resolve(); } }
+function sbSave(){ if(!SB_READY||!IDB_H) return; clearTimeout(SB_T); SB_T=setTimeout(function(){ try{ const tx=IDB_H.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(SB,'base'); }catch(e){ console.error(e); } },400); }
+function mgBaseGet(k,id){ if(k==='singles') return sgBaseGet(id); if(!SB_READY) return null; const j=SB[k+'|'+id]; if(!j) return null; try{ return JSON.parse(j); }catch(e){ return null; } }
+function mgBaseSet(k,id,json){ if(k==='singles'){ sgBaseSet(id,json); return; } if(!SB_READY||!mgOk(k)) return; if(json) SB[k+'|'+id]=json; else delete SB[k+'|'+id]; sbSave(); }
+function mgBaseInit(){   /* পরিষ্কার (Sync হয়ে থাকা) রেকর্ডের base না থাকলে এখনকার রূপটাই base */
+  const S=ensureSync(); let ch=false;
+  SYNC_COLLS.forEach(function(c){ const k=c.k; if(!mgOk(k)) return; if(k!=='singles' && !SB_READY) return;
+    collRecords(k).forEach(function(r){ if(!r||!r.id||!(Number(r._ts)>0)) return; if(S.dirty[k]&&S.dirty[k][r.id]) return;
+      if(k==='singles'){ if(!sgBaseGet(r.id)) sgBaseSet(r.id,syncJson(r)); return; }
+      if(!SB[k+'|'+r.id]){ SB[k+'|'+r.id]=syncJson(r); ch=true; } }); });
+  if(ch) sbSave();
+}
+function mgBaseClear(){ const S=ensureSync(); S.base={}; SB={}; sbSave(); }
+function mgJs(v){ return v===undefined?'\u0000u':JSON.stringify(v); }
+function mgIdArr(a){ return Array.isArray(a) && a.length>0 && a.every(function(x){ return x && typeof x==='object' && !Array.isArray(x) && x.id!==undefined && x.id!==null && x.id!==''; }); }
+function mgArr(L,Rr,B,lw,st){
+  L=L||[]; Rr=Rr||[]; B=Array.isArray(B)?B:[];
+  const m=function(a){ const o={}; a.forEach(function(x){ if(x&&x.id!=null) o[x.id]=x; }); return o; };
+  const Lm=m(L), Rm=m(Rr), Bm=m(B), out=[], seen={};
+  const pick=function(id){ if(seen[id]) return; seen[id]=1; const l=Lm[id], r=Rm[id], b=Bm[id];
+    if(b){
+      if(!l && !r) return;
+      if(!l){ if(mgJs(r)!==mgJs(b)){ st.ov=true; if(!lw) out.push(r); } return; }        /* এখানে মোছা */
+      if(!r){ if(mgJs(l)!==mgJs(b)){ st.ov=true; if(lw) out.push(l); } return; }        /* ওখানে মোছা */
+      const lc=mgJs(l)!==mgJs(b), rc=mgJs(r)!==mgJs(b);
+      if(!lc){ out.push(r); return; } if(!rc){ out.push(l); return; }
+      if(mgJs(l)===mgJs(r)){ out.push(l); return; }
+      out.push(mgObj(l,r,b,lw,st)); return;
+    }
+    if(l && r){ if(mgJs(l)!==mgJs(r)) st.ov=true; out.push(lw?l:r); return; }
+    out.push(l||r);
+  };
+  Rr.forEach(function(x){ if(x&&x.id!=null) pick(x.id); });
+  L.forEach(function(x){ if(x&&x.id!=null) pick(x.id); });
+  return out;
+}
+function mgObj(local,remote,base,lw,st){
+  const out={}, keys={}; base=base||{};
+  [local,remote,base].forEach(function(o){ Object.keys(o||{}).forEach(function(k){ keys[k]=1; }); });
+  Object.keys(keys).forEach(function(k){
+    let v;
+    if(MG_META[k]) v=(local[k]!==undefined)?local[k]:remote[k];
+    else {
+      const l=local[k], r=remote[k], b=base[k], lc=mgJs(l)!==mgJs(b), rc=mgJs(r)!==mgJs(b);
+      if(!lc) v=r; else if(!rc) v=l; else if(mgJs(l)===mgJs(r)) v=l;
+      else if((mgIdArr(l)||mgIdArr(r)||mgIdArr(b)) && (Array.isArray(l)||l===undefined) && (Array.isArray(r)||r===undefined)) v=mgArr(l,r,b,lw,st);
+      else if(l && r && b && typeof l==='object' && typeof r==='object' && typeof b==='object' && !Array.isArray(l) && !Array.isArray(r) && !Array.isArray(b)) v=mgObj(l,r,b,lw,st);
+      else { st.ov=true; v=lw?l:r; }
+    }
+    if(v!==undefined) out[k]=v;
+  });
+  return out;
+}
+function mgMerge(local,remote,base,lw){ const st={ov:false}; const out=mgObj(local||{},remote||{},base||{},!!lw,st); return {rec:out, ov:st.ov}; }
+function sgMerge(local, remote, base){
+  const out=Object.assign({}, remote), js=function(v){ return v===undefined?'\u0000u':JSON.stringify(v); };
+  const keys={}; Object.keys(local||{}).concat(Object.keys(base||{})).forEach(function(k){ keys[k]=1; });
+  Object.keys(keys).forEach(function(k){
+    if(SG_KEEP[k]){ if(local[k]!==undefined) out[k]=local[k]; return; }
+    if(js(local[k])!==js(base?base[k]:undefined)){ if(local[k]===undefined) delete out[k]; else out[k]=local[k]; }   /* এখানে বদলেছে → এখানকারটা */
+  });
+  return out;
 }
 function syncLog(type,msg){
   const S=ensureSync();
@@ -17307,7 +17392,7 @@ async function supaCall(op, extra){
 /* ================= v19.69 — Sync Conflict: একই জিনিস দুই ডিভাইসে একসাথে বদলালে =================
    নিয়ম আগের মতোই (যেটা পরে সেভ হয়েছে সেটাই থাকে), কিন্তু যেটা চাপা পড়ল তার কপি এই ডিভাইসে জমা থাকে —
    দেখা যায়, আর চাইলে সেটাই ফিরিয়ে আনা যায় (তখন সেটা নতুন বদল হিসেবে সবখানে যায়)। */
-const CF_SKIP={audit:1,versions:1,photos:1,licDevices:1,licenses:1};
+const CF_SKIP={audit:1,versions:1,photos:1,licDevices:1,licenses:1,recycleBin:1};
 function cfList(){ if(!Array.isArray(DB._conflicts)) DB._conflicts=[]; return DB._conflicts; }
 function cfNote(k,id,cur,row,won,remoteRec){
   if(CF_SKIP[k]) return;
@@ -17377,6 +17462,7 @@ function applyRemote(rows){
     if(row.del){                              /* ক্লাউডে মোছা হয়েছে */
       if(cur && !remoteWins(row.ts,row.dev,cur._ts,cur._dev)){ skipped++; return; }
       if(cur){ collDel(k,row.id); removed++; }
+      try{ if(mgOk(k) && k!=='singles') mgBaseSet(k,row.id,''); }catch(e){}
       delete S.fp[k][row.id]; delete S.dirty[k][row.id];
       if(!S.tombs.some(function(t){return t.c===k&&t.id===row.id;}))
         S.tombs.push({c:k,id:row.id,ts:row.ts,dev:row.dev,pushed:1});
@@ -17388,6 +17474,20 @@ function applyRemote(rows){
     /* v18.78 — Admin ছাড়া কেউ লগইন থাকলে Role/User এর ক্ষেত্রে ক্লাউডের তথ্যই শেষ কথা (Admin এর বদল সবসময় মানা হয়) */
     const authoritative=(k==='roles'||k==='users') && ME && !isAdmin();
     const localDirty=!!(cur && S.dirty[k] && S.dirty[k][row.id]);
+    if(mgOk(k) && cur && localDirty && !authoritative){     /* v19.78/79 — ঘর-ধরে মেলানো */
+      let rr; try{ rr=JSON.parse(row.json); }catch(e){ rr=null; }
+      const base=rr?mgBaseGet(k,row.id):null;
+      if(rr && base){
+        const lw=!remoteWins(row.ts,row.dev,cur._ts,cur._dev), M=mgMerge(cur, rr, base, lw), m=M.rec;
+        if(M.ov) cfNote(k,row.id,cur,row,lw?'local':'remote',rr);   /* একই ঘর দুই জায়গায় — চাপা পড়া কপি রাখি */
+        m.id=row.id; m._ts=Math.max(Date.now(), (Number(row.ts)||0)+1, Number(cur._ts)||0); m._dev=S.dev;
+        if(k==='users' && cur.lastLogin) m.lastLogin=cur.lastLogin;
+        collPut(k,m); mgBaseSet(k,row.id,row.json);
+        S.dirty[k][row.id]=1;                              /* মেলানো রূপটা আবার পাঠাই */
+        S.tombs=S.tombs.filter(function(t){ return !(t.c===k&&t.id===row.id); });
+        updated++; return;
+      }
+    }
     if(cur && !authoritative && !remoteWins(row.ts,row.dev,cur._ts,cur._dev)){
       /* v19.69 — দুই জায়গায় একসাথে বদল: এখানকারটা নতুন, তাই ওপারেরটা চাপা পড়ল — ওপারের কপি রেখে দিই */
       if(localDirty) cfNote(k,row.id,cur,row,'local');
@@ -17404,6 +17504,7 @@ function applyRemote(rows){
     if(k==='users' && cur && cur.lastLogin) rec.lastLogin=cur.lastLogin;
     if(localDirty && !authoritative) cfNote(k,row.id,cur,row,'remote',rec);   /* v19.69 — ওপারেরটা নতুন — এখানকার না-পাঠানো বদলের কপি রাখি */
     collPut(k,rec);
+    if(mgOk(k)) mgBaseSet(k,rec.id,row.json);      /* v19.78/79 */
     S.fp[k][rec.id]=fpOf(rec);
     delete S.dirty[k][rec.id];
     S.tombs=S.tombs.filter(function(t){ return !(t.c===k&&t.id===row.id); });
@@ -17454,6 +17555,7 @@ async function cloudSync(silent){
   SYNC_BUSY=true; syncStatus('চলছে…','busy'); updateSyncIndicator('busy');
   try{ stampChanges(); }catch(e){}          /* sync এর ঠিক আগে সব বদল ধরা নিশ্চিত করি */
   try{ freshJoinPrep(); }catch(e){}
+  try{ mgBaseInit(); }catch(e){ console.error(e); }   /* v19.78/79 — আগের ভার্সন থেকে এলে base শুরু */
   try{
     /* ধাপ ১ — আগে টানি (তাহলে পুরনো ডাটা দিয়ে নতুন ঢাকা পড়বে না) */
     let res=await syncCall('pull',{since:S.lastSeq});
@@ -17471,7 +17573,7 @@ async function cloudSync(silent){
     /* v18.33 — push এর সময় প্রতিটা রেকর্ডের যে fingerprint পাঠালাম তা মনে রাখি;
        accept ফিরলে বর্তমান fingerprint এর সাথে মিলিয়ে দেখি — push চলাকালীন আবার
        এডিট হয়ে থাকলে dirty মুছব না, নাহলে ওই এডিটটা হারিয়ে যেত */
-    const pushedFp={}; rows.forEach(function(r){ if(!r.del) pushedFp[r.c+'|'+r.id]=r._fp; });
+    const pushedFp={}, pushedJs={}; rows.forEach(function(r){ if(!r.del){ pushedFp[r.c+'|'+r.id]=r._fp; if(mgOk(r.c)) pushedJs[r.c+'|'+r.id]=r.json; } });
     let pushed=0, rejected=0;
     if(rows.length){
       /* v19.47 — ছোট ছোট ভাগে: সর্বোচ্চ ১৫০ সারি অথবা ~১.৫ MB (ছবির সারি বড় — একবারে অনেক MB না যায়) */
@@ -17490,6 +17592,7 @@ async function cloudSync(silent){
         (pr.results||[]).forEach(function(x){
           if(x.accepted){
             pushed++;
+            if(!x.del && pushedJs[x.c+'|'+x.id]) mgBaseSet(x.c,x.id,pushedJs[x.c+'|'+x.id]);   /* v19.78/79 */
             if(x.del){ const t=S.tombs.find(function(t){return t.c===x.c&&t.id===x.id;}); if(t) t.pushed=1; }
             else if(S.dirty[x.c]){
               const cur2=collFind(x.c,x.id), key=x.c+'|'+x.id;
@@ -17501,7 +17604,7 @@ async function cloudSync(silent){
           }
           /* সার্ভারেরটা বেশি নতুন — আমাদেরটা হেরে গেছে */
           rejected++;
-          if(S.dirty[x.c]) delete S.dirty[x.c][x.id];
+          if(S.dirty[x.c] && !(mgOk(x.c) && !x.del && x.cur && mgBaseGet(x.c,x.id))) delete S.dirty[x.c][x.id];   /* v19.78/79 — হারানো নয়, পরের ধাপে মেলানো */
           if(x.del){                       /* মোছাটা হেরেছে → কবরচিহ্ন তুলে দিই */
             S.tombs=S.tombs.filter(function(t){ return !(t.c===x.c && t.id===x.id); });
           }
@@ -17606,7 +17709,7 @@ function cloudWipe(){
   if(!confirm('⚠️ ক্লাউডের সব ডাটা মুছে ফেলবেন?\n\nএই কম্পিউটারের ডাটা থাকবে, শুধু ক্লাউডটা খালি হবে।')) return;
   if(prompt('নিশ্চিত হলে লিখুন:  WIPE')!=='WIPE') return;
   syncCall('wipe',{}).then(function(){
-    const S=ensureSync(); S.lastSeq=0; S.tombs=[];
+    const S=ensureSync(); S.lastSeq=0; S.tombs=[]; try{ mgBaseClear(); }catch(e){}
     syncLog('ok','ক্লাউড খালি করা হয়েছে'); saveDB(); renderSyncPanel();
     toast('ক্লাউড খালি করা হয়েছে');
   }).catch(function(e){ toast('হয়নি: '+e.message,true); });
@@ -17984,6 +18087,7 @@ function syncSetProvider(p){
   const S=ensureSync();
   if((S.provider||'gas')===p) return;
   S.provider=p; S.lastSeq=0;            /* নতুন জায়গা — শুরু থেকে টানবে */
+  try{ mgBaseClear(); }catch(e){}
   saveDB(); setAutoSync(); updateSyncIndicator('idle');
   if(currentPage==='settings') render();
 }
@@ -20405,7 +20509,7 @@ const BIN_COLLS={products:'products', mixes:'products', sections:'products', raw
   quotations:'quotation', exportPresets:'exportset'};
 const BIN_DAYS=60, BIN_MAX=500;
 let BIN_SHADOW={}, BIN_NEW=0, BIN_F={c:'',q:''};
-function binList(){ if(!Array.isArray(DB.recycleBin)) DB.recycleBin=[]; return DB.recycleBin; }
+function binList(){ if(!Array.isArray(DB.recycleBin)) DB.recycleBin=[]; DB.recycleBin.forEach(function(b){ if(b && !b.id && b.bid) b.id=b.bid; }); return DB.recycleBin; }
 function binShadow(){
   Object.keys(BIN_COLLS).forEach(function(k){ const m={}; collRecords(k).forEach(function(r){ if(r&&r.id) m[r.id]=r; }); BIN_SHADOW[k]=m; });
   if(BIN_NEW){ const n=BIN_NEW; BIN_NEW=0;
@@ -20422,7 +20526,8 @@ function binCatch(k,id){
   if(!BIN_COLLS[k] || SYNC_APPLYING || (typeof UNDO_BUSY!=='undefined' && UNDO_BUSY)) return;
   const r=BIN_SHADOW[k]&&BIN_SHADOW[k][id]; if(!r||r._recovered) return;
   let data; try{ data=JSON.parse(JSON.stringify(r)); }catch(e){ return; }
-  binList().push({bid:uid('bin'), c:k, rid:id, name:binName(k,r), code:r.code||'', at:nowISO(),
+  const bid=uid('bin');
+  binList().push({id:bid, bid:bid, c:k, rid:id, name:binName(k,r), code:r.code||'', at:nowISO(),
     by:ME?(ME.name||ME.username||''):'', data:data});
   BIN_NEW++;
 }
@@ -20977,6 +21082,18 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.79', d:'2026-11-22', t:'Sync এ কোনো বদল আর হারায় না — সব জায়গায় ঘর ধরে মেলানো', li:[
+  '<b>একই ধরনের সব সমস্যা ঠিক:</b> O/H Divisor এর মতো একই ভুল Costing, Order Requirement, RM, PM, Supplier, FG Master, Machine, Budget, দরপত্র, Mix Carton, Section, Export Setting, Production এও ছিল — একই জিনিস দুই ডিভাইসে Sync এর আগে বদলালে যেটা পরে বদলেছে তার পুরো কপি বসত, অন্যটার বদল হারিয়ে যেত',
+  '<b>উদাহরণ:</b> PC তে কোনো Costing এর বিক্রয় মূল্য আর ফোনে একই Costing এর Process Loss বদলালে — আগে একটা হারাত, এখন দুটোই থাকে। Order এ একজন Stock বসাল, আরেকজন নতুন লাইন যোগ করল — দুটোই থাকে',
+  '<b>তালিকা সারি ধরে মেলায়:</b> Order এর লাইন, Costing Template ইত্যাদিতে এক জায়গায় যোগ আর আরেক জায়গায় বদল — দুটোই থাকে; এক জায়গায় মুছলে মোছাই থাকে',
+  '<b>একই ঘর দুই জায়গায় আলাদা মানে বদলালে</b> শুধু তখন পরেরটা থাকে, আর চাপা পড়া মানটা Settings → Sync Conflict এ রাখা থাকে — ফেরত আনা যায়',
+  '<b>Recycle Bin এখন Sync হয়:</b> এক ডিভাইসে মোছা Costing / RM / Order অন্য ডিভাইস থেকেও ফেরত আনা যায়; ফেরত আনলে বা চিরতরে মুছলে সব জায়গায় একই হয়',
+  'শেষ Sync এর অবস্থা আলাদা জায়গায় (IndexedDB) রাখা হয়, তাই সাধারণ সেভ আগের মতোই দ্রুত · Cloud বদলালে বা ক্লাউড খালি করলে সেটা নতুন করে শুরু হয়']},
+ {v:'19.78', d:'2026-11-22', t:'O/H Divisor ও সব Settings Sync এ আর হারায় না', li:[
+  '<b>সমস্যা:</b> Company Settings (O/H Divisor, Company নাম, ছবির সুইচ, Price List ইত্যাদি) ক্লাউডে এক সারিতে যায়। এক PC তে O/H Divisor বদলানোর পর অন্য PC/ফোনে Sync এর আগে অন্য যেকোনো Setting বদলালে পুরো সারিটা চাপা পড়ত — Divisor আগের মানে ফিরে যেত',
+  '<b>এখন ঘর ধরে মেলায়:</b> শেষ Sync এর অবস্থা মনে রাখে; যে ঘর এই ডিভাইসে বদলেছে শুধু সেটাই এখান থেকে যায়, বাকি ঘর ক্লাউডেরটা থাকে — দুই জায়গার আলাদা বদল দুটোই থাকে',
+  'একই ঘর দুই জায়গায় বদলালে যেটা পরে বদলানো হয়েছে সেটাই থাকে · Order Plan এও একই নিয়ম',
+  'Costing এর নিজস্ব Divisor (Costing এর ভেতরে দেওয়া) আগের মতোই Costing এর সাথে Sync হয়']},
  {v:'19.77', d:'2026-11-22', t:'Print এ পণ্যের ছবি Premium · কোন Print এ ছবি থাকবে বাছাই', li:[
   '<b>Costing Sheet:</b> ছবি আর টেবিলের দাগের ওপর বসে না — বাঁ দিকের ঘরের সব সারি জুড়ে মাঝখানে, হালকা গোল কোণের সাদা ফ্রেমে; পুরো ছবি দেখায়, কাটা বা টানা নয়',
   '<b>Top Sheet:</b> ছবির ফ্রেম পাশের Product টেবিলের সমান উঁচু ও একই কালো দাগে; ছবি ঠিক মাঝখানে',
@@ -23898,6 +24015,18 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.79', d:'2026-11-22', t:'No change is lost in sync any more — field-by-field merge everywhere', li:[
+  '<b>All bugs of this kind fixed:</b> the O/H divisor problem also existed for costings, order requirements, RM, PM, suppliers, FG master, machines, budgets, quotations, mix cartons, sections, export settings and production — if the same item was changed on two devices before syncing, the later device’s whole copy replaced it and the other change was lost',
+  '<b>Example:</b> change a costing’s selling price on the PC and its process loss on the phone — before, one was lost; now both stay. One person enters stock on an order while another adds a line — both stay',
+  '<b>Lists are merged row by row:</b> order lines, costing templates and similar lists keep an addition from one device and an edit from another; a row deleted in one place stays deleted',
+  '<b>Only when the same field gets different values in two places</b> does the later one win, and the overwritten value is kept under Settings → Sync Conflict so it can be restored',
+  '<b>Recycle Bin now syncs:</b> a costing / RM / order deleted on one device can be restored from another; restoring or deleting permanently applies everywhere',
+  'The last-synced state is kept separately (IndexedDB), so normal saving is as fast as before · it starts afresh when the cloud is changed or wiped']},
+ {v:'19.78', d:'2026-11-22', t:'O/H divisor and other settings no longer lost in sync', li:[
+  '<b>Problem:</b> company settings (O/H divisor, company name, picture switches, price list…) travel to the cloud as one row. If the divisor was changed on one PC and any other setting was changed on another device before it synced, the whole row was overwritten and the divisor went back to the old value',
+  '<b>Now merged field by field:</b> the app remembers the last synced state; only the fields changed on this device are sent from here and every other field keeps the cloud value — separate changes on two devices are both kept',
+  'If the same field is changed in two places, the later change wins · the order plan follows the same rule',
+  'A costing’s own divisor (entered inside the costing) still syncs with that costing as before']},
  {v:'19.77', d:'2026-11-22', t:'Premium product pictures in print · choose which prints show them', li:[
   '<b>Costing sheet:</b> the picture no longer sits on the table lines — it is centred across all rows of the left box in a white frame with soft corners; the whole picture shows, never cropped or stretched',
   '<b>Top sheet:</b> the picture frame is as tall as the product table beside it, with the same black border; the picture is centred',
@@ -27442,6 +27571,7 @@ function idleNote(){
 function startApp(){
   idleTouch(true);
   try{ if(!window.__appmInit){ window.__appmInit=1; appmInit(); } else appmAfter(); }catch(e){ console.error(e); }
+  try{ sbLoad().then(function(){ try{ mgBaseInit(); }catch(e){} }); }catch(e){}   /* v19.79 */
   setTimeout(function(){ try{ if(mediaApply()) saveDB(); }catch(e){ console.error(e); } },900);   /* v19.66 — Logo/সিল/স্বাক্ষর Cloud এ */
   setTimeout(function(){ try{ pmDraftCheck(); }catch(e){ console.error(e); } },700);
   const r=myRole();
