@@ -14180,6 +14180,7 @@ function openQuote(){
   }
   renderQuoteBody();
   openModal('quoteModal');
+  try{ lhFootScan(); }catch(e){}      /* v19.80 — Print এর আগেই মাপা থাকে */
 }
 
 function qPickOptions(){
@@ -14221,7 +14222,7 @@ function renderQuoteBody(){
          '<option value="blank"'+(QUOTE.lhMode==='blank'?' selected':'')+'>Letter Head Paper — উপরে ফাঁকা (ছাপা কাগজে ছাপুন)</option>'+
        '</select></div>'+
        (QUOTE.lhMode==='blank'
-         ? ('<div class="field"><label>উপরে ফাঁকা জায়গা (mm)</label><input type="text" value="'+esc(QUOTE.lhTop)+'" onchange="qSetLHTop(this.value)"><div class="hint">ছাপা Letter Head যতটা জায়গা নেয়, ততটা দিন (যেমন 38–45)।</div></div>')
+         ? ('<div class="field"><div class="field-row cols-2"><div class="field"><label>উপরে ফাঁকা জায়গা (mm)</label><input type="text" value="'+esc(QUOTE.lhTop)+'" onchange="qSetLHTop(this.value)"></div><div class="field"><label>নিচে ফাঁকা (mm)</label><input type="text" value="'+esc(qLhBotB())+'" onchange="qSetLHBotB(this.value)"></div></div><div class="hint">ছাপা Letter Head এর হেডার ও ফুটার যতটা জায়গা নেয়, ততটা দিন (যেমন উপরে 38–45, নিচে 20–30)। সই-এর জায়গা ফুটারের ঠিক উপরে বসবে।</div></div>')
          : (QUOTE.lhMode==='image'
             ? ('<div class="field"><div class="field-row cols-2"><div class="field"><label>উপরে ফাঁকা (mm)</label><input type="text" value="'+esc(QUOTE.lhTop)+'" onchange="qSetLHTop(this.value)"></div><div class="field"><label>নিচে ফাঁকা (mm)</label><input type="text" value="'+esc(QUOTE.lhBot)+'" onchange="qSetLHBot(this.value)"></div></div><div class="hint">অ্যাপের Letter Head ছবি পুরো পাতায় বসবে; উপরে/নিচে হেডার-ফুটার এড়াতে ফাঁকা। ছবি বদলাতে Settings।</div></div>')
             : '<div class="field"></div>'))+
@@ -14750,7 +14751,7 @@ function quoteInnerHTML(){
   if(QUOTE.lhMode==='image'){
     /* কিছু নয় — printQuote পুরো পাতায় Letter Head ছবি ও padding বসায় */
   } else if(QUOTE.lhMode==='blank'){
-    h+='<div style="height:'+(n(QUOTE.lhTop)||38)+'mm;"></div>';
+    /* v19.80 — উপরের ফাঁকা জায়গা এখন printQuote এর পাতার padding এ (প্রতি পাতায়) */
   } else {
     h+='<div style="text-align:center;padding-bottom:3px;border-bottom:3px double '+GREEN+';margin-bottom:2px;">'+
          printLogoHTML()+
@@ -14842,6 +14843,7 @@ function quoteInnerHTML(){
     return '<div style="width:34%;text-align:center;">'+
       '<div style="height:56px;display:flex;align-items:flex-end;justify-content:center;">'+(!seal&&label==='Prepared By'&&psOn()?('<img src="'+DB.settings.sign+'" alt="" style="display:block;max-height:54px;max-width:150px;width:auto;height:auto;object-fit:contain;">'):'')+(seal&&DB.settings&&DB.settings.seal?('<img src="'+DB.settings.seal+'" alt="" style="display:block;max-height:54px;max-width:150px;width:auto;height:auto;object-fit:contain;">'):'')+'</div>'+
       '<div style="border-top:1px solid #000;padding-top:2px;"><b style="font-size:10px;">'+label+'</b>'+(sub?('<div style="font-size:9px;color:#555;">'+sub+'</div>'):'')+'</div></div>'; };
+  h+='<div class="q-endblk" style="page-break-inside:avoid;">';     /* v19.80 — সই থেকে শেষ পর্যন্ত: সবসময় পাতার নিচে */
   h+='<div style="display:flex;justify-content:space-between;margin-top:14px;page-break-inside:avoid;">'+
        sgBox('Prepared By', esc(meName()), false)+
        sgBox('Authorized Signatory', 'For '+esc(DB.settings.companyName||''), true)+'</div>'+
@@ -14856,6 +14858,7 @@ function quoteInnerHTML(){
          esc(DB.settings.companyName||'')+(DB.settings.address?(' · '+esc(DB.settings.address)):'')+
          '<br>This is a computer-generated '+(QDOC==='pi'?'proforma invoice':(QDOC==='ci'?'commercial invoice':'quotation'))+' and is valid without physical signature.</div>';
   }
+  h+='</div>';      /* q-endblk */
 
   h+='</div>';
   return h;
@@ -14980,28 +14983,65 @@ function lhPaginate(pa, topMm, botMm){
 function printQuote(){
   if(!needTool('print','Print')) return;
   if(!QUOTE || !QUOTE.lines.length){ toast('আগে অন্তত একটি পণ্য যোগ করুন',true); return; }
-  if(QUOTE.lhMode==='image'){
-    const img=qLhImage();
-    // Letterhead image anchored to an explicit A4-size page wrapper (position:absolute, height:297mm),
-    // NOT position:fixed (fixed clips the top header in real Chrome print). The wrapper is a stacking
-    // context (isolation:isolate) so the image sits at layer 0 and the content layers above it with
-    // z-index:1 — no negative z-index (that hid the whole letterhead behind the white page background).
-    const bg = img ? ('<img src="'+img+'" alt="" style="position:absolute;top:0;left:0;width:100%;height:297mm;object-fit:fill;">') : '';
-    const top=(n(QUOTE.lhTop)>0?n(QUOTE.lhTop):46), bot=(n(QUOTE.lhBot)>0?n(QUOTE.lhBot):30);
-    document.getElementById('printArea').innerHTML=
-      '<div class="lh-page" style="position:relative;isolation:isolate;width:100%;min-height:297mm;box-sizing:border-box;padding:'+top+'mm 10mm '+bot+'mm 10mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;">'
-      + bg
-      + '<div class="lh-body" style="position:relative;z-index:1;">'+quoteInnerHTML()+'</div>'
-      + '</div>';
-    try{ lhPaginate(document.getElementById('printArea'), top, bot); }catch(e){ console.error(e); }
-    setPrintOrientation('portrait','0mm');
-  } else {
-    document.getElementById('printArea').innerHTML=
-      '<div style="padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;">'+quoteInnerHTML()+'</div>';
-    setPrintOrientation('portrait','8mm 10mm');
-  }
+  /* v19.80 — তিন ধরনেই একই A4 পাতা-ব্যবস্থা: লাইন কম হোক বা বেশি, সই-এর জায়গা সবসময় শেষ পাতার নিচে
+     (Letter Head হলে footer ডিজাইনের ঠিক উপরে)। আগে সই লেখার ঠিক পরেই বসত, ১টা পণ্য দিলে পাতার মাঝখানে। */
+  const md=QUOTE.lhMode, img=md==='image'?qLhImage():'';
+  try{ lhFootScan(); }catch(e){}
+  // Letterhead image anchored to an explicit A4-size page wrapper (position:absolute, height:297mm),
+  // NOT position:fixed (fixed clips the top header in real Chrome print). The wrapper is a stacking
+  // context (isolation:isolate) so the image sits at layer 0 and the content layers above it with
+  // z-index:1 — no negative z-index (that hid the whole letterhead behind the white page background).
+  const bg = img ? ('<img src="'+img+'" alt="" style="position:absolute;top:0;left:0;width:100%;height:297mm;object-fit:fill;">') : '';
+  let top, bot;
+  if(md==='image'){ top=(n(QUOTE.lhTop)>0?n(QUOTE.lhTop):46); bot=Math.max((n(QUOTE.lhBot)>0?n(QUOTE.lhBot):30), lhFootMm()); }   /* নিচের ডিজাইনের উপরে */
+  else if(md==='blank'){ top=(n(QUOTE.lhTop)>0?n(QUOTE.lhTop):38); bot=qLhBotB(); }
+  else { top=8; bot=8; }
+  document.getElementById('printArea').innerHTML=
+    '<div class="lh-page" style="position:relative;isolation:isolate;width:100%;min-height:297mm;box-sizing:border-box;padding:'+top+'mm 10mm '+bot+'mm 10mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;">'
+    + bg
+    + '<div class="lh-body" style="position:relative;z-index:1;">'+quoteInnerHTML()+'</div>'
+    + '</div>';
+  try{ lhPaginate(document.getElementById('printArea'), top, bot); }catch(e){ console.error(e); }
+  try{ qPinEnd(document.getElementById('printArea')); }catch(e){ console.error(e); }
+  setPrintOrientation('portrait','0mm');
   safePrint();
 }
+/* শেষ পাতা: লেখা ওপরে, সই-এর অংশ (q-endblk) নিচে — মাঝে যা ফাঁকা থাকে। Printed by লাইন (stampInline) এর পরে আসে। */
+function qPinEnd(pa){
+  const pages=pa.querySelectorAll('.lh-page'); if(!pages.length) return;
+  const pg=pages[pages.length-1], body=pg.querySelector('.lh-body'); if(!body) return;
+  const end=body.querySelector('.q-endblk'); if(!end) return;
+  pg.style.minHeight=''; pg.style.height='297mm'; pg.style.overflow='hidden';
+  pg.style.display='flex'; pg.style.flexDirection='column';
+  body.style.flex='1 1 auto'; body.style.display='flex'; body.style.flexDirection='column'; body.style.minHeight='0';
+  body.appendChild(end); end.style.marginTop='auto';
+}
+/* v19.80 — Letter Head ছবির নিচের ডিজাইন (ঢেউ, QR, ঠিকানার পট্টি) কোথা থেকে শুরু, ছবি দেখে নিজেই মাপি —
+   সই আর Printed by লাইন যেন সবসময় তার উপরে থাকে। দুই পাশের ১২mm বাদ দিয়ে (লেখার জায়গা) নিচ থেকে উপরে খুঁজি;
+   ৩mm একটানা ফাঁকা পেলে সেখানেই ডিজাইনের শুরু। হালকা জলছাপ (ধূসর) গোনা হয় না। */
+var LH_FOOT={key:'',mm:0,busy:false};
+function lhKey(src){ src=String(src||''); return src.length+':'+src.slice(-64); }
+function lhFootScan(src){
+  src=src||qLhImage(); if(!src) return; const key=lhKey(src);
+  if(LH_FOOT.key===key || LH_FOOT.busy) return; LH_FOOT.busy=true;
+  const im=new Image();
+  im.onload=function(){ try{
+    const W=420, H=Math.round(W*297/210), c=document.createElement('canvas'); c.width=W; c.height=H;
+    const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,W,H); x.drawImage(im,0,0,W,H);
+    const d=x.getImageData(0,0,W,H).data, x0=Math.round(W*12/210), x1=Math.round(W*198/210), gap=Math.round(H*3/297);
+    let top=-1, blank=0;
+    for(let y=H-1;y>=Math.round(H*0.55);y--){
+      let k=0; for(let i=x0;i<x1;i++){ const o=(y*W+i)*4, r=d[o], g=d[o+1], b=d[o+2], mx=Math.max(r,g,b), mn=Math.min(r,g,b); if(mn<170||(mx-mn)>55){ k++; if(k>1) break; } }
+      if(k>1){ top=y; blank=0; } else if(top>=0 && ++blank>=gap) break;
+    }
+    LH_FOOT={key:key, mm:(top>=0?Math.ceil((H-top)*297/H)+3:0), busy:false};
+  }catch(e){ LH_FOOT={key:key,mm:0,busy:false}; } };
+  im.onerror=function(){ LH_FOOT={key:key,mm:0,busy:false}; };
+  im.src=src;
+}
+function lhFootMm(){ const src=qLhImage(); return (src && LH_FOOT.key===lhKey(src))?LH_FOOT.mm:0; }
+function qLhBotB(){ return (DB.settings&&n(DB.settings.qLhBotB)>0)?n(DB.settings.qLhBotB):20; }
+function qSetLHBotB(v){ DB.settings=DB.settings||{}; DB.settings.qLhBotB=n(v)||0; saveDB(); }
 
 /* ---------- Excel ---------- */
 function exportQuote(){
@@ -21082,6 +21122,11 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.80', d:'2026-11-22', t:'দরপত্র / PI / CI: সই-এর জায়গা সবসময় পাতার নিচে', li:[
+  '<b>সই নিচে:</b> ১টা পণ্য দিন বা ১০টা — Prepared By / Authorized Signatory, “We look forward…” আর নিচের লেখা সবসময় শেষ পাতার একদম নিচে বসে; মাঝখানে ফাঁকা থাকলে সেটা লেখা আর সই-এর মাঝে থাকে',
+  '<b>Letter Head ছবিতে:</b> নিচের ডিজাইন (ঢেউ, QR কোড, ঠিকানার পট্টি) কোথা থেকে শুরু অ্যাপ ছবি দেখে নিজেই মেপে নেয় — সই আর Printed by লাইন সবসময় তার উপরে থাকে, ডিজাইনের ওপর পড়ে না। “নিচে ফাঁকা (mm)” এর চেয়ে বেশি দরকার হলে নিজেই বাড়ায়',
+  '<b>ছাপা Letter Head কাগজে:</b> এখন “নিচে ফাঁকা (mm)” ঘরও আছে — কাগজের ফুটারের উপরে সই বসে; উপরের ফাঁকা প্রতিটা পাতায় থাকে (আগে শুধু প্রথম পাতায়)',
+  'অনেক পণ্য হলে আগের মতোই পরের পাতায় যায়, প্রতি পাতায় ছকের শিরোনাম থাকে; সই শুধু শেষ পাতার নিচে · Print আর PDF দুটোতেই একই']},
  {v:'19.79', d:'2026-11-22', t:'Sync এ কোনো বদল আর হারায় না — সব জায়গায় ঘর ধরে মেলানো', li:[
   '<b>একই ধরনের সব সমস্যা ঠিক:</b> O/H Divisor এর মতো একই ভুল Costing, Order Requirement, RM, PM, Supplier, FG Master, Machine, Budget, দরপত্র, Mix Carton, Section, Export Setting, Production এও ছিল — একই জিনিস দুই ডিভাইসে Sync এর আগে বদলালে যেটা পরে বদলেছে তার পুরো কপি বসত, অন্যটার বদল হারিয়ে যেত',
   '<b>উদাহরণ:</b> PC তে কোনো Costing এর বিক্রয় মূল্য আর ফোনে একই Costing এর Process Loss বদলালে — আগে একটা হারাত, এখন দুটোই থাকে। Order এ একজন Stock বসাল, আরেকজন নতুন লাইন যোগ করল — দুটোই থাকে',
@@ -24015,6 +24060,11 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.80', d:'2026-11-22', t:'Quotation / PI / CI: signature area always at the bottom of the page', li:[
+  '<b>Signature at the bottom:</b> with 1 item or 10, Prepared By / Authorized Signatory, “We look forward…” and the closing lines always sit at the very bottom of the last page; any spare space goes between the content and the signatures',
+  '<b>Letter head image:</b> the app measures where the bottom design (wave, QR code, address band) starts in the image — the signatures and the Printed by line always stay above it and never sit on the design. It raises the “Bottom space (mm)” value by itself when more is needed',
+  '<b>Pre-printed letter head paper:</b> now has a “Bottom space (mm)” box too — signatures sit above the paper’s footer; the top space applies on every page (before, only the first)',
+  'Long quotations still continue on the next page with the table heading repeated; signatures only at the bottom of the last page · same for print and PDF']},
  {v:'19.79', d:'2026-11-22', t:'No change is lost in sync any more — field-by-field merge everywhere', li:[
   '<b>All bugs of this kind fixed:</b> the O/H divisor problem also existed for costings, order requirements, RM, PM, suppliers, FG master, machines, budgets, quotations, mix cartons, sections, export settings and production — if the same item was changed on two devices before syncing, the later device’s whole copy replaced it and the other change was lost',
   '<b>Example:</b> change a costing’s selling price on the PC and its process loss on the phone — before, one was lost; now both stay. One person enters stock on an order while another adds a line — both stay',
