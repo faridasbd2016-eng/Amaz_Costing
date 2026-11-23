@@ -13048,11 +13048,8 @@ function orderMatSplitPrintHTML(d,pageBreak){
         R(p.rmF)+R(p.rmH)+(N?R(p.rmN):'')+R(x.rmVal,true)+R(p.pkF)+R(p.pkH)+(N?R(p.pkN):'')+R(x.pkVal,true)+R(n(p.rmF)+n(p.pkF),true)+R(n(p.rmH)+n(p.pkH),true)+R(x.rmVal+x.pkVal,true)+'</tr>'; }).join('')+
     '</tbody><tfoot><tr style="background:#f3f3f3;"><td colspan="2" style="'+B+'font-weight:bold;">TOTAL</td>'+'<td style="'+B+'width:1%;text-align:right;white-space:nowrap;font-weight:bold;">'+orMsQtyTot(D).join('<br>')+'</td>'+
       R(T.rmF,true)+R(T.rmH,true)+(N?R(T.rmN,true):'')+R(T.rm,true)+R(T.pkF,true)+R(T.pkH,true)+(N?R(T.pkN,true):'')+R(T.pk,true)+R(T.rmF+T.pkF,true)+R(T.rmH+T.pkH,true)+R(T.rm+T.pk,true)+'</tr></tfoot></table>'+
-    '<table style="width:auto;min-width:46%;border-collapse:collapse;margin-top:10px;'+S+'font-size:10.5px;"><thead><tr>'+H('Purchase By','text-align:left;width:34%;')+H('RM (BDT)','width:22%;')+H('PM (BDT)','width:22%;')+H('Total (BDT)','width:22%;')+'</tr></thead><tbody>'+
-      '<tr><td style="'+B+'">Factory</td>'+R2(T.rmF)+R2(T.pkF)+R2(T.rmF+T.pkF,true)+'</tr>'+
-      '<tr><td style="'+B+'">Head Office</td>'+R2(T.rmH)+R2(T.pkH)+R2(T.rmH+T.pkH,true)+'</tr>'+
-      (N?'<tr><td style="'+B+'">Unassigned</td>'+R2(T.rmN)+R2(T.pkN)+R2(T.rmN+T.pkN,true)+'</tr>':'')+
-      '<tr style="background:#f3f3f3;"><td style="'+B+'font-weight:bold;">Total</td>'+R2(T.rm,true)+R2(T.pk,true)+R2(T.rm+T.pk,true)+'</tr></tbody></table>'+
+    orderBuyByHTML(d)+
+
     '</div>';
   return h;
 }
@@ -13235,6 +13232,40 @@ function exportOrderReq(){
     return {Material:x.name, Unit:x.unit, Rate:x.rate, 'Required Qty':+x.qty.toFixed(3), 'Value (BDT)':+x.value.toFixed(2)}; })), 'Packing Materials');
   XLSX.writeFile(wb, 'Order_'+((d.plan.ref||'Costing').replace(/[^A-Za-z0-9]/g,'_').slice(0,24))+'.xlsx');
 }
+/* v19.86 — “To Buy — by Purchaser” ছক (Material Requirement Print এর আসল ছক) — আলাদা ফাংশনে, দুই Print এ একই */
+function orderBuyByHTML(d){
+  const S="font-family:'Times New Roman',serif;", cl='padding:2px 5px;', B='border:1px solid #000;white-space:nowrap;';
+  const W='width:70%;border-collapse:collapse;'+S+'font-size:11.5px;'+B;
+  const hd=function(){ const a=[].slice.call(arguments);
+    return '<tr style="font-weight:bold;background:#e2efda;">'+
+    a.map(function(t,i){ return '<td style="'+cl+B+(i?'text-align:right;':'')+'">'+t+'</td>'; }).join('')+'</tr>'; };
+  const balTxt=function(b){ return b>0.5?('Due '+money(b,0)):(b<-0.5?('Excess '+money(-b,0)):'-'); };
+  const rw6=function(l,a,b,t,c,pv,pd,bal,bold){ return '<tr'+(bold?' style="font-weight:bold;"':'')+'>'+
+    '<td style="'+cl+B+'">'+l+'</td>'+
+    '<td style="'+cl+B+'text-align:right;">'+money(a,0)+'</td>'+
+    '<td style="'+cl+B+'text-align:right;">'+money(b,0)+'</td>'+
+    '<td style="'+cl+B+'text-align:right;">'+(t>0.5?money(t,0):'-')+'</td>'+
+    '<td style="'+cl+B+'text-align:right;">'+money(c,0)+'</td>'+
+    '<td style="'+cl+B+'text-align:right;">'+(pd>0.5?money(pd,0):'-')+'</td>'+
+    '<td style="'+cl+B+'text-align:right;">'+(pv>0.5?money(pv,0):'-')+'</td>'+
+    '<td style="'+cl+B+'text-align:right;">'+balTxt(bal)+'</td></tr>'; };
+  let h='';
+      const M=buyMatrix(d).filter(function(r){ return r.tot>0.5 || r.k; });
+      const mRm=M.reduce(function(a,r){return a+r.rm;},0), mPk=M.reduce(function(a,r){return a+r.pk;},0);
+      const mTr=M.reduce(function(a,r){return a+r.tr;},0);
+      const mPv=M.reduce(function(a,r){return a+r.prev;},0);
+      const mPd=M.reduce(function(a,r){return a+r.paid;},0);
+      h+='<div style="font-weight:bold;margin:12px 0 4px;border-bottom:1.5px solid #000;">'+
+        'To Buy — by Purchaser</div>'+
+        '<table style="'+W.replace('width:70%','width:100%')+'">'+
+        hd('Purchased By','RM ৳','PM ৳','Transport ৳','Total ৳','Paid ৳','Prev. Excess ৳','Balance')+
+        M.map(function(r){ return rw6(esc(r.k?r.l:'Not assigned'), r.rm, r.pk, r.tr, r.tot, r.prev, r.paid, r.bal); }).join('')+
+        rw6('Total', mRm, mPk, mTr, mRm+mPk+mTr, mPv, mPd, mRm+mPk+mTr-mPv-mPd, true)+
+        '</table>'+
+        (mTr>0.5?('<div style="font-size:10px;margin-top:3px;">Material ৳ '+money(mRm+mPk,0)+
+          ' + Transport ৳ '+money(mTr,0)+' = ৳ '+money(mRm+mPk+mTr,0)+'</div>'):'');
+  return h;
+}
 function orderReqHTML(d, pageBreak){
   const pl=d.plan, S="font-family:'Times New Roman',serif;", cl='padding:2px 5px;';
   function sec(title,rows,total){
@@ -13343,20 +13374,7 @@ function orderReqHTML(d, pageBreak){
         rw('Packing Materials', pV, pS, pN)+
         rw('Total (RM + PM)', rV+pV, rS+pS, rN+pN, true)+
         '</table>';
-      const M=buyMatrix(d).filter(function(r){ return r.tot>0.5 || r.k; });
-      const mRm=M.reduce(function(a,r){return a+r.rm;},0), mPk=M.reduce(function(a,r){return a+r.pk;},0);
-      const mTr=M.reduce(function(a,r){return a+r.tr;},0);
-      const mPv=M.reduce(function(a,r){return a+r.prev;},0);
-      const mPd=M.reduce(function(a,r){return a+r.paid;},0);
-      h+='<div style="font-weight:bold;margin:12px 0 4px;border-bottom:1.5px solid #000;">'+
-        'To Buy — by Purchaser</div>'+
-        '<table style="'+W.replace('width:70%','width:100%')+'">'+
-        hd('Purchased By','RM ৳','PM ৳','Transport ৳','Total ৳','Paid ৳','Prev. Excess ৳','Balance')+
-        M.map(function(r){ return rw6(esc(r.k?r.l:'Not assigned'), r.rm, r.pk, r.tr, r.tot, r.prev, r.paid, r.bal); }).join('')+
-        rw6('Total', mRm, mPk, mTr, mRm+mPk+mTr, mPv, mPd, mRm+mPk+mTr-mPv-mPd, true)+
-        '</table>'+
-        (mTr>0.5?('<div style="font-size:10px;margin-top:3px;">Material ৳ '+money(mRm+mPk,0)+
-          ' + Transport ৳ '+money(mTr,0)+' = ৳ '+money(mRm+mPk+mTr,0)+'</div>'):'');
+      h+=orderBuyByHTML(d);     /* v19.86 — একই ছক পণ্যভিত্তিক RM / PM এর Print এও */
       return h; })()+
     '<table style="width:100%;'+S+'font-size:12px;margin-top:10px;border-top:2px solid #000;">'+
     '<tr style="font-weight:bold;"><td style="'+cl+'">TOTAL MATERIAL REQUIREMENT</td>'+
@@ -21237,6 +21255,9 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.86', d:'2026-11-23', t:'পণ্যভিত্তিক RM / PM Print: নিচে আসল “To Buy — by Purchaser” ছক', li:[
+  'পণ্যভিত্তিক RM / PM এর Print / PDF এর নিচের ছোট সারাংশ ছকের জায়গায় এখন Material Requirement Print এর আসল ছক — Purchased By · RM · PM · Transport · Total · Paid · Prev. Excess · Balance (Due / Excess), নিচে Material + Transport এর যোগ',
+  'দুই Print এ একই ছক একই হিসাবে (একটা ফাংশন থেকে) — একটায় বদলালে অন্যটাতেও; Material Requirement Print আগের মতোই, এক অক্ষরও বদলায়নি']},
  {v:'19.85', d:'2026-11-22', t:'পণ্যভিত্তিক RM / PM: মোট Qty এক অঙ্কে', li:[
   'TOTAL সারিতে Ctn, Bag ইত্যাদি আর আলাদা লাইনে ভাগ হয় না — সব পণ্যের পরিমাণ একসাথে যোগ হয়ে এক অঙ্কে বসে (সব একই একক হলে পাশে এককের নাম থাকে)']},
  {v:'19.84', d:'2026-11-22', t:'পণ্যভিত্তিক RM / PM: মোট Qty আর Factory / Head Office মোট কলাম', li:[
@@ -24195,6 +24216,9 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.86', d:'2026-11-23', t:'Product-wise RM / PM print: the original “To Buy — by Purchaser” table at the bottom', li:[
+  'The small summary under the product-wise RM / PM print / PDF is replaced by the original table from the material requirement print — Purchased By · RM · PM · Transport · Total · Paid · Prev. Excess · Balance (Due / Excess), with the Material + Transport line below',
+  'Both prints now build the table from the same code, so they always match; the material requirement print is unchanged']},
  {v:'19.85', d:'2026-11-22', t:'Product-wise RM / PM: total quantity as one figure', li:[
   'The TOTAL row no longer splits Ctn, Bag etc. onto separate lines — all quantities are added into one figure (the unit is shown when every product uses the same one)']},
  {v:'19.84', d:'2026-11-22', t:'Product-wise RM / PM: total quantity and factory / head office total columns', li:[
