@@ -1,1 +1,1 @@
-{"version": "19.89", "date": "2026-11-23", "notes": "পণ্যভিত্তিক RM / PM: CBM আর Sales Value কলাম", "notes_en": "Product-wise RM / PM: CBM and sales value columns"}
+{"version": "19.90", "date": "2026-11-23", "notes": "বড় ছকে শিরোনাম Freeze · Demand এর সব কলাম এক পর্দায় · Demand থেকে Work Order", "notes_en": "Frozen table headings · all demand columns visible · work orders from demand"}

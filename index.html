@@ -1934,6 +1934,36 @@ html.ui-modern .tag:not(#printArea *):not(.pdfbox *){font-size:11px;}
   #mpk .mpk-none{padding:30px 16px; text-align:center; color:var(--text-dim);}
 }
 
+
+/* ===================== v19.90 — বড় ছকে শিরোনাম জমে থাকে (Freeze), প্রথম কলামও; পাশে সরানোর দণ্ড সবসময় চোখের সামনে ===================== */
+.tw-fz{overflow:auto !important;}
+.tw-pg{overflow:visible !important;}
+html .tw-pg > table > thead, html .tw-fz > table > thead{position:sticky; top:0; z-index:4;}
+html .tw-pg > table, html .tw-fz > table{border-collapse:separate; border-spacing:0;}   /* collapse এ জমে থাকা শিরোনামের নিচে লেখা ভেসে ওঠে — তাই separate */
+html .tw-pg > table > thead > tr > th{background-color:var(--panel) !important; background-image:linear-gradient(var(--panel-2),var(--panel-2)) !important; box-shadow:inset 0 -1px 0 var(--border);}
+.modal .tw-fz.tw-tall{max-height:calc(100vh - 300px); min-height:220px;}
+html .tw-fz > table > thead > tr > th{background-color:var(--panel) !important; background-image:linear-gradient(var(--panel-2),var(--panel-2)) !important; box-shadow:inset 0 -1px 0 var(--border);}
+html .tw-fz > table > tfoot{position:sticky; bottom:0; z-index:4;}
+html .tw-fz > table > tfoot > tr > td, html .tw-fz > table > tfoot > tr > th{ background-color:var(--panel) !important; background-image:linear-gradient(var(--panel-2),var(--panel-2)) !important; box-shadow:inset 0 1px 0 var(--border);}
+html .tw-fz > table > * > tr > .tw-fc{position:sticky; z-index:2; background-color:var(--panel) !important;}
+html .tw-fz > table > thead > tr > th.tw-fc{z-index:5; background-color:var(--panel) !important; background-image:linear-gradient(var(--panel-2),var(--panel-2)) !important;}
+html .tw-fz > table > tfoot > tr > .tw-fc{z-index:5; background-image:linear-gradient(var(--panel-2),var(--panel-2)) !important;}
+.tw-fz .tw-fc-last{box-shadow:inset -1px 0 0 var(--border), 6px 0 8px -6px rgba(0,0,0,.18);}
+.tw-fz > table > thead th.tw-fc-last{box-shadow:inset -1px 0 0 var(--border), inset 0 -1px 0 var(--border), 6px 0 8px -6px rgba(0,0,0,.18);}
+.tw-fz::-webkit-scrollbar{height:12px; width:10px;}
+.tw-fz::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--text-dim) 45%, transparent); border-radius:8px; border:2px solid transparent; background-clip:padding-box;}
+.tw-fz::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb, var(--text-dim) 70%, transparent); background-clip:padding-box;}
+/* Demand Sheet: ঘরগুলো ছোট, যাতে সব কলাম একসাথে দেখা যায় */
+#demBody .dm-tbl th, #demBody .dm-tbl td{padding:6px 5px !important;}
+#demBody .dm-tbl thead th{white-space:normal !important; line-height:1.2; font-size:10.5px !important; vertical-align:bottom;}
+#demBody .dm-tbl td .rate-inline{padding:5px 6px !important; font-size:12.5px;}
+@media (min-width:761px){
+  #demModal > .modal{height:94vh; max-height:94vh;}
+  #demModal > .modal > .modal-body{display:flex; flex-direction:column; min-height:0; overflow:hidden;}
+  #demModal > .modal > .modal-body > *{flex:0 0 auto;}
+  #demModal > .modal > .modal-body > .dm-wrap{flex:1 1 auto; min-height:180px; max-height:none !important;}
+}
+
 body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0,0,0,.5) !important;caret-color:transparent;pointer-events:none;user-select:none;}
 </style>
 </head>
@@ -2118,6 +2148,7 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
   <div class="modal-body" id="demBody"></div>
   <div class="modal-foot"><button class="btn btn-ghost" onclick="demReload()">&#8635; Order থেকে আবার বানান</button><span style="flex:1"></span>
     <button class="btn btn-primary" onclick="demPickOpen()">+ PM List থেকে Item</button>
+    <button class="btn btn-accent" onclick="woOpen()" title="এই Demand থেকে Supplier কে Work Order (Purchase Order)">&#128221; Work Order</button>
     <button class="btn btn-ghost" onclick="pdfRun(function(){demPrint(DEM_CUR)},function(){return pdfOrdName(DEM_CUR+'_Demand')})">PDF</button>
     <button class="btn btn-ghost" onclick="demPrint(DEM_CUR)">&#128424; Print</button>
     <button class="btn btn-ghost" onclick="demExcel(DEM_CUR)">&#8681; Excel</button>
@@ -6058,7 +6089,7 @@ function renderRMTable(){
   const sorted=list.slice().sort(byName);
   VISIBLE.rm=sorted.map(function(m){return m.id;});
   w.innerHTML=banner+'<table><thead><tr><th class="chkcell"><input type="checkbox" class="chk" id="rmCheckAll" onchange="toggleAllVisible(\'rm\',this.checked)" title="সব নির্বাচন"></th>'+
-   '<th>Name</th><th>Unit</th><th class="num" style="min-width:120px">Rate ✎</th>'+
+   '<th style="min-width:220px">Name</th><th>Unit</th><th class="num" style="min-width:120px">Rate ✎</th>'+
    '<th style="min-width:230px">আগের Rate</th><th style="min-width:130px">কে কিনবে ✎</th><th>Supplier</th><th>Updated</th><th></th></tr></thead><tbody>'+
    sorted.map(function(m,idx){
      const z=n(m.unitPrice)<=0, sel=!!SEL.rm[m.id];
@@ -6643,7 +6674,7 @@ function renderPKTable(){
   const sorted=list.slice().sort(byName);
   VISIBLE.pk=sorted.map(function(m){return m.id;});
   w.innerHTML=banner+'<table><thead><tr><th class="chkcell"><input type="checkbox" class="chk" id="pkCheckAll" onchange="toggleAllVisible(\'pk\',this.checked)" title="সব নির্বাচন"></th>'+
-   '<th>Name</th><th>Unit</th><th class="num" style="min-width:120px">Rate ✎</th>'+
+   '<th style="min-width:220px">Name</th><th>Unit</th><th class="num" style="min-width:120px">Rate ✎</th>'+
    '<th style="min-width:230px">আগের Rate</th><th style="min-width:130px">কে কিনবে ✎</th><th>Supplier</th><th>Updated</th><th></th></tr></thead><tbody>'+
    sorted.map(function(m,idx){
      const z=n(m.unitPrice)<=0, sel=!!SEL.pk[m.id];
@@ -11825,13 +11856,14 @@ function demRender(){
     const v=r[x.k];
     if(x.k==='name'){                     /* v18.90 — Item এর নাম PM List থেকেই; হাতে লেখা নয় */
       const pm=r.pmId?pmMasterOf(r.pmId):null;
-      if(pm&&pm.id) return '<div style="min-width:230px;"><b>'+esc(r.name||pm.name)+'</b> <span class="tag" style="font-size:10px;">PM</span>'+
+      if(pm&&pm.id) return '<div style="min-width:170px;max-width:230px;white-space:normal;"><b>'+esc(r.name||pm.name)+'</b> <span class="tag" style="font-size:10px;">PM</span>'+
         (pm.category?'<div class="muted" style="font-size:11px;">'+esc(pm.category)+'</div>':'')+'</div>';
-      return '<input class="rate-inline" list="demPmDL" style="min-width:230px;" value="'+esc(v||'')+'" placeholder="PM List থেকে বাছুন…" onchange="demLinkPm('+i+',this)">';
+      return '<input class="rate-inline" list="demPmDL" style="min-width:170px;" value="'+esc(v||'')+'" placeholder="PM List থেকে বাছুন…" onchange="demLinkPm('+i+',this)">';
     }
-    if(x.k==='buy') return '<select class="rate-inline" style="width:110px;" onchange="demSet('+i+',\'buy\',this.value)">'+
+    if(x.k==='buy') return '<select class="rate-inline" style="width:104px;padding-left:4px;font-size:12px;" onchange="demSet('+i+',\'buy\',this.value)">'+
       ['','Head Office','Factory'].map(function(o){ return '<option value="'+o+'"'+(String(v||'')===o?' selected':'')+'>'+(o||'—')+'</option>'; }).join('')+'</select>';
-    const w=x.k==='name'?'min-width:230px;':(x.t==='n'?'width:76px;text-align:right;':'width:'+(x.k==='party'||x.k==='demand'?150:62)+'px;');
+    /* v19.90 — ছোট ঘর: L/W/H/Ply ছোট, বাকিগুলো লেখার মাপে */
+    const w=x.k==='name'?'min-width:170px;':(x.t==='n'?'width:60px;text-align:right;':'width:'+((x.k==='party'||x.k==='demand')?140:(['L','W','H','ply'].indexOf(x.k)>=0?44:(x.k==='country'?70:56)))+'px;');
     return '<input class="rate-inline" style="'+w+'" value="'+esc(v==null?'':(x.t==='n'&&!n(v)?'':v))+'"'+(x.t==='n'?' placeholder="0" onfocus="this.select()"':'')+
       ' onchange="demSet('+i+',\''+x.k+'\',this.value)">'; };
   document.getElementById('demBody').innerHTML=
@@ -11843,7 +11875,7 @@ function demRender(){
     demSigEditHTML()+
     '<datalist id="demPmDL">'+(DB.packaging||[]).map(function(m){ return '<option value="'+esc(m.name)+'"></option>'; }).join('')+'</datalist>'+
     (sh.rows.length?'':'<div class="hint" style="padding:14px;text-align:center;border:1px dashed var(--border);border-radius:8px;margin-bottom:10px;">এই Sheet এ কোনো Item নেই — নিচের <b>"+ PM List থেকে Item"</b> চেপে বাছাই করুন।</div>')+
-    '<div class="table-wrap" style="max-height:60vh;overflow:auto;"><table><thead><tr><th>#</th>'+sp.map(function(x){return '<th'+(x.t==='s'?'':' class="num"')+'>'+(x.g?'Size '+x.h:x.h)+'</th>';}).join('')+'<th></th></tr></thead><tbody>'+
+    '<div class="table-wrap dm-wrap" style="max-height:60vh;overflow:auto;"><table class="dm-tbl"><thead><tr><th>#</th>'+sp.map(function(x){return '<th'+(x.t==='s'?'':' class="num"')+'>'+(x.g?'Size '+x.h:x.h)+'</th>';}).join('')+'<th></th></tr></thead><tbody>'+
     sh.rows.map(function(r,i){ const c=demCalc(r);
       return '<tr><td class="muted">'+(i+1)+'</td>'+sp.map(function(x){
         if(x.t==='c') return '<td class="num" id="dm_'+x.k+'_'+i+'"><b>'+esc(demFmt(x,c[x.k]))+'</b></td>';
@@ -11852,6 +11884,265 @@ function demRender(){
     '</tbody><tfoot><tr style="font-weight:700;background:var(--panel-2);"><td colspan="'+sp.length+'" style="padding:9px 12px;text-align:right;">Total (Actual Need / Amount)</td>'+
     '<td class="num" id="dm_tot" style="padding:9px 12px;">'+money(T.act,0)+' / ৳'+money(T.amt,0)+'</td><td></td></tr></tfoot></table></div>';
 }
+/* ===== v19.90 — Freeze: বড় ছকে শিরোনাম (আর পাশে বড় হলে প্রথম কলাম) জমে থাকে =====
+   কম্পিউটারে (মোবাইল App ধাঁচে নয়)। যে ছক পর্দার চেয়ে লম্বা, তার নিজের Scroll — শিরোনাম ও TOTAL সারি
+   সবসময় দেখা যায়, আর পাশে সরানোর দণ্ড পর্দার মধ্যেই থাকে। পাশে চওড়া হলে প্রথম কলাম (# থাকলে # + নাম) জমে থাকে। */
+var TWF_T=null;
+function twfOk(){ try{ return !(typeof appmOn==='function' && appmOn()); }catch(e){ return true; } }
+function twfStickyTop(el){   /* পাতার উপরে জমে থাকা অংশগুলোর (Topbar, Toolbar, Tab) নিচ পর্যন্ত */
+  let top=0; const tb=document.getElementById('topbar'); if(tb && tb.offsetParent!==null) top=tb.offsetHeight;
+  const c=document.getElementById('content'); if(!c) return top;
+  c.querySelectorAll('.page-actions,.page-toolbar,.panel-head,.tabs,[id$="Tabs"],[class*="toolbar"],[class*="vtab"]').forEach(function(x){ if(!x.offsetParent || x.closest('table')) return; const cs=getComputedStyle(x);
+    if(cs.position!=='sticky') return; if(!(x.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING)) return;
+    top=Math.max(top,(parseFloat(cs.top)||0)+x.offsetHeight); });
+  return top;
+}
+function twfScan(){
+  if(!twfOk()){ document.querySelectorAll('.tw-fz,.tw-pg').forEach(twfOff); return; }
+  const vh=window.innerHeight||800;
+  document.querySelectorAll('table').forEach(function(t){
+    if(!t.offsetParent || t.closest('#printArea,.pdfbox,.no-fz') || t.classList.contains('m-cards') || t.classList.contains('fam-tbl') || t.classList.contains('fam2-tbl')) return;
+    const w=t.parentElement; if(!w || w.tagName==='TD') return;
+    const ox=w.classList.contains('tw-pg')?'auto':getComputedStyle(w).overflowX; if(ox!=='auto' && ox!=='scroll'){ return; }
+    if(!t.tHead || !t.tHead.rows.length){ return; }
+    const nRows=(t.tBodies[0]&&t.tBodies[0].rows.length)||0;
+    const tall=nRows>8 && t.offsetHeight>vh*0.62;
+    const wasPg=w.classList.contains('tw-pg'); if(wasPg) w.classList.remove('tw-pg');
+    const wide=w.scrollWidth>w.clientWidth+2;
+    const inModal=!!t.closest('.modal-overlay');
+    if(inModal){
+      if(!tall && !wide && !w.style.maxHeight){ twfOff(w); return; }
+      w.classList.add('tw-fz'); w.classList.toggle('tw-tall', tall); twfLayout(t, wide, 0); return;
+    }
+    if(wide){   /* পাশে চওড়া: নিজের Scroll — লম্বা হলে পর্দার মাপে উঁচু, যাতে পাশে সরানোর দণ্ড চোখের সামনে থাকে */
+      w.classList.remove('tw-pg'); w.classList.add('tw-fz'); w.classList.toggle('tw-tall', tall);
+      /* লম্বাও হলে ছকটা নিজেই উপরের অংশের নিচে জমে থাকে (sticky) — শিরোনাম কখনো ঢাকা পড়ে না */
+      if(tall){ const st=twfStickyTop(w), docTop=w.getBoundingClientRect().top+(window.scrollY||0), fit=vh-docTop-28;
+        /* ছকের উপরে বেশি কিছু না থাকলে পুরো ছক পর্দায় এঁটে যায় (পাতা আর সরে না); নাহলে উপরের অংশের নিচে জমে থাকে */
+        if(fit>=300){ w.style.maxHeight=fit+'px'; w.style.position=''; w.style.top=''; }
+        else { w.style.maxHeight=Math.max(260, vh-st-10)+'px'; w.style.position='sticky'; w.style.top=st+'px'; }
+        w.setAttribute('data-twmh','1'); }
+      else if(w.getAttribute('data-twmh')==='1'){ w.style.maxHeight=''; w.style.position=''; w.style.top=''; w.removeAttribute('data-twmh'); }
+      twfLayout(t, true, 0); return;
+    }
+    if(tall){   /* শুধু লম্বা: পাতার সাথেই Scroll, শিরোনাম পাতার উপরের অংশের নিচে জমে থাকে */
+      if(w.classList.contains('tw-fz')){ twfOff(w); }
+      w.classList.add('tw-pg'); twfLayout(t, false, twfStickyTop(w)); return;
+    }
+    twfOff(w);
+  });
+}
+function twfOff(w){ w.classList.remove('tw-fz','tw-tall','tw-pg'); if(w.getAttribute('data-twmh')==='1'){ w.style.maxHeight=''; w.style.position=''; w.style.top=''; w.removeAttribute('data-twmh'); } w.querySelectorAll('.tw-fc,.tw-fc-last').forEach(function(c){ c.classList.remove('tw-fc','tw-fc-last'); c.style.left=''; }); const th=w.querySelector('thead'); if(th) th.style.top=''; }
+function twfLayout(t, wide, base){
+  /* শিরোনামের সারি একের বেশি হলে প্রতিটার top আলাদা */
+  t.tHead.style.top=(base||0)+'px';     /* পুরো শিরোনাম (সব সারি) একসাথে জমে — সারির মাঝে ফাঁক থাকে না */
+  t.querySelectorAll('.tw-fc,.tw-fc-last').forEach(function(c){ c.classList.remove('tw-fc','tw-fc-last'); c.style.left=''; });
+  if(!wide) return;
+  /* কয়টা কলাম জমবে: প্রথমটা সরু (#, SL) হলে দুটো, নাহলে একটা; ছকের জায়গার ৫৫% এর বেশি হলে জমাই না */
+  const body=t.tBodies[0]; const r0=body&&[].find.call(body.rows,function(r){ return r.cells.length>2; }); if(!r0) return;
+  let nF=(r0.cells[0].offsetWidth<60)?2:1; const W=[]; for(let i=0;i<nF;i++){ if(!r0.cells[i]||(r0.cells[i].colSpan||1)>1){ nF=i; break; } W.push(r0.cells[i].offsetWidth); }
+  const tot=W.reduce(function(a,b){return a+b;},0); if(!nF || tot>t.parentElement.clientWidth*0.55) return;
+  const L=[0]; for(let i=1;i<nF;i++) L.push(L[i-1]+W[i-1]);
+  const apply=function(rows){ const occ={};   /* rowspan সামলাতে */
+    [].forEach.call(rows,function(r,ri){ let col=0; [].forEach.call(r.cells,function(c){ while(occ[ri+':'+col]) col++;
+        const cs=c.colSpan||1, rs=c.rowSpan||1;
+        for(let a=0;a<rs;a++) for(let b2=0;b2<cs;b2++) occ[(ri+a)+':'+(col+b2)]=1;
+        if(col<nF){ c.classList.add('tw-fc'); c.style.left=L[col]+'px'; if(col+cs>=nF) c.classList.add('tw-fc-last'); }
+        col+=cs; }); }); };
+  apply(t.tHead.rows); [].forEach.call(t.tBodies,function(b){ apply(b.rows); }); if(t.tFoot) apply(t.tFoot.rows);
+}
+function twfQueue(){ clearTimeout(TWF_T); TWF_T=setTimeout(function(){ try{ twfScan(); }catch(e){ console.error(e); } },140); }
+(function(){ try{
+  const mo=new MutationObserver(function(ms){ for(let i=0;i<ms.length;i++){ const t=ms[i].target; if(t && t.closest && t.closest('#printArea')) continue; twfQueue(); return; } });
+  const go=function(){ mo.observe(document.body,{childList:true,subtree:true}); twfQueue(); };
+  if(document.body) go(); else document.addEventListener('DOMContentLoaded',go);
+  window.addEventListener('resize',twfQueue);
+}catch(e){} })();
+
+/* ======================= v19.90 — Demand থেকে Work Order (Purchase Order) =======================
+   Demand Sheet এর Item (Size, Ply, Paper, Liner, Country, Qty, Rate) থেকে Supplier কে Work Order।
+   প্রতিটা Work Order Order এর ভেতরে থাকে (o.demand.wo) — তাই Cloud Sync হয়। নম্বর নিজে থেকে:
+   ASBD/MMP/2026/24 (কোম্পানির আদ্যক্ষর / Supplier এর আদ্যক্ষর / বছর / ক্রমিক)।
+   Print তিন রকম: Software এর Letter Head ছবিতে · ছাপা Letter Head কাগজে (উপরে-নিচে ফাঁকা) · Letter Head ছাড়া।
+   Print সবসময় ইংরেজিতে; সই-এর অংশ সবসময় পাতার নিচে (Letter Head এর নিচের ডিজাইনের উপরে)। */
+var WO_CUR=null;
+const WO_TERMS_DEF=['Shipment Address: {FAC}','Quality must be as approved by us.','Purchase order number must appear on all challan and bill copy.',
+  'Please enclose a challan copy, having our received seal & sign, with your bills.','Payment will be made by Account payee cheque.','Credit period: 45 days from bill receive.'];
+function woList(){ const o=orderPlan(); if(!o) return []; o.demand=o.demand||{}; o.demand.wo=o.demand.wo||[]; return o.demand.wo; }
+function woCfg(){ const st=DB.settings||{}; return {mode:st.woLhMode||'image', top:n(st.woLhTop)>0?n(st.woLhTop):40, bot:n(st.woLhBot)>0?n(st.woLhBot):25,
+  officer:st.woOfficer||'', desig:st.woDesig||'Executive Procurement', terms:(st.woTerms&&st.woTerms.length)?st.woTerms:WO_TERMS_DEF.slice(), prefix:st.woPrefix||woCoInit()}; }
+function woTermsSet(v){ woCfgSet('woTerms', String(v||'').split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean)); }
+function woCfgSet(k,v){ DB.settings=DB.settings||{}; DB.settings[k]=v; saveDB(); }
+function woCoInit(){ const c=String((DB.settings&&DB.settings.companyName)||'Company');
+  let t=c.replace(/\b(ltd|limited|pvt|private|inc|co)\b\.?/ig,' ').replace(/[()]/g,' ').split(/\s+/).filter(Boolean).map(function(w){ return /^[A-Z]{2,4}$/.test(w)?w:w.charAt(0).toUpperCase(); }).join('');
+  return t.slice(0,6)||'PO'; }
+function woSupInit(nm){ const w=String(nm||'').replace(/[^A-Za-z0-9 ]/g,' ').split(/\s+/).filter(Boolean); if(!w.length) return 'SUP';
+  return w.map(function(x){ return x.charAt(0).toUpperCase(); }).join('').slice(0,4); }
+function woNextNo(sup){ DB.settings=DB.settings||{}; const y=new Date().getFullYear(); const sq=(n(DB.settings.woSeq)||0)+1;
+  return {no:woCfg().prefix+'/'+woSupInit(sup)+'/'+y+'/'+String(sq).padStart(2,'0'), seq:sq}; }
+function woSupRec(nm){ const k=String(nm||'').trim().toLowerCase(); return (DB.suppliers||[]).find(function(x){ return String(x.name||'').trim().toLowerCase()===k; })||null; }
+function woCols(type){   /* Demand এর কলাম থেকে Work Order এর কলাম */
+  const sp=demSpec(type); return sp.filter(function(x){ return x.t==='s' && ['name','buy','party','unit','demand'].indexOf(x.k)<0; }); }
+function woRowFromDem(r){ const c=demCalc(r), pm=r.pmId?pmMasterOf(r.pmId):null;
+  const o={pmId:r.pmId||'', name:r.name||(pm&&pm.name)||'', unit:r.unit||(pm&&pm.unit)||'Pcs', qty:n(c.act)>0?n(c.act):n(r.need), rate:n(r.rate), sup:(pm&&pm.supplier)||r.party||''};
+  ['L','W','H','ply','paper','liner','country'].forEach(function(k){ if(r[k]!=null && r[k]!=='') o[k]=r[k]; }); return o; }
+/* ---- তালিকা ---- */
+function woOpen(){
+  const sh=demSheet(DEM_CUR); if(!sh) return; if(!sh.rows.length){ toast('এই Demand এ কোনো Item নেই',true); return; }
+  let ov=document.getElementById('woModal'); if(!ov){ ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='woModal'; document.body.appendChild(ov); }
+  woListRender(); openModal('woModal'); try{ lhFootScan(); }catch(e){}
+}
+function woListRender(){
+  const ov=document.getElementById('woModal'); if(!ov) return; const L=woList().filter(function(w){ return w.type===DEM_CUR; });
+  ov.innerHTML='<div class="modal" style="max-width:900px;"><div class="modal-head"><h3>Work Order — '+esc(demT(DEM_CUR).l)+'</h3><button class="close-x" onclick="closeModal(\'woModal\')">&#10005;</button></div>'+
+    '<div class="modal-body">'+(L.length?('<div class="table-wrap"><table><thead><tr><th>Work Order No</th><th>তারিখ</th><th>Supplier</th><th class="num">Item</th><th class="num">Qty</th><th class="num">টাকা ৳</th><th></th></tr></thead><tbody>'+
+      L.map(function(w){ const T=woTot(w); return '<tr><td><b>'+esc(w.no)+'</b></td><td>'+esc(demDMY(w.date))+'</td><td>'+esc(w.sup||'—')+'</td><td class="num">'+w.rows.length+'</td><td class="num">'+money(T.qty,0)+'</td><td class="num"><b>'+money(T.amt,2)+'</b></td>'+
+        '<td><div class="row-actions"><button class="btn btn-sm btn-ghost" onclick="woEdit(\''+w.id+'\')">Edit</button><button class="btn btn-sm btn-ghost" onclick="woPrint(\''+w.id+'\')">&#128424; Print</button>'+
+        '<button class="btn btn-sm btn-ghost" onclick="woPdf(\''+w.id+'\')">PDF</button><button class="btn btn-sm btn-danger" onclick="woDel(\''+w.id+'\')">Del</button></div></td></tr>'; }).join('')+'</tbody></table></div>')
+      :'<div class="hint" style="padding:18px;text-align:center;border:1px dashed var(--border);border-radius:10px;">এই Demand থেকে এখনো কোনো Work Order বানানো হয়নি।</div>')+
+    '</div><div class="modal-foot"><span class="muted" style="font-size:12px;">একই Demand থেকে আলাদা আলাদা Supplier এর জন্য আলাদা Work Order বানানো যায়</span><span style="flex:1"></span>'+
+    '<button class="btn btn-primary" onclick="woEdit()">+ নতুন Work Order</button><button class="btn" onclick="closeModal(\'woModal\')">Close</button></div></div>';
+}
+function woTot(w){ let q=0,a=0; (w.rows||[]).forEach(function(r){ q+=n(r.qty); a+=n(r.qty)*n(r.rate); }); return {qty:q, amt:a}; }
+function woDel(id){ const L=woList(), i=L.findIndex(function(w){return w.id===id;}); if(i<0) return; if(!confirm(L[i].no+' মুছবেন?')) return; L.splice(i,1); saveDB(); woListRender(); }
+/* ---- বানানো / বদলানো ---- */
+var WO_ED=null;
+function woEdit(id){
+  const sh=demSheet(DEM_CUR), o=orderPlan(), C=woCfg();
+  let w=id?woList().find(function(x){return x.id===id;}):null;
+  const src=sh.rows.map(woRowFromDem).filter(function(r){ return r.name; });
+  if(!w){ const sups={}; src.forEach(function(r){ if(r.sup) sups[r.sup]=(sups[r.sup]||0)+1; }); const sup=Object.keys(sups).sort(function(a,b){return sups[b]-sups[a];})[0]||'';
+    const sr=woSupRec(sup), I=demPrInfo(DEM_CUR,sh);
+    w={id:'', type:DEM_CUR, no:'', date:new Date().toISOString().slice(0,10), req:I.req||'', sup:sup, addr:(sr&&sr.address)||'', phone:(sr&&sr.phone)||'', attn:(sr&&(sr.contact||sr.person))||'',
+       ref:(o.ref||''), pr:I.pr||'', note:'', rows:[]};
+    WO_ED={w:w, pick:{}, src:src}; src.forEach(function(r,i){ if(!sup || r.sup===sup || !r.sup) WO_ED.pick[i]=Object.assign({},r); });
+  } else { WO_ED={w:JSON.parse(JSON.stringify(w)), pick:{}, src:src};
+    /* আগে নেওয়া Item গুলো টিক, Qty/Rate যেমন বসানো ছিল */
+    w.rows.forEach(function(r){ let i=src.findIndex(function(x){ return (r.pmId&&x.pmId===r.pmId)||(!r.pmId&&x.name===r.name); }); if(i<0){ src.push(Object.assign({},r)); i=src.length-1; } WO_ED.pick[i]=Object.assign({},src[i],r); }); }
+  woEdRender();
+}
+function woEdRender(){
+  let ov=document.getElementById('woModal'); if(!ov){ ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='woModal'; document.body.appendChild(ov); openModal('woModal'); } const E=WO_ED, w=E.w, C=woCfg(), cols=woCols(w.type);
+  const sups=(DB.suppliers||[]).map(function(x){ return '<option value="'+esc(x.name)+'"></option>'; }).join('');
+  const f=function(lbl,k,typ,ph){ return '<div class="field"><label>'+lbl+'</label><input type="'+(typ||'text')+'" value="'+esc(w[k]||'')+'" placeholder="'+esc(ph||'')+'" oninput="WO_ED.w.'+k+'=this.value"'+(k==='sup'?' list="woSupDL" onchange="woSupPick(this.value)"':'')+'></div>'; };
+  let T={q:0,a:0}; Object.keys(E.pick).forEach(function(i){ const r=E.pick[i]; T.q+=n(r.qty); T.a+=n(r.qty)*n(r.rate); });
+  ov.innerHTML='<div class="modal" style="max-width:1200px;width:96vw;"><div class="modal-head"><h3>'+(w.id?'Work Order বদলান — '+esc(w.no):'নতুন Work Order')+' · '+esc(demT(w.type).l)+'</h3><button class="close-x" onclick="woListRender()">&#10005;</button></div>'+
+   '<div class="modal-body"><datalist id="woSupDL">'+sups+'</datalist>'+
+   '<div class="field-row cols-3">'+f('Supplier (To) *','sup','text','Supplier এর নাম')+f('Address','addr')+f('Attention / Contact','attn','text','ঐচ্ছিক')+'</div>'+
+   '<div class="field-row cols-3">'+f('Work Order No','no','text','খালি থাকলে নিজে থেকে')+f('Date','date','date')+f('Required Date (কবে লাগবে)','req','date')+'</div>'+
+   '<div class="field-row cols-3">'+f('Phone','phone','text','ঐচ্ছিক')+f('Order Ref','ref')+f('PR No','pr')+'</div>'+
+   '<div class="muted" style="font-size:12px;margin:6px 0;">টিক দেওয়া Item গুলো Work Order এ যাবে — Qty আর Rate এখানে বদলানো যায় (Demand বদলায় না)</div>'+
+   '<div class="table-wrap" style="max-height:44vh;overflow:auto;"><table><thead><tr><th style="width:34px;"><input type="checkbox" onchange="woPickAll(this.checked)"'+(Object.keys(E.pick).length===E.src.length?' checked':'')+'></th><th>Particulars</th>'+
+     cols.map(function(x){ return '<th>'+esc(x.g?x.h:x.h)+'</th>'; }).join('')+'<th>Supplier (PM List)</th><th class="num">Qty</th><th class="num">Rate ৳</th><th class="num">Amount ৳</th></tr></thead><tbody>'+
+     E.src.map(function(r,i){ const p=E.pick[i], on=!!p, v=on?p:r;
+       return '<tr style="'+(on?'':'opacity:.55;')+'"><td><input type="checkbox"'+(on?' checked':'')+' onchange="woPick('+i+',this.checked)"></td><td><b>'+esc(r.name)+'</b></td>'+
+         cols.map(function(x){ return '<td>'+esc(r[x.k]==null?'':r[x.k])+'</td>'; }).join('')+'<td class="muted" style="font-size:12px;">'+esc(r.sup||'—')+'</td>'+
+         '<td class="num"><input class="rate-inline" style="width:80px;text-align:right;" value="'+(n(v.qty)?money(v.qty,0):'')+'" '+(on?'':'disabled ')+'onchange="woRowSet('+i+',\'qty\',this.value)"> <span class="muted" style="font-size:11px;">'+esc(r.unit||'')+'</span></td>'+
+         '<td class="num"><input class="rate-inline" style="width:76px;text-align:right;" value="'+(n(v.rate)?money(v.rate,2):'')+'" '+(on?'':'disabled ')+'onchange="woRowSet('+i+',\'rate\',this.value)"></td>'+
+         '<td class="num"><b>'+(on?money(n(v.qty)*n(v.rate),2):'')+'</b></td></tr>'; }).join('')+
+   '</tbody><tfoot><tr style="font-weight:700;background:var(--panel-2);"><td colspan="'+(cols.length+3)+'" style="padding:9px 12px;text-align:right;">Total ('+Object.keys(E.pick).length+' item)</td><td class="num">'+money(T.q,0)+'</td><td></td><td class="num">৳'+money(T.a,2)+'</td></tr></tfoot></table></div>'+
+   '<div class="field-row cols-2" style="margin-top:12px;"><div class="field"><label>Terms &amp; Conditions (প্রতি লাইনে একটা — সব Work Order এ একই, পরে বদলানো যায়)</label><textarea rows="6" id="woTermsTA" onchange="woTermsSet(this.value)">'+esc(C.terms.join('\n'))+'</textarea>'+
+     '<div class="hint">{FAC} লিখলে Demand এর Factory ঠিকানা বসে</div></div>'+
+   '<div class="field"><label>Purchasing Officer — নাম</label><input type="text" id="woOffN" onchange="woCfgSet(\'woOfficer\',this.value.trim())" value="'+esc(C.officer)+'" placeholder="যেমন: Mohammed Hossain Sujon">'+
+     '<label style="margin-top:8px;">Designation</label><input type="text" id="woOffD" onchange="woCfgSet(\'woDesig\',this.value.trim())" value="'+esc(C.desig)+'">'+
+     '<label style="margin-top:8px;">Note (ঐচ্ছিক — Print এ ছকের নিচে)</label><input type="text" value="'+esc(w.note||'')+'" oninput="WO_ED.w.note=this.value"></div></div>'+
+   '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;padding:10px 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;margin-top:6px;">'+
+     '<div class="field" style="margin:0;"><label>Print কোথায়</label><select id="woLhMode" onchange="woCfgSet(\'woLhMode\',this.value);woEdRender()">'+
+       [['image','Software এর Letter Head (ছবি)'],['blank','ছাপা Letter Head কাগজে'],['none','Letter Head ছাড়া (সাধারণ কাগজ)']].map(function(o){ return '<option value="'+o[0]+'"'+(C.mode===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
+     (C.mode==='blank'?('<div class="field" style="margin:0;width:150px;"><label>উপরে ফাঁকা (mm)</label><input type="text" value="'+C.top+'" onchange="woCfgSet(\'woLhTop\',n(this.value))"></div>'+
+       '<div class="field" style="margin:0;width:150px;"><label>নিচে ফাঁকা (mm)</label><input type="text" value="'+C.bot+'" onchange="woCfgSet(\'woLhBot\',n(this.value))"></div>'):'')+
+     '<span class="muted" style="font-size:12px;flex:1;min-width:200px;">'+(C.mode==='image'?'Settings এ দেওয়া Letter Head এর উপর Print — নিচের ডিজাইনের উপরে সই':(C.mode==='blank'?'আগে থেকে ছাপা Letter Head কাগজ Printer এ দিন — উপরে-নিচে এতটুকু ফাঁকা থাকবে':'কোম্পানির নাম-ঠিকানা সহ সাধারণ কাগজে'))+'</span></div>'+
+   '</div><div class="modal-foot"><button class="btn" onclick="woListRender()">&#8592; তালিকা</button><span style="flex:1"></span>'+
+   '<button class="btn btn-ghost" onclick="woSave(\'print\')">Save + &#128424; Print</button><button class="btn btn-ghost" onclick="woSave(\'pdf\')">Save + PDF</button><button class="btn btn-primary" onclick="woSave()">Save</button></div></div>';
+}
+function woSupPick(v){ const r=woSupRec(v), w=WO_ED.w; w.sup=v; if(r){ if(r.address) w.addr=r.address; if(r.phone) w.phone=r.phone; if(r.contact||r.person) w.attn=r.contact||r.person; }
+  /* এই Supplier এর Item গুলো নিজে থেকে টিক */
+  const E=WO_ED; const any=E.src.some(function(x){ return x.sup && x.sup.toLowerCase()===String(v).toLowerCase(); });
+  if(any && !w.id){ E.pick={}; E.src.forEach(function(x,i){ if(x.sup && x.sup.toLowerCase()===String(v).toLowerCase()) E.pick[i]=Object.assign({},x); }); }
+  woEdRender(); }
+function woPick(i,on){ if(on) WO_ED.pick[i]=Object.assign({},WO_ED.src[i]); else delete WO_ED.pick[i]; woEdRender(); }
+function woPickAll(on){ WO_ED.pick={}; if(on) WO_ED.src.forEach(function(x,i){ WO_ED.pick[i]=Object.assign({},x); }); woEdRender(); }
+function woRowSet(i,k,v){ if(!WO_ED.pick[i]) return; WO_ED.pick[i][k]=n(v); woEdRender(); }
+function woSave(then){
+  const E=WO_ED, w=E.w; if(!String(w.sup||'').trim()){ toast('Supplier এর নাম দিন',true); return; }
+  const rows=Object.keys(E.pick).map(Number).sort(function(a,b){return a-b;}).map(function(i){ return E.pick[i]; });
+  if(!rows.length){ toast('অন্তত একটা Item টিক দিন',true); return; }
+  const ta=document.getElementById('woTermsTA'); if(ta){ const t=ta.value.split('\n').map(function(x){return x.trim();}).filter(Boolean); DB.settings.woTerms=t; }
+  const on=document.getElementById('woOffN'), od=document.getElementById('woOffD'); if(on) DB.settings.woOfficer=on.value.trim(); if(od) DB.settings.woDesig=od.value.trim();
+  /* Supplier তালিকায় না থাকলে যোগ, ঠিকানা/ফোন মনে রাখি */
+  try{ DB.suppliers=DB.suppliers||[]; let sr=woSupRec(w.sup); if(!sr){ sr={id:uid('sup'),name:w.sup.trim(),address:w.addr||'',phone:w.phone||'',createdAt:nowISO()}; DB.suppliers.push(sr); }
+    else { if(w.addr && !sr.address) sr.address=w.addr; if(w.phone && !sr.phone) sr.phone=w.phone; } }catch(e){}
+  w.rows=rows.map(function(r){ const o={}; ['pmId','name','unit','qty','rate','L','W','H','ply','paper','liner','country'].forEach(function(k){ if(r[k]!=null && r[k]!=='') o[k]=r[k]; }); return o; });
+  if(!String(w.no||'').trim()){ const x=woNextNo(w.sup); w.no=x.no; DB.settings.woSeq=x.seq; }
+  const L=woList(); if(!w.id){ w.id=uid('wo'); w.createdAt=nowISO(); w.by=(ME&&ME.name)||''; L.push(w); } else { const i=L.findIndex(function(x){return x.id===w.id;}); if(i>=0) L[i]=w; else L.push(w); }
+  w.updatedAt=nowISO(); saveDB(); toast('Work Order '+w.no+' Save হয়েছে');
+  woListRender(); if(then==='print') woPrint(w.id); else if(then==='pdf') woPdf(w.id);
+}
+/* ---- Print ---- */
+function woPrintHTML(w){
+  const C=woCfg(), cols=woCols(w.type), st=DB.settings||{}, S="font-family:'Times New Roman',Times,serif;", B='border:1px solid #000;padding:2px 4px;';
+  const hasSize=cols.some(function(x){return x.g;});
+  const fac=((orderPlan().demand||{}).hdr||{}).fac||DEM_FAC;
+  const T=woTot(w); const units={}; w.rows.forEach(function(r){ units[r.unit||'']=1; }); const uk=Object.keys(units); const uLab=uk.length===1&&uk[0]?uk[0]:'';
+  const th=function(t,x){ return '<th style="'+B+'background:#e9eef0;color:#000;font-weight:bold;font-size:9.5px;line-height:1.15;text-transform:none;letter-spacing:0;text-align:center;vertical-align:middle;'+(x||'')+'">'+t+'</th>'; };
+  const td=function(v,al,x){ return '<td style="'+B+'text-align:'+(al||'center')+';'+(x||'')+'">'+v+'</td>'; };
+  const N='width:1%;white-space:nowrap;';
+  let h='<div style="'+S+'color:#000;font-size:12px;">';
+  if(C.mode==='none'){
+    h+='<div style="display:flex;align-items:center;gap:14px;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:10px;">'+printLogoHTML()+
+      '<div style="flex:1;"><div style="font-size:20px;font-weight:bold;letter-spacing:.3px;">'+esc(st.companyName||'')+'</div>'+
+      (st.address?'<div style="font-size:11px;">'+esc(st.address)+'</div>':'')+([st.phone,st.email].filter(Boolean).length?'<div style="font-size:11px;">'+esc([st.phone,st.email].filter(Boolean).join(' · '))+'</div>':'')+'</div></div>';
+  }
+  h+='<div style="text-align:center;margin:0 0 8px;"><span style="font-size:17px;font-weight:bold;letter-spacing:2px;border-bottom:2px solid #000;padding:0 6px 1px;">WORK ORDER</span>'+
+     '<div style="font-size:10px;margin-top:3px;letter-spacing:.5px;">(Purchase Order)</div></div>';
+  /* To / নম্বর — সাধারণ div (Print এর ছকের দাগ যেন না বসে) */
+  const kv=function(k,v,wd){ return '<div style="display:flex;gap:0;line-height:1.45;"><span style="font-weight:bold;min-width:'+(wd||64)+'px;">'+k+'</span><span style="padding:0 6px;">:</span><span style="flex:1;">'+v+'</span></div>'; };
+  h+='<div style="display:flex;justify-content:space-between;gap:28px;margin-bottom:8px;font-size:11.5px;">'+
+     '<div style="flex:1;min-width:0;">'+kv('To','<b>'+esc(w.sup||'')+'</b>')+(w.addr?kv('Address',esc(w.addr)):'')+(w.attn?kv('Attention',esc(w.attn)):'')+(w.phone?kv('Phone',esc(w.phone)):'')+'</div>'+
+     '<div style="flex:0 0 auto;min-width:220px;">'+kv('W.O. No','<b>'+esc(w.no)+'</b>',86)+kv('Date',esc(demDMY(w.date)),86)+(w.req?kv('Required Date','<b>'+esc(demDMY(w.req))+'</b>',86):'')+(w.ref?kv('Order Ref',esc(w.ref),86):'')+(w.pr?kv('PR No',esc(w.pr),86):'')+'</div></div>';
+  h+='<div style="margin:0 0 5px;font-size:11.5px;">Dear Sir,<br>Kindly arrange to supply the following item(s) as per the specification below.</div>';
+  h+='<table style="width:100%;border-collapse:collapse;'+S+'font-size:10.5px;"><thead><tr>'+th('SL',N+'" rowspan="'+(hasSize?2:1))+th('Particulars','text-align:left;" rowspan="'+(hasSize?2:1));
+  const sizeCols=cols.filter(function(x){return x.g;}), other=cols.filter(function(x){return !x.g;});
+  if(hasSize) h+=th('Size (cm)','" colspan="'+sizeCols.length);
+  other.forEach(function(x){ h+=th(esc(x.h),N+'" rowspan="'+(hasSize?2:1)); });
+  h+=th('Qty'+(uLab?'<br>('+esc(uLab.toLowerCase())+')':''),N+'" rowspan="'+(hasSize?2:1))+th('Rate<br>(BDT)',N+'" rowspan="'+(hasSize?2:1))+th('Amount<br>(BDT)',N+'" rowspan="'+(hasSize?2:1))+'</tr>';
+  if(hasSize) h+='<tr>'+sizeCols.map(function(x){ return th(esc(x.h),N); }).join('')+'</tr>';
+  /* মোট সারি tbody তেই — পাতা ভাগ হলেও শেষে থাকে */
+  h+='</thead><tbody>'+w.rows.map(function(r,i){ return '<tr>'+td(i+1,'center',N)+td(esc(r.name),'left')+
+      cols.map(function(x){ return td(esc(r[x.k]==null?'':r[x.k]),'center',N); }).join('')+
+      td(money(r.qty,0)+(uLab?'':' '+esc(r.unit||'')),'right',N)+td(money(r.rate,2),'right',N)+td(money(n(r.qty)*n(r.rate),2),'right',N+'font-weight:bold;')+'</tr>'; }).join('')+
+    '<tr style="background:#f3f3f3;">'+'<td colspan="'+(2+cols.length)+'" style="'+B+'text-align:right;font-weight:bold;">Total Quantity</td>'+td(money(T.qty,0),'right',N+'font-weight:bold;')+
+      td('Total','right','font-weight:bold;')+td(money(T.amt,2),'right',N+'font-weight:bold;')+'</tr>'+
+    '<tr><td colspan="'+(5+cols.length)+'" style="'+B+'"><b>In Word:</b> '+esc(demWords(T.amt))+'</td></tr></tbody></table>';
+  if(w.note) h+='<div style="margin-top:6px;font-size:11px;"><b>Note:</b> '+esc(w.note)+'</div>';
+  h+='<div style="margin-top:9px;font-size:10.5px;"><div style="font-weight:bold;text-decoration:underline;margin-bottom:2px;">Terms &amp; Conditions:</div><ol style="margin:0;padding-left:20px;line-height:1.4;">'+
+     C.terms.map(function(t){ return '<li>'+esc(t.replace(/\{FAC\}/g, String(fac).replace(/^Factory\s*:\s*/i,'')))+'</li>'; }).join('')+'</ol></div>';
+  /* সই — সবসময় পাতার নিচে (q-endblk) */
+  const sg=function(title,inner,nm,dg){ return '<div style="flex:1;text-align:center;font-size:11px;"><div style="height:46px;display:flex;align-items:flex-end;justify-content:center;">'+(inner||'')+'</div>'+
+    '<div style="border-top:1px solid #000;margin:0 10px;padding-top:3px;font-weight:bold;">'+title+'</div>'+(nm?'<div>'+esc(nm)+'</div>':'')+(dg?'<div style="font-size:10px;">'+esc(dg)+'</div>':'')+'</div>'; };
+  h+='<div class="q-endblk" style="page-break-inside:avoid;"><div style="display:flex;gap:26px;margin-top:14px;">'+
+     sg('Purchasing Officer',psOn()?psImgFlow():'',C.officer,C.desig)+sg('Authorized Signature','','','')+sg('Received By (Supplier)','','','Signature, Seal & Date')+'</div></div>';
+  h+='</div>'; return h;
+}
+function woPrintSet(id){
+  const w=woList().find(function(x){return x.id===id;}); if(!w){ toast('Work Order পাওয়া যায়নি',true); return null; }
+  const C=woCfg(), img=C.mode==='image'?qLhImage():'';
+  let top, bot;
+  if(C.mode==='image'){ top=(DB.settings&&n(DB.settings.qLhTop)>0)?Math.max(n(DB.settings.qLhTop),38):46; bot=Math.max((DB.settings&&n(DB.settings.qLhBot)>0)?n(DB.settings.qLhBot):30, (typeof lhFootMm==='function'?lhFootMm():0)); }
+  else if(C.mode==='blank'){ top=C.top; bot=C.bot; } else { top=10; bot=10; }
+  const bg=img?('<img src="'+img+'" alt="" style="position:absolute;top:0;left:0;width:100%;height:297mm;object-fit:fill;">'):'';
+  document.getElementById('printArea').innerHTML=
+    '<div class="lh-page" style="position:relative;isolation:isolate;width:100%;min-height:297mm;box-sizing:border-box;padding:'+top+'mm 12mm '+bot+'mm 12mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;">'+bg+
+    '<div class="lh-body" style="position:relative;z-index:1;">'+woPrintHTML(w)+'</div></div>';
+  try{ lhPaginate(document.getElementById('printArea'), top, bot); }catch(e){ console.error(e); }
+  try{ qPinEnd(document.getElementById('printArea')); }catch(e){ console.error(e); }
+  setPrintOrientation('portrait','0mm');
+  return w;
+}
+function woPrint(id){ if(!needTool('print','Print')) return; if(woPrintSet(id)) safePrint(); }
+function woPdf(id){ const w=woList().find(function(x){return x.id===id;}); if(!w) return;
+  pdfRun(function(){ if(woPrintSet(id)) safePrint(); }, function(){ return pdfSafe('Work_Order_'+String(w.no).replace(/[\/\\]/g,'-')+' '+(w.sup||'')); }); }
+
 function demSet(i,k,v){
   const sh=demSheet(DEM_CUR); if(!sh||!sh.rows[i]) return;
   const sp=demSpec(DEM_CUR).filter(function(x){return x.k===k;})[0];
@@ -21402,6 +21693,13 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.90', d:'2026-11-23', t:'বড় ছকে শিরোনাম জমে থাকে (Freeze) · Demand এর সব কলাম এক পর্দায় · Demand থেকে Work Order', li:[
+  '<b>শিরোনাম Freeze:</b> যেকোনো লম্বা ছকে (Demand Sheet, RM / PM তালিকা, Order এর সব ট্যাব, Reports, Costing এর লাইন…) নিচে নামলেও কলামের নাম উপরে জমে থাকে; TOTAL সারিও নিচে দেখা যায়',
+  '<b>পাশে চওড়া ছকে প্রথম কলাম জমে থাকে:</b> # আর পণ্য / Material এর নাম বাঁ দিকে স্থির থাকে, ডানে সরালেও কোন সারি কোন পণ্য বোঝা যায়। পাশে সরানোর দণ্ড ছকের নিচে পর্দার মধ্যেই থাকে — আর পুরো পাতার নিচে নামতে হয় না',
+  '<b>Demand Sheet:</b> ঘরগুলো ছোট করা হয়েছে (L/W/H/Ply সরু, শিরোনাম দুই লাইনে) — Carton এর সব কলাম Amount পর্যন্ত এক পর্দায়; পপআপ পুরো উচ্চতা নেয়, ছক নিজে Scroll হয়',
+  '<b>নতুন: Work Order (Purchase Order):</b> Demand Sheet এর নিচে “📝 Work Order” — Supplier বাছলে তার Item গুলো নিজে থেকে টিক; Particulars, Size (L/W/H), Ply, Paper, Liner, Country, Qty, Rate Demand থেকেই আসে, Qty/Rate এখানে বদলানো যায়। নম্বর নিজে থেকে (যেমন ASBD/MMP/2026/01), Supplier এর ঠিকানা/ফোন Supplier তালিকা থেকে',
+  'Work Order এর Print / PDF তিন রকম: Software এর Letter Head ছবিতে · আগে থেকে ছাপা Letter Head কাগজে (উপরে-নিচে ফাঁকা mm দিয়ে) · Letter Head ছাড়া সাধারণ কাগজে। Total Quantity, In Word, Terms &amp; Conditions (একবার লিখলে সব Work Order এ), নিচে Purchasing Officer · Authorized Signature · Received By (Supplier) — সই সবসময় পাতার নিচে',
+  'একই Demand থেকে আলাদা Supplier এর জন্য আলাদা Work Order; সব Order এর সাথে Cloud Sync হয় · মোবাইলের App চেহারা আর কম্পিউটারে Print আগের মতোই']},
  {v:'19.89', d:'2026-11-23', t:'পণ্যভিত্তিক RM / PM: CBM আর Sales Value কলাম', li:[
   'Qty এর পরে <b>CBM</b> (প্রতি পণ্যের মোট CBM) আর শেষে <b>Sales Value ৳</b> — TOTAL সারিতে মোট CBM ও মোট বিক্রয়মূল্য',
   'স্ক্রিন, মোবাইলের কার্ড, Print আর PDF সব জায়গায় · ১৪টা পণ্য সহ পুরো ছক এখনো এক পাতায় (A4 Portrait)']},
@@ -24378,6 +24676,13 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.90', d:'2026-11-23', t:'Frozen headings on large tables · all demand columns on one screen · work orders from demand', li:[
+  '<b>Frozen headings:</b> on any long table (demand sheet, RM / PM lists, all order tabs, reports, costing lines…) the column headings stay on top while scrolling down, and the TOTAL row stays visible at the bottom',
+  '<b>First column frozen on wide tables:</b> # and the product / material name stay on the left while scrolling right. The horizontal scrollbar sits inside the screen under the table — no need to scroll to the bottom of the page first',
+  '<b>Demand sheet:</b> tighter cells (narrow L/W/H/Ply, two-line headings) — every carton column up to Amount fits on one screen; the popup uses the full height and the table scrolls inside it',
+  '<b>New: Work Order (Purchase Order):</b> “📝 Work Order” under the demand sheet — choosing a supplier ticks its items; Particulars, Size (L/W/H), Ply, Paper, Liner, Country, Qty and Rate come from the demand and Qty / Rate can be changed. Numbers are automatic (e.g. ASBD/MMP/2026/01); the supplier’s address / phone come from the supplier list',
+  'Work order print / PDF in three ways: on the software letter head image · on pre-printed letter head paper (top / bottom space in mm) · on plain paper without letter head. Total quantity, amount in words, terms & conditions (written once for all work orders), and Purchasing Officer · Authorized Signature · Received By (Supplier) — signatures always at the bottom of the page',
+  'Several work orders (one per supplier) from one demand; they sync with the order · mobile app look and desktop prints unchanged']},
  {v:'19.89', d:'2026-11-23', t:'Product-wise RM / PM: CBM and sales value columns', li:[
   '<b>CBM</b> (total CBM per product) after Qty and <b>Sales Value ৳</b> at the end — the TOTAL row shows total CBM and total sales value',
   'On screen, mobile cards, print and PDF · with 14 products the whole table still fits on one page (A4 portrait)']},
