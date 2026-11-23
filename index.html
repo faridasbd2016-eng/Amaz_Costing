@@ -1964,6 +1964,13 @@ html .tw-fz > table > tfoot > tr > .tw-fc{z-index:5; background-image:linear-gra
   #demModal > .modal > .modal-body > .dm-wrap{flex:1 1 auto; min-height:180px; max-height:none !important;}
 }
 
+
+/* v19.92 — তালিকা (Unit, Category…) বদলানোর ছোট চাকা */
+.lst-ic{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:4px;padding:0;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--text-dim);font-size:12px;line-height:1;cursor:pointer;vertical-align:middle;}
+.lst-ic:hover{color:var(--primary);border-color:var(--primary);}
+th .lst-ic{width:18px;height:18px;font-size:11px;text-transform:none;}
+#printArea .lst-ic,.pdfbox .lst-ic{display:none !important;}
+
 body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0,0,0,.5) !important;caret-color:transparent;pointer-events:none;user-select:none;}
 </style>
 </head>
@@ -2108,13 +2115,12 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
     <input type="hidden" id="rmId">
     <div class="field-row cols-2">
       <div class="field"><label>Material Name *</label><input type="text" id="rmName" placeholder="যেমন: Beson"></div>
-      <div class="field"><label>Category</label><input type="text" id="rmCategory" placeholder="যেমন: Ingredient"></div>
+      <div class="field"><label>Category <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('rmcat','rmCategory')">&#9881;</button></label><input type="text" id="rmCategory" list="lst_rmcat" data-lst="rmcat" placeholder="যেমন: Ingredient"></div>
     </div>
     <div class="field-row cols-3">
-      <div class="field"><label>Unit *</label><select id="rmUnit">
-        <option>Kg</option><option>gm</option><option>Ltr</option><option>ml</option><option>Pc</option><option>Pack</option><option>Dozen</option></select></div>
+      <div class="field"><label>Unit * <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('unit','rmUnit')">&#9881;</button></label><select id="rmUnit" data-lst="unit"><option>Kg</option></select></div>
       <div class="field"><label>Rate (৳ / unit) *</label><input type="number" id="rmPrice" step="0.0001" oninput="rateImpPrev('rm')"></div>
-      <div class="field"><label>Supplier</label><input type="text" id="rmSupplier" list="supList"></div>
+      <div class="field"><label>Supplier <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('supplier','rmSupplier')">&#9881;</button></label><input type="text" id="rmSupplier" list="supList"></div>
     </div>
     <div id="rmImpPrev" style="display:none;margin:-4px 0 12px;"></div>
     <div class="field"><label>কে কিনবে</label><select id="rmBuyBy">
@@ -2126,7 +2132,7 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
   <div class="modal-foot"><button class="btn" onclick="closeModal('rmModal')">বাতিল</button><button class="btn btn-primary" onclick="saveRawMaterial()">Save</button></div>
 </div></div>
 
-<datalist id="supList"></datalist>
+<datalist id="supList"></datalist><div id="lstDLs"></div>
 <div class="modal-overlay" id="ctnModal"><div class="modal" style="max-width:1280px;width:98vw;">
   <div class="modal-head"><h3>Carton Rate Calculator — Liner / Media Rate থেকে Carton এর দাম</h3><button class="close-x" onclick="closeModal('ctnModal');render()">&#10005;</button></div>
   <div class="modal-body" id="ctnBody"></div>
@@ -2161,13 +2167,12 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
     <input type="hidden" id="pkId">
     <div class="field-row cols-2">
       <div class="field"><label>Item Name *</label><input type="text" id="pkName" placeholder="যেমন: Carton 350gm X 24"></div>
-      <div class="field"><label>Category</label><input type="text" id="pkCategory"></div>
+      <div class="field"><label>Category <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('pkcat','pkCategory')">&#9881;</button></label><input type="text" id="pkCategory" list="lst_pkcat" data-lst="pkcat"></div>
     </div>
     <div class="field-row cols-3">
-      <div class="field"><label>Unit *</label><select id="pkUnit">
-        <option>Pc</option><option>Kg</option><option>gm</option><option>Roll</option><option>Ltr</option><option>Pack</option></select></div>
+      <div class="field"><label>Unit * <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('unit','pkUnit')">&#9881;</button></label><select id="pkUnit" data-lst="unit"><option>Pcs</option></select></div>
       <div class="field"><label>Rate (৳ / unit) *</label><input type="number" id="pkPrice" step="0.0001" oninput="rateImpPrev('pk')"></div>
-      <div class="field"><label>Supplier</label><input type="text" id="pkSupplier" list="supList"></div>
+      <div class="field"><label>Supplier <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('supplier','pkSupplier')">&#9881;</button></label><input type="text" id="pkSupplier" list="supList"></div>
     </div>
     <div id="pkImpPrev" style="display:none;margin:-4px 0 12px;grid-column:1/-1;"></div>
     <div class="field"><label>কে কিনবে</label><select id="pkBuyBy">
@@ -2175,7 +2180,7 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
       <option value="fac">Factory Purchase</option>
       <option value="ho">Head Office Purchase</option></select></div>
     <div class="field-row cols-2">
-      <div class="field"><label>Demand Sheet ধরন</label><select id="pkDType">
+      <div class="field"><label>Demand Sheet ধরন <button type="button" class="lst-ic" title="Demand ধরন: যোগ / বদল / মুছুন" onclick="demTypeMgr()">&#9881;</button></label><select id="pkDType">
         <option value="">Auto (নাম/Category দেখে)</option>
         <option value="boyom">Boyom &amp; Bottle</option><option value="foil">Foil</option>
         <option value="carton">Carton</option><option value="sticker">Sticker</option>
@@ -2183,11 +2188,11 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
       <div class="field"><label>Size (L×W×H / মাপ)</label><input type="text" id="pkDSize" placeholder="L×W×H যেমন: 40×30×25"></div>
     </div>
     <div class="field-row cols-3">
-      <div class="field"><label>Ply (Carton)</label><input type="text" id="pkDPly" placeholder="3 / 5 Ply"></div>
-      <div class="field"><label>Paper (Carton)</label><input type="text" id="pkDPaper" placeholder="যেমন: Bangla"></div>
-      <div class="field"><label>Liner (Carton)</label><input type="text" id="pkDLiner" placeholder="যেমন: Both"></div>
+      <div class="field"><label>Ply (Carton) <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('ply','pkDPly')">&#9881;</button></label><input type="text" id="pkDPly" list="lst_ply" data-lst="ply" placeholder="3 / 5 Ply"></div>
+      <div class="field"><label>Paper (Carton) <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('paper','pkDPaper')">&#9881;</button></label><input type="text" id="pkDPaper" list="lst_paper" data-lst="paper" placeholder="যেমন: Bangla"></div>
+      <div class="field"><label>Liner (Carton) <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('liner','pkDLiner')">&#9881;</button></label><input type="text" id="pkDLiner" list="lst_liner" data-lst="liner" placeholder="যেমন: Both"></div>
     </div>
-    <div class="field"><label>Country / Origin</label><input type="text" id="pkDCountry"></div>
+    <div class="field"><label>Country / Origin <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('country','pkDCountry')">&#9881;</button></label><input type="text" id="pkDCountry" list="lst_country" data-lst="country"></div>
     <div class="field"><label>Note</label><textarea id="pkNote" rows="2"></textarea></div>
   </div>
   <div class="modal-foot"><button class="btn" onclick="closeModal('pkModal')">বাতিল</button><button class="btn btn-primary" onclick="savePackaging()">Save</button></div>
@@ -2200,7 +2205,7 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
     <div id="fgCtypeBadge" style="margin-bottom:12px;"></div>
     <div class="field-row cols-2" style="margin-bottom:12px;">
       <div class="field"><label>Product Name *</label><input type="text" id="fg_name" placeholder="Hot Chanachur (350 gm X 24 Jar)"></div>
-      <div class="field" style="max-width:170px;"><label>Unit</label><span id="fg_unitWrap"></span></div>
+      <div class="field" style="max-width:170px;"><label>Unit <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen('fgunit','fg_unit')">&#9881;</button></label><span id="fg_unitWrap"></span></div>
     </div>
     <div class="field-row cols-2" style="margin-bottom:4px;">
       <div class="field" id="fgUsdField"><label>আসল বিক্রয়মূল্য (US$ per Ctn)</label><input type="text" id="fg_sellUsd" oninput="fgUsdInput(this.value)"></div>
@@ -4550,8 +4555,8 @@ function renderCtn(){
     const SEL=function(f,opts,val,col){ return '<select class="gk" data-r="'+i+'" data-c="'+col+'" style="font-size:12px;padding:3px" onkeydown="ctnKey(event,this)" onchange="ctnRow(\''+m.id+'\',\''+f+'\',this.value)"><option value=""></option>'+opts.map(function(o){return '<option'+(String(val).toLowerCase()===o.toLowerCase()?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'; };
     return '<tr data-id="'+m.id+'"'+(cc.inf.ok?'':' style="background:rgba(200,120,0,.07)"')+'><td class="muted">'+(i+1)+'</td><td style="min-width:230px;"><b>'+esc(m.name)+'</b></td>'+
       '<td>'+I('L',p[0],42,0)+'</td><td>'+I('W',p[1],42,1)+'</td><td>'+I('H',p[2],42,2)+'</td>'+
-      '<td>'+SEL('dPly',['3','5'],m.dPly||'',3)+'</td><td>'+SEL('dPaper',['Bangla','Tanbin'],m.dPaper||'',4)+'</td>'+
-      '<td>'+SEL('dLiner',['Both','One'],m.dLiner||'',5)+'</td>'+
+      '<td>'+SEL('dPly',lstGet('ply'),m.dPly||'',3)+'</td><td>'+SEL('dPaper',lstGet('paper'),m.dPaper||'',4)+'</td>'+
+      '<td>'+SEL('dLiner',lstGet('liner'),m.dLiner||'',5)+'</td>'+
       '<td class="num cp"><b>'+cc.price+'</b></td><td class="num cc">'+cc.cur+'</td>'+
       '<td class="num cd" style="color:'+cc.col+'">'+cc.diff+'</td>'+
       '<td style="text-align:center"><input type="checkbox" class="gk" data-r="'+i+'" data-c="6" onkeydown="ctnKey(event,this)" '+(on?'checked ':'')+'onchange="ctnRow(\''+m.id+'\',\'ctnAuto\',this.checked)" title="টিক থাকলে Rate নিজে থেকে বদলাবে"></td></tr>'; }).join('');
@@ -4664,7 +4669,7 @@ function dmImportApply(){
     let m=x.match;
     if(!m){
       if(!I.create) return;
-      m={id:uid('pk'), name:x.name, category:'', unit:x.unit||'Pc', unitPrice:0, rateHistory:[], supplier:'', buyBy:'ho', note:'', updatedAt:nowISO()};
+      m={id:uid('pk'), name:x.name, category:'', unit:normUnit(x.unit)||'Pcs', unitPrice:0, rateHistory:[], supplier:'', buyBy:'ho', note:'', updatedAt:nowISO()};
       DB.packaging.push(m); nw++;
     } else up++;
     if(x.unit && !x.match) m.unit=x.unit;
@@ -6089,7 +6094,7 @@ function renderRMTable(){
   const sorted=list.slice().sort(byName);
   VISIBLE.rm=sorted.map(function(m){return m.id;});
   w.innerHTML=banner+'<table><thead><tr><th class="chkcell"><input type="checkbox" class="chk" id="rmCheckAll" onchange="toggleAllVisible(\'rm\',this.checked)" title="সব নির্বাচন"></th>'+
-   '<th style="min-width:220px">Name</th><th>Unit</th><th class="num" style="min-width:120px">Rate ✎</th>'+
+   '<th style="min-width:220px">Name</th><th>Unit <button type="button" class="lst-ic" title="Unit তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen(\'unit\')">&#9881;</button></th><th class="num" style="min-width:120px">Rate ✎</th>'+
    '<th style="min-width:230px">আগের Rate</th><th style="min-width:130px">কে কিনবে ✎</th><th>Supplier</th><th>Updated</th><th></th></tr></thead><tbody>'+
    sorted.map(function(m,idx){
      const z=n(m.unitPrice)<=0, sel=!!SEL.rm[m.id];
@@ -6674,7 +6679,7 @@ function renderPKTable(){
   const sorted=list.slice().sort(byName);
   VISIBLE.pk=sorted.map(function(m){return m.id;});
   w.innerHTML=banner+'<table><thead><tr><th class="chkcell"><input type="checkbox" class="chk" id="pkCheckAll" onchange="toggleAllVisible(\'pk\',this.checked)" title="সব নির্বাচন"></th>'+
-   '<th style="min-width:220px">Name</th><th>Unit</th><th class="num" style="min-width:120px">Rate ✎</th>'+
+   '<th style="min-width:220px">Name</th><th>Unit <button type="button" class="lst-ic" title="Unit তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen(\'unit\')">&#9881;</button></th><th class="num" style="min-width:120px">Rate ✎</th>'+
    '<th style="min-width:230px">আগের Rate</th><th style="min-width:130px">কে কিনবে ✎</th><th>Supplier</th><th>Updated</th><th></th></tr></thead><tbody>'+
    sorted.map(function(m,idx){
      const z=n(m.unitPrice)<=0, sel=!!SEL.pk[m.id];
@@ -7083,7 +7088,7 @@ function openRMModal(id){ document.getElementById('rmId').value=id||''; { const 
   } else { document.getElementById('rmModalTitle').textContent='নতুন Raw Material'; rmSet('','','Kg','','','',''); }
   openModal('rmModal'); }
 function rmSet(a,b,c,d,e,f,g){ document.getElementById('rmName').value=a; document.getElementById('rmCategory').value=b||'';
-  document.getElementById('rmUnit').value=c||'Kg'; document.getElementById('rmPrice').value=d;
+  document.getElementById('rmUnit').innerHTML=UNIT_OPTS(normUnit(c)||'Kg'); document.getElementById('rmUnit').value=normUnit(c)||'Kg'; document.getElementById('rmPrice').value=d;
   document.getElementById('rmSupplier').value=e||''; document.getElementById('rmNote').value=f||'';
   document.getElementById('rmBuyBy').value=g||''; }
 function saveRawMaterial(){
@@ -7202,13 +7207,13 @@ function openPKModal(id){ document.getElementById('pkId').value=id||''; { const 
   if(id){ const m=DB.packaging.find(function(x){return x.id===id;});
     document.getElementById('pkModalTitle').textContent='Packing Material Edit';
     pkSet(m.name,m.category,m.unit,m.unitPrice,m.supplier,m.note,m.buyBy,m);
-  } else { document.getElementById('pkModalTitle').textContent='নতুন Packing Material'; pkSet('','','Pc','','','','',null); }
+  } else { document.getElementById('pkModalTitle').textContent='নতুন Packing Material'; pkSet('','','Pcs','','','','',null); }
   openModal('pkModal'); }
 function pkSet(a,b,c,d,e,f,g,m){ m=m||{};
   document.getElementById('pkDType').innerHTML='<option value="">Auto (নাম/Category দেখে)</option>'+demTypes().map(function(t){ return '<option value="'+esc(t.v)+'">'+esc(t.l)+'</option>'; }).join('')+'<option value="none">Demand Sheet এ লাগবে না</option>';
   document.getElementById('pkDType').value=m.demandType||''; document.getElementById('pkDSize').value=m.dSize||'';
   document.getElementById('pkDPly').value=m.dPly||''; document.getElementById('pkDPaper').value=m.dPaper||''; document.getElementById('pkDLiner').value=m.dLiner||''; document.getElementById('pkDCountry').value=m.dCountry||''; document.getElementById('pkName').value=a; document.getElementById('pkCategory').value=b||'';
-  document.getElementById('pkUnit').value=c||'Pc'; document.getElementById('pkPrice').value=d;
+  document.getElementById('pkUnit').innerHTML=UNIT_OPTS(normUnit(c)||'Pcs'); document.getElementById('pkUnit').value=normUnit(c)||'Pcs'; document.getElementById('pkPrice').value=d;
   document.getElementById('pkSupplier').value=e||''; document.getElementById('pkNote').value=f||'';
   document.getElementById('pkBuyBy').value=g||''; }
 function pkReadDemand(m){
@@ -8298,8 +8303,8 @@ function BUY_BY_OPTS(cur){
       return '<option value="'+b.v+'"'+(cur===b.v?' selected':'')+'>'+b.s+'</option>'; }).join('');
 }
 /* তালিকা থেকেই সরাসরি বদলানো — Edit modal না খুলেই */
-var UNIT_LIST=['Kg','gm','Ltr','ml','Pc','Pack','Dozen','Roll','Sheet','Set','Box','Meter'];
-function UNIT_OPTS(cur){ const l=UNIT_LIST.slice(); if(cur&&l.indexOf(cur)<0) l.push(cur);
+var UNIT_LIST=['Kg','gm','Ltr','ml','Pcs','Pack','Dozen','Roll','Sheet','Set','Box','Meter'];
+function UNIT_OPTS(cur){ cur=normUnit(cur); const l=lstGet('unit'); if(cur&&l.indexOf(cur)<0) l.push(cur);
   return l.map(function(u){return '<option'+(u===cur?' selected':'')+'>'+esc(u)+'</option>';}).join(''); }
 function setMatField(t,id,f,v){
   const list=t==='rm'?DB.rawMaterials:DB.packaging;
@@ -9946,7 +9951,7 @@ function renderMixForm(){
     '<div class="field-row cols-3" style="margin-bottom:8px;">'+
       '<div class="field"><label>Product (FG list থেকে) *</label><select id="mx_name" onchange="mixSetFg(this.value)">'+fgSel+'</select>'+
         (fgOpts.length?'':'<div class="hint" style="color:var(--danger);">এই Section এর FG list এ কোনো Product নেই — আগে FG Product Master এ যোগ করুন।</div>')+'</div>'+
-      '<div class="field"><label>Section</label><select id="mx_sec" onchange="mixSetSec(this.value)"'+(m.id?' disabled':'')+'>'+secOpts+'</select></div>'+
+      '<div class="field"><label>Section <button type="button" class="lst-ic" title="Section: যোগ / বদল / মুছুন" onclick="openSectionMgr()">&#9881;</button></label><select id="mx_sec" onchange="mixSetSec(this.value)"'+(m.id?' disabled':'')+'>'+secOpts+'</select></div>'+
       '<div class="field"><label>Folder <small style="color:var(--text-dim);">(ঐচ্ছিক)</small></label><input type="text" list="mx_dl" value="'+esc(m.folder||'')+'" oninput="MIXF.folder=this.value.trim()"><datalist id="mx_dl">'+dl+'</datalist></div></div>'+
     (prods.length?'':'<p class="hint" style="color:var(--danger);">এই Section এ কোনো Costing নেই — আগে flavour এর Costing তৈরি করুন।</p>')+
     '<div class="table-wrap"><table class="tbl"><thead><tr><th style="width:30px;">#</th><th>Flavour এর Costing</th>'+
@@ -10715,7 +10720,7 @@ function openCostOrg(id, mode){
     '<div class="modal-body">'+
     '<p class="hint" style="margin:-4px 0 13px;">'+(isCopy?('“'+esc(p.name)+'” এর একটা নতুন কপি তৈরি হবে।'):('“'+esc(p.name)+'” কে এই Section/Folder এ সরানো হবে।'))+'</p>'+
     (isCopy?('<div class="field" style="margin-bottom:13px;"><label>নতুন নাম</label><input type="text" id="co_name" value="'+esc(p.name+' (Copy)')+'"></div>'):'')+
-    '<div class="field" style="margin-bottom:13px;"><label>Section</label><select id="co_sec">'+secOpts+'</select></div>'+
+    '<div class="field" style="margin-bottom:13px;"><label>Section <button type="button" class="lst-ic" title="Section: যোগ / বদল / মুছুন" onclick="openSectionMgr()">&#9881;</button></label><select id="co_sec">'+secOpts+'</select></div>'+
     '<div class="field" style="margin-bottom:17px;"><label>Folder <small style="color:var(--text-dim);">(খালি রাখলে ফোল্ডারহীন)</small></label>'+
       '<input type="text" id="co_folder" list="co_folderDL" value="'+esc(folderOf(p))+'" placeholder="যেমন: Malaysia"><datalist id="co_folderDL">'+dl+'</datalist></div>'+
     (isCopy?coSwapHTML(p):'')+
@@ -11864,7 +11869,8 @@ function demRender(){
       ['','Head Office','Factory'].map(function(o){ return '<option value="'+o+'"'+(String(v||'')===o?' selected':'')+'>'+(o||'—')+'</option>'; }).join('')+'</select>';
     /* v19.90 — ছোট ঘর: L/W/H/Ply ছোট, বাকিগুলো লেখার মাপে */
     const w=x.k==='name'?'min-width:170px;':(x.t==='n'?'width:60px;text-align:right;':'width:'+((x.k==='party'||x.k==='demand')?140:(['L','W','H','ply'].indexOf(x.k)>=0?44:(x.k==='country'?70:56)))+'px;');
-    return '<input class="rate-inline" style="'+w+'" value="'+esc(v==null?'':(x.t==='n'&&!n(v)?'':v))+'"'+(x.t==='n'?' placeholder="0" onfocus="this.select()"':'')+
+    const dl=({paper:1,liner:1,ply:1,country:1,unit:1})[x.k]?' list="lst_'+x.k+'"':'';      /* v19.92 — তালিকা থেকে বাছা যায় */
+    return '<input class="rate-inline" style="'+w+'"'+dl+' value="'+esc(v==null?'':(x.t==='n'&&!n(v)?'':v))+'"'+(x.t==='n'?' placeholder="0" onfocus="this.select()"':'')+
       ' onchange="demSet('+i+',\''+x.k+'\',this.value)">'; };
   document.getElementById('demBody').innerHTML=
     '<div class="field-row cols-2" style="margin-bottom:10px;"><div class="field"><label>Sheet এর Title</label><input type="text" value="'+esc(sh.title||demT(type).t)+'" onchange="demTitle(this.value)"></div>'+
@@ -11875,7 +11881,7 @@ function demRender(){
     demSigEditHTML()+
     '<datalist id="demPmDL">'+(DB.packaging||[]).map(function(m){ return '<option value="'+esc(m.name)+'"></option>'; }).join('')+'</datalist>'+
     (sh.rows.length?'':'<div class="hint" style="padding:14px;text-align:center;border:1px dashed var(--border);border-radius:8px;margin-bottom:10px;">এই Sheet এ কোনো Item নেই — নিচের <b>"+ PM List থেকে Item"</b> চেপে বাছাই করুন।</div>')+
-    '<div class="table-wrap dm-wrap" style="max-height:60vh;overflow:auto;"><table class="dm-tbl"><thead><tr><th>#</th>'+sp.map(function(x){return '<th'+(x.t==='s'?'':' class="num"')+'>'+(x.g?'Size '+x.h:x.h)+'</th>';}).join('')+'<th></th></tr></thead><tbody>'+
+    '<div class="table-wrap dm-wrap" style="max-height:60vh;overflow:auto;"><table class="dm-tbl"><thead><tr><th>#</th>'+sp.map(function(x){return '<th'+(x.t==='s'?'':' class="num"')+'>'+(x.g?'Size '+x.h:x.h)+(({paper:1,liner:1,ply:1,country:1,unit:1})[x.k]?' <button type="button" class="lst-ic" title="তালিকা: যোগ / বদল / মুছুন" onclick="lstOpen(\''+x.k+'\')">&#9881;</button>':'')+'</th>';}).join('')+'<th></th></tr></thead><tbody>'+
     sh.rows.map(function(r,i){ const c=demCalc(r);
       return '<tr><td class="muted">'+(i+1)+'</td>'+sp.map(function(x){
         if(x.t==='c') return '<td class="num" id="dm_'+x.k+'_'+i+'"><b>'+esc(demFmt(x,c[x.k]))+'</b></td>';
@@ -12166,6 +12172,160 @@ function woPrintSet(id){
 function woPrint(id){ if(!needTool('print','Print')) return; if(woPrintSet(id)) safePrint(); }
 function woPdf(id){ const w=woList().find(function(x){return x.id===id;}); if(!w) return;
   pdfRun(function(){ if(woPrintSet(id)) safePrint(); }, function(){ return pdfSafe('Work_Order_'+String(w.no).replace(/[\/\\]/g,'-')+' '+(w.sup||'')); }); }
+
+
+/* ======================= v19.92 — তালিকা ব্যবস্থাপনা (Unit, Category, Paper, Liner, Ply, Country, FG Unit, Supplier) =======================
+   প্রতিটা তালিকার পাশে ⚙ — যোগ / নাম বদল / মুছা। নাম বদলালে যেখানে যেখানে ব্যবহার হয়েছে সব জায়গায় বদলায়;
+   অন্য একটার নাম দিলে দুটো মিলে এক হয়। ব্যবহার হচ্ছে এমন নাম মুছা যায় না (আগে অন্যটায় মেলাতে হয়)।
+   তালিকা Settings এ থাকে — Cloud Sync হয়। */
+function normUnit(u){ u=String(u==null?'':u).trim(); if(/^(pc|pcs|pce|piece|pieces|pc\.|pcs\.)$/i.test(u)) return 'Pcs'; return u; }
+function unitNormAll(){ let ch=0; const fx=function(o,k){ if(o && o[k]!=null && o[k]!==''){ const v=normUnit(o[k]); if(v!==o[k]){ o[k]=v; o.updatedAt=o.updatedAt?nowISO():o.updatedAt; ch++; } } };
+  (DB.rawMaterials||[]).forEach(function(m){ fx(m,'unit'); }); (DB.packaging||[]).forEach(function(m){ fx(m,'unit'); }); (DB.fgProducts||[]).forEach(function(m){ fx(m,'unit'); });
+  (DB.orderPlans||[]).concat(DB.orders||[]).forEach(function(o){ const d=o&&o.demand; if(!d) return; Object.keys(d.sheets||{}).forEach(function(k){ ((d.sheets[k]||{}).rows||[]).forEach(function(r){ fx(r,'unit'); }); });
+    (d.wo||[]).forEach(function(w){ (w.rows||[]).forEach(function(r){ fx(r,'unit'); }); }); });
+  return ch; }
+function lstDemRows(){ const out=[]; (DB.orderPlans||[]).concat(DB.orders||[]).forEach(function(o){ const d=o&&o.demand; if(!d) return;
+  Object.keys(d.sheets||{}).forEach(function(k){ ((d.sheets[k]||{}).rows||[]).forEach(function(r){ out.push(r); }); }); (d.wo||[]).forEach(function(w){ (w.rows||[]).forEach(function(r){ out.push(r); }); }); }); return out; }
+const LST={
+  unit:   {l:'Unit (RM / PM)', def:['Kg','gm','Ltr','ml','Pcs','Pack','Dozen','Roll','Sheet','Set','Box','Meter'],
+           refs:function(){ return [[DB.rawMaterials,'unit'],[DB.packaging,'unit'],[lstDemRows(),'unit']]; }},
+  fgunit: {l:'FG Unit', def:['Ctn','Pkt','Bag','CS','Box','Jar','Drum','Sack','Bundle','Dozen','Pcs','Bottle','Kg','Ltr'], refs:function(){ return [[DB.fgProducts,'unit']]; }},
+  rmcat:  {l:'RM Category', def:[], refs:function(){ return [[DB.rawMaterials,'category']]; }},
+  pkcat:  {l:'PM Category', def:['Carton','Sticker','Poly','Boyom','Bottle','Foil','Tray','Label'], refs:function(){ return [[DB.packaging,'category']]; }},
+  paper:  {l:'Paper (Carton)', def:['Bangla','Tanbin'], refs:function(){ return [[DB.packaging,'dPaper'],[lstDemRows(),'paper']]; }},
+  liner:  {l:'Liner (Carton)', def:['Both','One'], refs:function(){ return [[DB.packaging,'dLiner'],[lstDemRows(),'liner']]; }},
+  ply:    {l:'Ply (Carton)', def:['3','5','7'], refs:function(){ return [[DB.packaging,'dPly'],[lstDemRows(),'ply']]; }},
+  country:{l:'Country / Origin', def:['Bangladesh','Malaysia','China','India'], refs:function(){ return [[DB.packaging,'dCountry'],[lstDemRows(),'country']]; }},
+  supplier:{l:'Supplier', def:[], refs:function(){ return [[DB.rawMaterials,'supplier'],[DB.packaging,'supplier'],[DB.suppliers,'name']]; }}
+};
+function lstUsed(k){ const m={}; (LST[k].refs()||[]).forEach(function(rf){ (rf[0]||[]).forEach(function(o){ const v=String((o&&o[rf[1]])==null?'':o[rf[1]]).trim(); if(v){ const kk=v.toLowerCase(); m[kk]=m[kk]||{v:v,n:0}; m[kk].n++; } }); }); return m; }
+function lstSaved(k){ const L=(DB.settings&&DB.settings.lists&&DB.settings.lists[k]); return Array.isArray(L)?L:null; }
+function lstGet(k){ const D=LST[k]; if(!D) return []; const base=lstSaved(k)||D.def, out=[], seen={};
+  const add=function(v){ v=String(v||'').trim(); if(k==='unit'||k==='fgunit') v=normUnit(v); if(!v) return; const kk=v.toLowerCase(); if(seen[kk]) return; seen[kk]=1; out.push(v); };
+  base.forEach(add); const U=lstUsed(k); Object.keys(U).sort().forEach(function(kk){ add(U[kk].v); }); return out; }
+function lstSave(k,arr){ DB.settings=DB.settings||{}; DB.settings.lists=Object.assign({},DB.settings.lists||{}); DB.settings.lists[k]=arr.slice(); saveDB(); }
+var LST_CUR=null;
+function lstOpen(k,target){
+  if(!LST[k]) return; LST_CUR={k:k,t:target||''};
+  let ov=document.getElementById('lstModal'); if(!ov){ ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='lstModal'; ov.style.zIndex=100500; document.body.appendChild(ov); }
+  lstRender(); openModal('lstModal'); setTimeout(function(){ const i=document.getElementById('lstNew'); if(i) i.focus(); },60);
+}
+function lstRender(){
+  const ov=document.getElementById('lstModal'); if(!ov||!LST_CUR) return; const k=LST_CUR.k, L=lstGet(k), U=lstUsed(k);
+  ov.innerHTML='<div class="modal" style="max-width:520px;"><div class="modal-head"><h3>&#9881; '+esc(LST[k].l)+' — তালিকা</h3><button class="close-x" onclick="lstClose()">&#10005;</button></div>'+
+   '<div class="modal-body"><div style="display:flex;gap:8px;margin-bottom:12px;"><input type="text" id="lstNew" placeholder="নতুন নাম লিখে Enter চাপুন" onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();lstAdd();}" style="flex:1;">'+
+   '<button class="btn btn-primary" onclick="lstAdd()">+ যোগ</button></div>'+
+   '<div class="table-wrap no-fz" style="max-height:52vh;overflow:auto;"><table><thead><tr><th>নাম</th><th class="num">ব্যবহার</th><th style="width:140px;"></th></tr></thead><tbody>'+
+   L.map(function(v,i){ const u=U[v.toLowerCase()], n0=u?u.n:0;
+     return '<tr><td><input type="text" class="rate-inline" value="'+esc(v)+'" data-old="'+esc(v)+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();this.blur();}" onchange="lstRen(this.dataset.old,this.value,this)" style="width:100%;text-align:left;font-weight:600;"></td>'+
+       '<td class="num">'+(n0?'<span title="'+n0+' জায়গায় ব্যবহার">'+n0+'</span>':'<span class="muted">—</span>')+'</td>'+
+       '<td style="white-space:nowrap;text-align:right;">'+
+         '<button class="btn btn-sm btn-ghost" title="উপরে" onclick="lstMove('+i+',-1)"'+(i?'':' disabled')+'>&#9650;</button>'+
+         '<button class="btn btn-sm btn-ghost" title="নিচে" onclick="lstMove('+i+',1)"'+(i<L.length-1?'':' disabled')+'>&#9660;</button>'+
+         '<button class="btn btn-sm btn-danger" title="'+(n0?'ব্যবহার হচ্ছে — আগে নাম বদলে অন্যটায় মেলান':'মুছুন')+'" onclick="lstDel(\''+esc(v).replace(/'/g,"\\'")+'\')"'+(n0?' disabled':'')+'>&#10005;</button></td></tr>'; }).join('')+
+   '</tbody></table></div><div class="hint" style="margin-top:8px;">নাম বদলালে যত জায়গায় ব্যবহার হয়েছে সব জায়গায় বদলাবে। অন্য একটা নামের মতো লিখলে দুটো মিলে এক হবে (যেমন pc → Pcs)। ব্যবহার হচ্ছে এমন নাম মুছা যায় না।</div></div>'+
+   '<div class="modal-foot"><span style="flex:1"></span><button class="btn btn-primary" onclick="lstClose()">ঠিক আছে</button></div></div>';
+}
+function lstAdd(){ const i=document.getElementById('lstNew'); let v=String(i&&i.value||'').trim(); const k=LST_CUR.k; if(k==='unit'||k==='fgunit') v=normUnit(v); if(!v) return;
+  const L=lstGet(k); if(L.some(function(x){ return x.toLowerCase()===v.toLowerCase(); })){ toast('“'+v+'” আগে থেকেই আছে',true); return; }
+  L.push(v); lstSave(k,L); if(k==='supplier'){ DB.suppliers=DB.suppliers||[]; if(!DB.suppliers.some(function(x){ return String(x.name||'').toLowerCase()===v.toLowerCase(); })){ DB.suppliers.push({id:uid('sup'),name:v,createdAt:nowISO()}); saveDB(); } }
+  LST_CUR.pick=v; lstRender(); setTimeout(function(){ const n2=document.getElementById('lstNew'); if(n2) n2.focus(); },30); toast('“'+v+'” যোগ হয়েছে'); }
+function lstMove(i,d){ const k=LST_CUR.k, L=lstGet(k), j=i+d; if(j<0||j>=L.length) return; const t=L[i]; L[i]=L[j]; L[j]=t; lstSave(k,L); lstRender(); }
+function lstDel(v){ const k=LST_CUR.k, U=lstUsed(k); if(U[String(v).toLowerCase()]){ toast('ব্যবহার হচ্ছে — মুছা যাবে না',true); return; }
+  if(!confirm('“'+v+'” তালিকা থেকে মুছবেন?')) return; lstSave(k,lstGet(k).filter(function(x){ return x!==v; })); lstRender(); }
+function lstRen(oldV,newV,el){ const k=LST_CUR.k; newV=String(newV||'').trim(); if(k==='unit'||k==='fgunit') newV=normUnit(newV);
+  if(!newV || newV===oldV){ if(el) el.value=oldV; return; }
+  const L=lstGet(k), exist=L.find(function(x){ return x!==oldV && x.toLowerCase()===newV.toLowerCase(); }), U=lstUsed(k), n0=(U[oldV.toLowerCase()]||{}).n||0;
+  if(exist && !confirm('“'+exist+'” আগে থেকেই আছে — “'+oldV+'” কে “'+exist+'” এর সাথে মিলিয়ে এক করবেন? ('+n0+' জায়গায় বদলাবে)')){ el.value=oldV; return; }
+  if(!exist && n0 && !confirm('“'+oldV+'” → “'+newV+'” — '+n0+' জায়গায় বদলাবে। ঠিক আছে?')){ el.value=oldV; return; }
+  const to=exist||newV, lo=oldV.toLowerCase();
+  (LST[k].refs()||[]).forEach(function(rf){ (rf[0]||[]).forEach(function(o){ if(o && String(o[rf[1]]==null?'':o[rf[1]]).trim().toLowerCase()===lo){ o[rf[1]]=to; if(o.updatedAt!==undefined||o.id) o.updatedAt=nowISO(); } }); });
+  if(k==='supplier'){ /* একই নামের দুটো Supplier হলে একটা রাখি */ const seen={}; DB.suppliers=(DB.suppliers||[]).filter(function(x){ const kk=String(x.name||'').toLowerCase(); if(seen[kk]) return false; seen[kk]=1; return true; }); }
+  const L2=L.map(function(x){ return x===oldV?to:x; }).filter(function(x,i,a){ return a.findIndex(function(y){ return y.toLowerCase()===x.toLowerCase(); })===i; });
+  lstSave(k,L2); LST_CUR.pick=to; lstRender(); toast('বদলানো হয়েছে'); }
+function lstClose(){ closeModal('lstModal'); const C=LST_CUR; LST_CUR=null; lstDLFill();
+  try{ if(C && C.t){ const el=document.getElementById(C.t); if(el){ if(el.tagName==='SELECT'){ const keep=el.value; if(C.k==='fgunit'){ const par=el.parentElement; if(par&&par.id==='fg_unitWrap') par.innerHTML=fgUnitSel('fg_unit',C.pick||keep,'','width:100%;'); }
+        else { el.innerHTML=UNIT_OPTS_K(C.k, C.pick||keep); el.value=C.pick||keep; } }
+      else if(C.pick && !el.value) el.value=C.pick; } } }catch(e){ console.error(e); }
+  try{ if(!document.querySelector('.modal-overlay.open') || ['rawmaterials','packaging','fgproducts','suppliers'].indexOf(currentPage)>=0) render(); }catch(e){}
+  try{ document.querySelectorAll('select[data-lst]').forEach(function(se){ if(C && se.id===C.t) return; const k=se.getAttribute('data-lst'), v=se.value; se.innerHTML=UNIT_OPTS_K(k,v); se.value=v; }); }catch(e){}
+  try{ if(typeof DEM_CUR!=='undefined' && DEM_CUR && document.getElementById('demModal') && document.getElementById('demModal').classList.contains('open')) demRender(); }catch(e){}
+}
+function UNIT_OPTS_K(k,cur){ const l=lstGet(k); if(cur&&l.indexOf(cur)<0) l.push(cur); return l.map(function(u){ return '<option'+(u===cur?' selected':'')+'>'+esc(u)+'</option>'; }).join(''); }
+function lstDLFill(){ const b=document.getElementById('lstDLs'); if(!b) return;
+  b.innerHTML=['rmcat','pkcat','paper','liner','ply','country','unit'].map(function(k){ return '<datalist id="lst_'+k+'">'+lstGet(k).map(function(v){ return '<option value="'+esc(v)+'"></option>'; }).join('')+'</datalist>'; }).join('');
+  try{ supDL(); }catch(e){} }
+/* Demand ধরনের তালিকা (যোগ / বদল / মুছা) */
+function demTypeMgr(){
+  let ov=document.getElementById('dtMgr'); if(!ov){ ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='dtMgr'; ov.style.zIndex=100400; document.body.appendChild(ov); }
+  const C=demCustom();
+  ov.innerHTML='<div class="modal" style="max-width:520px;"><div class="modal-head"><h3>&#9881; Demand Sheet ধরন</h3><button class="close-x" onclick="closeModal(\'dtMgr\')">&#10005;</button></div><div class="modal-body">'+
+    '<div class="muted" style="font-size:12px;margin-bottom:6px;">মূল ধরন (বদলানো যায় না)</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">'+DEMAND_TYPES.map(function(t){ return '<span class="tag">'+esc(t.l)+'</span>'; }).join('')+'</div>'+
+    '<div class="muted" style="font-size:12px;margin-bottom:6px;">নিজের ধরন</div>'+(C.length?C.map(function(t){ return '<div style="display:flex;gap:8px;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:9px;margin-bottom:6px;"><b style="flex:1;">'+esc(t.l)+'</b>'+
+      '<button class="btn btn-sm btn-ghost" onclick="closeModal(\'dtMgr\');demTypeOpen(\''+t.v+'\')">&#9998; বদল</button><button class="btn btn-sm btn-danger" onclick="demTypeDel(\''+t.v+'\');demTypeMgr();">&#10005;</button></div>'; }).join(''):'<div class="hint">এখনো নিজের কোনো ধরন নেই</div>')+
+    '</div><div class="modal-foot"><button class="btn btn-primary" onclick="closeModal(\'dtMgr\');demTypeOpen()">+ নতুন ধরন</button><span style="flex:1"></span><button class="btn" onclick="closeModal(\'dtMgr\')">Close</button></div></div>';
+  openModal('dtMgr');
+}
+/* ======================= v19.92 — Excel এর মতো কিবোর্ড: ↑ ↓ ← → Tab Enter =======================
+   যেকোনো ছকের ঘরে: ↓ / Enter = নিচের সারির একই ঘর · ↑ / Shift+Enter = উপরের · → / ← = পাশের ঘর (লেখার মাঝে থাকলে
+   আগে লেখার ভেতরে সরে; ঘরে ঢুকেই বা লেখার শেষে থাকলে পাশের ঘরে) · Tab / Shift+Tab = পরের / আগের ঘর (সারির শেষে পরের সারি)।
+   Enter চাপলে লেখাটা সেভ হয়। ঘর বদলানোর পর ছক নতুন করে আঁকা হলেও কার্সর ঠিক ঘরেই থাকে।
+   ফর্মের ঘরে (পপআপে) Enter = পরের ঘর। Dropdown (select) এ ↑ ↓ আগের মতোই মান বদলায়। */
+function kbCtl(el){ if(!el||el.disabled||el.readOnly&&el.tagName!=='SELECT') return false; const t=el.tagName;
+  if(t==='SELECT') return true; if(t!=='INPUT') return false; return !/^(checkbox|radio|button|submit|hidden|file|color|range|image|reset)$/i.test(el.type||''); }
+function kbVis(el){ return !!(el.offsetParent||el.getClientRects().length); }
+function kbCtls(node){ return [].filter.call(node.querySelectorAll('input,select'),function(x){ return kbCtl(x)&&kbVis(x); }); }
+function kbPos(el){ const td=el.closest('td'); const tr=td&&td.parentElement, tb=tr&&tr.closest('table'); if(!tb) return null;
+  const root=el.closest('.modal-overlay')||document.getElementById('content')||document.body;
+  return {root:root.id||'', ti:[].indexOf.call(root.querySelectorAll('table'),tb), ri:tr.rowIndex, ci:td.cellIndex, k:kbCtls(td).indexOf(el)}; }
+function kbFind(P){ if(!P) return null; const root=(P.root&&document.getElementById(P.root))||document.body; const tb=root.querySelectorAll('table')[P.ti]; if(!tb) return null;
+  const tr=tb.rows[P.ri]; if(!tr) return null; const td=tr.cells[P.ci]; if(!td) return null; const c=kbCtls(td); return c[Math.max(0,Math.min(P.k,c.length-1))]||null; }
+function kbFocus(t){ if(!t) return; const P=kbPos(t);
+  const go=function(x){ try{ x.focus({preventScroll:false}); if(x.tagName==='INPUT') x.select(); x.__kbEd=false; try{ x.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){} }catch(e){} };
+  go(t);
+  [0,60,200].forEach(function(ms){ setTimeout(function(){ if(t.isConnected && document.activeElement===t) return; const a=document.activeElement; if(a && a!==document.body && a.isConnected && kbCtl(a) && a!==t && P && JSON.stringify(kbPos(a))===JSON.stringify(P)) return;
+    if(!t.isConnected || document.activeElement===document.body){ const x=kbFind(P); if(x && document.activeElement!==x) go(x); } },ms); }); }
+function kbRowCtl(tr,ci,dir){ /* একই কলাম; না থাকলে কাছের ঘর */ const td=tr.cells[ci]; let c=td?kbCtls(td):[]; if(c.length) return c[0];
+  return null; }
+function kbVert(el,dir){ const td=el.closest('td'), tr=td.parentElement, tb=tr.closest('table'), ci=td.cellIndex;
+  let r=tr.rowIndex+dir; while(r>=0 && r<tb.rows.length){ const x=kbRowCtl(tb.rows[r],ci); if(x) return x; r+=dir; } return null; }
+function kbHorz(el,dir,wrap){ const tr=el.closest('tr'), tb=tr.closest('table'); const C=kbCtls(tr), i=C.indexOf(el);
+  if(i+dir>=0 && i+dir<C.length) return C[i+dir]; if(!wrap) return null;
+  let r=tr.rowIndex+dir; while(r>=0 && r<tb.rows.length){ const c2=kbCtls(tb.rows[r]); if(c2.length) return dir>0?c2[0]:c2[c2.length-1]; r+=dir; } return null; }
+function kbSkip(el,e){
+  if(el.classList.contains('gk') || el.closest('#printArea,.pdfbox,#lgBox,#loginScreen,#mpk')) return true;
+  const oh=el.getAttribute('onkeydown')||'';
+  if(/acKey/.test(oh) && typeof AC_OPEN!=='undefined' && AC_OPEN) return true;
+  if(/mcKey/.test(oh) && typeof MC_OPEN!=='undefined' && MC_OPEN && typeof MC_EL!=='undefined' && MC_EL===el) return true;
+  if(/qjKey|lgKey|mpkEnter|ctnKey|kgNav/.test(oh)) return true;
+  return false; }
+document.addEventListener('input',function(e){ const t=e.target; if(t && t.tagName==='INPUT') t.__kbEd=true; },true);
+document.addEventListener('focusin',function(e){ const t=e.target; if(!t || t.tagName!=='INPUT') return; t.__kbEd=false;
+  /* ছকের ঘরে ঢুকলে Excel এর মতো পুরো লেখা বাছা — টাইপ করলেই নতুন মান বসে */
+  if(kbCtl(t) && t.closest('td') && t.closest('table') && !t.closest('#printArea') && !t.classList.contains('matac')){
+    t.addEventListener('mouseup',function(ev){ ev.preventDefault(); },{once:true}); setTimeout(function(){ if(document.activeElement===t && !t.__kbEd) try{ t.select(); }catch(x){} },0); } },true);
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey||e.isComposing) return;
+  const el=e.target, k=e.key; if(!el || !kbCtl(el) || kbSkip(el,e)) return;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Tab'].indexOf(k)<0) return;
+  const inCell=!!(el.closest('td') && el.closest('table'));
+  if(!inCell){   /* ফর্ম: Enter = পরের ঘর (পপআপের ভেতরে, নিজস্ব Enter নেই এমন ঘরে) */
+    if(k!=='Enter' || e.shiftKey || el.getAttribute('onkeydown') || el.getAttribute('onkeyup') || el.getAttribute('onkeypress')) return;
+    const md=el.closest('.modal-body'); if(!md) return;
+    const C=kbCtls(md), i=C.indexOf(el); if(i<0) return; e.preventDefault(); const nx=C[i+1];
+    if(nx){ nx.focus(); if(nx.tagName==='INPUT') try{ nx.select(); }catch(x){} } else { el.blur(); el.focus(); }
+    return; }
+  const isSel=el.tagName==='SELECT', ed=!!el.__kbEd, hasList=!!el.getAttribute('list');
+  let t=null;
+  if(k==='Tab'){ t=kbHorz(el,e.shiftKey?-1:1,true); if(!t) return; }
+  else if(k==='Enter'){ t=kbVert(el,e.shiftKey?-1:1); if(!t){ e.preventDefault(); el.blur(); const P=kbPos(el); setTimeout(function(){ const x=kbFind(P); if(x){ x.focus(); if(x.select) try{ x.select(); }catch(z){} } },60); return; } }
+  else if(k==='ArrowUp'||k==='ArrowDown'){ if(isSel) return; if(hasList && ed) return; t=kbVert(el,k==='ArrowDown'?1:-1); if(!t) return; }
+  else { if(!isSel){ if(el.type==='number'){ if(ed) return; } else if(ed){ let a=null,b=null; try{ a=el.selectionStart; b=el.selectionEnd; }catch(x){} const L=String(el.value).length;
+        if(a!==null){ if(k==='ArrowLeft' && !(a===0&&b===0) && !(a===0&&b===L)) return; if(k==='ArrowRight' && !(a===L&&b===L) && !(a===0&&b===L)) return; } } }
+    t=kbHorz(el,k==='ArrowRight'?1:-1,false); if(!t) return; }
+  e.preventDefault(); e.stopPropagation();
+  kbFocus(t);
+},true);
 
 function demSet(i,k,v){
   const sh=demSheet(DEM_CUR); if(!sh||!sh.rows[i]) return;
@@ -17229,7 +17389,7 @@ function downloadImportTemplate(){
   }
   const s = t==='rm'
     ? [{Name:'Beson',Category:'Ingredient',Unit:'Kg',Rate:68.9,'Purchased By':'Factory',Supplier:'ABC Traders'},{Name:'Palm Oil',Category:'Ingredient',Unit:'Kg',Rate:139.13,'Purchased By':'Head Office',Supplier:''}]
-    : [{Name:'Carton 350gm X 24',Category:'Secondary',Unit:'Pc',Rate:33.5,'Purchased By':'Head Office',Supplier:'XYZ Packaging'},{Name:'Jar + Cap',Category:'Primary',Unit:'Pc',Rate:11.5,'Purchased By':'Factory',Supplier:''}];
+    : [{Name:'Carton 350gm X 24',Category:'Secondary',Unit:'Pcs',Rate:33.5,'Purchased By':'Head Office',Supplier:'XYZ Packaging'},{Name:'Jar + Cap',Category:'Primary',Unit:'Pc',Rate:11.5,'Purchased By':'Factory',Supplier:''}];
   const ws=XLSX.utils.json_to_sheet(s), wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Template');
   XLSX.writeFile(wb,(t==='rm'?'Raw_Materials':'Packing_Materials')+'_Import_Template.xlsx');
@@ -17264,7 +17424,7 @@ function processImportRows(rows){
   const t=document.getElementById('importType').value;
   if(String(t).indexOf('fg_')===0){ processFgImportRows(rows, t.slice(3)); return; }
   const master = t==='rm'?DB.rawMaterials:DB.packaging;
-  const du = t==='rm'?'Kg':'Pc';
+  const du = t==='rm'?'Kg':'Pcs';
   let nw=0,up=0,sk=0,nr=0,dupIn=0; importParsedRows=[];
   rows.forEach(function(row){
     const name=String(getField(row,['name','materialname','itemname','particulars'])||'').trim().replace(/\s+/g,' ');
@@ -19798,7 +19958,7 @@ document.addEventListener('visibilitychange',function(){ if(document.visibilityS
    Costing এ RM/PM এর নাম লিখে না মিললে তালিকার নিচেই "＋ নতুন যোগ করুন" — ছোট ফর্মে নাম, Unit, দর দিলেই
    Master এ যোগ হয়ে ওই লাইনে বসে যায়। যুক্ত লাইনের ✏️ চেপে Master এর দর/নাম/Unit সেখান থেকেই বদলানো যায়।
    Costing পেজ ছাড়তে হয় না, যা লেখা ছিল সব থাকে। */
-const QA_UNITS={rm:['Kg','gm','Ltr','ml','Pc','Pack','Dozen'], pk:['Pc','Kg','gm','Roll','Ltr','Pack']};
+const QA_UNITS={get rm(){ return lstGet('unit'); }, get pk(){ var a=lstGet('unit'); var i=a.indexOf('Pcs'); if(i>0){ a.splice(i,1); a.unshift('Pcs'); } return a; }};
 let QA=null;
 function qaMod(t){ return t==='rm'?'rawmaterials':'packaging'; }
 function qaCanAdd(t){ return (t==='rm'||t==='pk') && can(qaMod(t),'a'); }
@@ -19821,7 +19981,7 @@ function qaBox(){
   m.innerHTML='<div class="modal" style="max-width:460px;"><div class="modal-head"><h3 id="qaTitle"></h3><button class="close-x" onclick="closeModal(\'qaModal\')">&#10005;</button></div>'+
     '<div class="modal-body"><p class="hint" id="qaHint" style="margin:0 0 12px;"></p>'+
     '<div class="field"><label>নাম *</label><input type="text" id="qaName" autocomplete="off"></div>'+
-    '<div class="field-row cols-2"><div class="field"><label>Unit *</label><select id="qaUnit"></select></div>'+
+    '<div class="field-row cols-2"><div class="field"><label>Unit * <button type="button" class="lst-ic" title="Unit তালিকা" onclick="lstOpen(\'unit\',\'qaUnit\')">&#9881;</button></label><select id="qaUnit" data-lst="unit"></select></div>'+
     '<div class="field"><label>Rate (৳ / unit) *</label><input type="number" id="qaRate" step="0.0001" min="0"></div></div>'+
     '<div class="field-row cols-2" id="qaMore"><div class="field"><label>Category</label><input type="text" id="qaCat"></div>'+
     '<div class="field"><label>Supplier</label><input type="text" id="qaSup" list="supList"></div></div>'+
@@ -21717,6 +21877,13 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.92', d:'2026-11-23', t:'Excel এর মতো কিবোর্ড (↑ ↓ ← → Tab Enter) সব ছকে · Unit সহ সব তালিকায় ⚙ যোগ / বদল / মুছা · Pc → Pcs', li:[
+  '<b>কিবোর্ড সব জায়গায়:</b> Work Order, Demand Sheet, Order Requirement, ক্রয় সারাংশ, RM / PM তালিকা, Costing এর লাইন — যেকোনো ছকের ঘরে ↓ / Enter = নিচের ঘর, ↑ / Shift+Enter = উপরের, → / ← = পাশের ঘর, Tab / Shift+Tab = পরের / আগের ঘর (সারির শেষে পরের সারিতে)। Enter চাপলে লেখা সেভ হয়; ঘরে ঢুকলে লেখা বাছা থাকে, টাইপ করলেই নতুন মান। লেখার মাঝে থাকলে ← → লেখার ভেতরে সরে। ঘর সেভ হয়ে ছক নতুন করে আঁকা হলেও কার্সর ঠিক ঘরে থাকে',
+  'পপআপ ফর্মে Enter = পরের ঘর · Dropdown এ ↑ ↓ আগের মতোই মান বদলায়',
+  '<b>তালিকায় ⚙:</b> Unit (RM / PM), FG Unit, RM Category, PM Category, Supplier, Paper, Liner, Ply, Country, Demand Sheet ধরন, Section — প্রতিটার পাশে ছোট চাকা: নতুন যোগ, নাম বদল (যত জায়গায় ব্যবহার সব জায়গায় বদলায়), দুটো নাম মিলিয়ে এক করা, ক্রম বদল, মুছা (ব্যবহার হচ্ছে এমন নাম মুছা যায় না)। কোনটা কত জায়গায় ব্যবহার হচ্ছে দেখা যায়',
+  'RM / PM তালিকার Unit কলামের মাথায়ও ⚙ · Demand Sheet এর Paper / Liner / Ply / Country / Unit ঘরে তালিকা থেকে বাছা যায়, কলামের মাথায় ⚙ · Carton হিসাবের Ply / Paper / Liner ও এই তালিকা থেকে',
+  '<b>Pc → Pcs:</b> সব RM, PM, FG, Demand Sheet আর Work Order এ Pc / pc / pcs / Piece এখন একটাই — Pcs; নতুন করে Pc লিখলেও Pcs হয়ে যায়',
+  'তালিকাগুলো Settings এ থাকে, Cloud Sync হয়']},
  {v:'19.91', d:'2026-11-23', t:'Work Order: সই বদলানো · Printer এ Letter Head কাগজ দিয়ে Print স্পষ্ট করে', li:[
   '<b>সই:</b> Work Order এর তালিকা আর বানানোর পাতায় “Print সেটিং” — প্রতিটা সই এর শিরোনাম বদলানো যায় (যেমন Approved By), টিক দিয়ে কোনটা থাকবে ঠিক করা যায়, নাম আর পদবি ঐচ্ছিক, Settings এ আপলোড করা সই কোনটায় বসবে বাছা যায়, “+ আরেকটা সই” (৫টা পর্যন্ত)',
   '<b>Print কোথায় — তিনটা বড় বাছাই একসাথে চোখের সামনে:</b> Software এর Letter Head · Printer এ Letter Head কাগজ (আগে থেকে ছাপা কাগজ, উপরে-নিচে ফাঁকা mm) · Letter Head ছাড়া। আগে এটা বানানোর পাতার নিচে ছোট ঘরে ছিল, তাই চোখে পড়ছিল না',
@@ -24704,6 +24871,13 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.92', d:'2026-11-23', t:'Excel-style keyboard (↑ ↓ ← → Tab Enter) in every table · ⚙ add / edit / delete on all lists incl. Unit · Pc → Pcs', li:[
+  '<b>Keyboard everywhere:</b> work orders, demand sheets, order requirement, purchase summary, RM / PM lists, costing lines — in any table cell ↓ / Enter = cell below, ↑ / Shift+Enter = above, → / ← = next cell, Tab / Shift+Tab = next / previous cell (wrapping to the next row). Enter saves the value; entering a cell selects its text so typing replaces it. Inside text, ← → move the caret. The cursor stays on the right cell even when the table redraws after saving',
+  'In popup forms Enter goes to the next field · ↑ ↓ in dropdowns still change the value',
+  '<b>⚙ on lists:</b> Unit (RM / PM), FG unit, RM category, PM category, supplier, paper, liner, ply, country, demand sheet type, section — a small gear next to each: add, rename (changes every place it is used), merge two names, reorder, delete (names in use cannot be deleted). Usage counts are shown',
+  'Also ⚙ on the Unit column of the RM / PM lists · demand sheet Paper / Liner / Ply / Country / Unit cells suggest from the lists, with ⚙ in the column heading · the carton calculator’s Ply / Paper / Liner use the same lists',
+  '<b>Pc → Pcs:</b> Pc / pc / pcs / Piece in every RM, PM, FG, demand sheet and work order is now one unit — Pcs; typing Pc again becomes Pcs',
+  'Lists live in Settings and sync to the cloud']},
  {v:'19.91', d:'2026-11-23', t:'Work order: editable signatures · printing on letter head paper made obvious', li:[
   '<b>Signatures:</b> a “Print settings” box in the work order list and editor — rename each signature title (e.g. Approved By), tick which ones to print, optional name and designation, choose which one carries the uploaded signature, “+ Add signature” (up to 5)',
   '<b>Where to print — three large choices side by side:</b> software letter head · letter head paper in the printer (pre-printed paper, top / bottom space in mm) · no letter head. It used to be a small box at the bottom of the editor and was easy to miss',
@@ -28315,6 +28489,7 @@ function startApp(){
   idleTouch(true);
   try{ if(!window.__appmInit){ window.__appmInit=1; appmInit(); } else appmAfter(); }catch(e){ console.error(e); }
   try{ sbLoad().then(function(){ try{ mgBaseInit(); }catch(e){} }); }catch(e){}   /* v19.79 */
+  try{ if(unitNormAll()) saveDB(); lstDLFill(); }catch(e){ console.error(e); }      /* v19.92 — Pc → Pcs */
   setTimeout(function(){ try{ lhFootScan(); }catch(e){} },2500);   /* v19.81 — Letter Head এর নিচের ডিজাইন আগেই মেপে রাখি */
   setTimeout(function(){ try{ if(mediaApply()) saveDB(); }catch(e){ console.error(e); } },900);   /* v19.66 — Logo/সিল/স্বাক্ষর Cloud এ */
   setTimeout(function(){ try{ pmDraftCheck(); }catch(e){ console.error(e); } },700);
