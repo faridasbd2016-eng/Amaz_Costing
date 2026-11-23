@@ -11971,6 +11971,34 @@ const WO_TERMS_DEF=['Shipment Address: {FAC}','Quality must be as approved by us
 function woList(){ const o=orderPlan(); if(!o) return []; o.demand=o.demand||{}; o.demand.wo=o.demand.wo||[]; return o.demand.wo; }
 function woCfg(){ const st=DB.settings||{}; return {mode:st.woLhMode||'image', top:n(st.woLhTop)>0?n(st.woLhTop):40, bot:n(st.woLhBot)>0?n(st.woLhBot):25,
   officer:st.woOfficer||'', desig:st.woDesig||'Executive Procurement', terms:(st.woTerms&&st.woTerms.length)?st.woTerms:WO_TERMS_DEF.slice(), prefix:st.woPrefix||woCoInit()}; }
+/* v19.91 — সই: শিরোনাম বদলানো যায়, কোনটা থাকবে টিক দিয়ে; নাম/পদবি ঐচ্ছিক; Software এ আপলোড করা সই কোনটায় বসবে */
+function woSigs(){ const st=DB.settings||{}; if(Array.isArray(st.woSigs)&&st.woSigs.length) return st.woSigs;
+  return [{t:'Purchasing Officer',on:1,n:st.woOfficer||'',d:st.woDesig||'Executive Procurement',img:1},{t:'Authorized Signature',on:1,n:'',d:'',img:0},{t:'Received By (Supplier)',on:1,n:'',d:'Signature, Seal & Date',img:0}]; }
+function woSigSet(i,k,v){ const L=JSON.parse(JSON.stringify(woSigs())); if(!L[i]) return; L[i][k]=v; if(k==='img'&&v) L.forEach(function(x,j){ if(j!==i) x.img=0; }); woCfgSet('woSigs',L); }
+function woSigAdd(){ const L=JSON.parse(JSON.stringify(woSigs())); if(L.length>=5){ toast('সর্বোচ্চ ৫টা সই',true); return; } L.push({t:'Checked By',on:1,n:'',d:'',img:0}); woCfgSet('woSigs',L); woSetRefresh(); }
+function woSigDel(i){ const L=JSON.parse(JSON.stringify(woSigs())); L.splice(i,1); if(!L.length){ toast('অন্তত একটা সই রাখুন — না চাইলে টিক তুলে দিন',true); return; } woCfgSet('woSigs',L); woSetRefresh(); }
+function woSetRefresh(){ const b=document.getElementById('woSetBox'); if(b) b.outerHTML=woSetHTML(); }
+function woSetHTML(){
+  const C=woCfg(), L=woSigs(), I='style="font-size:12.5px;padding:6px 8px;width:100%;min-width:0;box-sizing:border-box;"';
+  return '<div id="woSetBox" style="border:1px solid var(--border);border-radius:12px;padding:12px 14px;background:var(--panel-2);margin-top:10px;">'+
+   '<div style="font-weight:700;margin-bottom:8px;">&#128424; Print সেটিং <span class="muted" style="font-weight:500;font-size:12px;">— সব Work Order এ একই, এখানে বদলালেই হবে</span></div>'+
+   '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">'+
+     [['image','&#128444; Software এর Letter Head','Settings এ আপলোড করা Letter Head ছবির উপর Print'],['blank','&#128196; Printer এ Letter Head কাগজ','আগে থেকে ছাপা Letter Head কাগজ Printer এ দিয়ে Print — শুধু লেখা ছাপা হবে'],['none','&#9633; Letter Head ছাড়া','সাধারণ কাগজে, উপরে কোম্পানির নাম-ঠিকানা']].map(function(o){ const on=C.mode===o[0];
+       return '<label style="flex:1;min-width:200px;display:flex;gap:8px;align-items:flex-start;cursor:pointer;padding:9px 11px;border-radius:10px;border:1.5px solid '+(on?'var(--primary)':'var(--border)')+';background:'+(on?'color-mix(in srgb,var(--primary) 9%,var(--panel))':'var(--panel)')+';">'+
+         '<input type="radio" name="woLhM"'+(on?' checked':'')+' onchange="woCfgSet(\'woLhMode\',\''+o[0]+'\');woSetRefresh()" style="margin-top:3px;"><span><b style="font-size:13px;">'+o[1]+'</b><br><span class="muted" style="font-size:11.5px;">'+o[2]+'</span></span></label>'; }).join('')+'</div>'+
+   (C.mode==='blank'?('<div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;"><div class="field" style="margin:0;width:170px;"><label>উপরে ফাঁকা (mm)</label><input type="text" value="'+C.top+'" onchange="woCfgSet(\'woLhTop\',n(this.value))"></div>'+
+     '<div class="field" style="margin:0;width:170px;"><label>নিচে ফাঁকা (mm)</label><input type="text" value="'+C.bot+'" onchange="woCfgSet(\'woLhBot\',n(this.value))"></div>'+
+     '<span class="muted" style="font-size:12px;flex:1;min-width:220px;">আপনার Letter Head কাগজের হেডার আর ফুটার যতটা জায়গা নেয় ততটা দিন — লেখা তার মাঝখানে ছাপা হবে, সই ফুটারের ঠিক উপরে</span></div>'):'')+
+   '<div style="font-weight:700;font-size:13px;margin:4px 0 6px;">সই (Print এর নিচে)</div>'+
+   '<div class="table-wrap no-fz"><table style="font-size:12.5px;table-layout:fixed;width:100%;"><colgroup><col style="width:64px;"><col><col><col><col style="width:84px;"><col style="width:46px;"></colgroup><thead><tr><th>রাখবেন</th><th>শিরোনাম (Title)</th><th>নাম (ঐচ্ছিক)</th><th>পদবি / নিচের লেখা</th><th style="white-space:normal;text-align:center;" title="Settings এ আপলোড করা সই">আপলোড<br>করা সই</th><th></th></tr></thead><tbody>'+
+   L.map(function(x,i){ return '<tr><td style="text-align:center;"><input type="checkbox"'+(x.on?' checked':'')+' onchange="woSigSet('+i+',\'on\',this.checked?1:0)"></td>'+
+     '<td><input type="text" '+I+' value="'+esc(x.t||'')+'" onchange="woSigSet('+i+',\'t\',this.value.trim())"></td>'+
+     '<td><input type="text" '+I+' value="'+esc(x.n||'')+'" placeholder="যেমন: Mohammed Hossain Sujon" onchange="woSigSet('+i+',\'n\',this.value.trim())"></td>'+
+     '<td><input type="text" '+I+' value="'+esc(x.d||'')+'" placeholder="যেমন: Executive Procurement" onchange="woSigSet('+i+',\'d\',this.value.trim())"></td>'+
+     '<td style="text-align:center;"><input type="radio" name="woSigImg"'+(x.img?' checked':'')+(psOn()?'':' disabled title="Settings এ সই আপলোড করা নেই"')+' onchange="woSigSet('+i+',\'img\',1)"></td>'+
+     '<td><button class="btn btn-sm btn-ghost" title="মুছুন" onclick="woSigDel('+i+')">&#10005;</button></td></tr>'; }).join('')+
+   '</tbody></table></div><button class="btn btn-sm btn-ghost" style="margin-top:6px;" onclick="woSigAdd()">+ আরেকটা সই</button></div>';
+}
 function woTermsSet(v){ woCfgSet('woTerms', String(v||'').split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean)); }
 function woCfgSet(k,v){ DB.settings=DB.settings||{}; DB.settings[k]=v; saveDB(); }
 function woCoInit(){ const c=String((DB.settings&&DB.settings.companyName)||'Company');
@@ -12000,6 +12028,7 @@ function woListRender(){
         '<td><div class="row-actions"><button class="btn btn-sm btn-ghost" onclick="woEdit(\''+w.id+'\')">Edit</button><button class="btn btn-sm btn-ghost" onclick="woPrint(\''+w.id+'\')">&#128424; Print</button>'+
         '<button class="btn btn-sm btn-ghost" onclick="woPdf(\''+w.id+'\')">PDF</button><button class="btn btn-sm btn-danger" onclick="woDel(\''+w.id+'\')">Del</button></div></td></tr>'; }).join('')+'</tbody></table></div>')
       :'<div class="hint" style="padding:18px;text-align:center;border:1px dashed var(--border);border-radius:10px;">এই Demand থেকে এখনো কোনো Work Order বানানো হয়নি।</div>')+
+    woSetHTML()+
     '</div><div class="modal-foot"><span class="muted" style="font-size:12px;">একই Demand থেকে আলাদা আলাদা Supplier এর জন্য আলাদা Work Order বানানো যায়</span><span style="flex:1"></span>'+
     '<button class="btn btn-primary" onclick="woEdit()">+ নতুন Work Order</button><button class="btn" onclick="closeModal(\'woModal\')">Close</button></div></div>';
 }
@@ -12043,15 +12072,8 @@ function woEdRender(){
    '</tbody><tfoot><tr style="font-weight:700;background:var(--panel-2);"><td colspan="'+(cols.length+3)+'" style="padding:9px 12px;text-align:right;">Total ('+Object.keys(E.pick).length+' item)</td><td class="num">'+money(T.q,0)+'</td><td></td><td class="num">৳'+money(T.a,2)+'</td></tr></tfoot></table></div>'+
    '<div class="field-row cols-2" style="margin-top:12px;"><div class="field"><label>Terms &amp; Conditions (প্রতি লাইনে একটা — সব Work Order এ একই, পরে বদলানো যায়)</label><textarea rows="6" id="woTermsTA" onchange="woTermsSet(this.value)">'+esc(C.terms.join('\n'))+'</textarea>'+
      '<div class="hint">{FAC} লিখলে Demand এর Factory ঠিকানা বসে</div></div>'+
-   '<div class="field"><label>Purchasing Officer — নাম</label><input type="text" id="woOffN" onchange="woCfgSet(\'woOfficer\',this.value.trim())" value="'+esc(C.officer)+'" placeholder="যেমন: Mohammed Hossain Sujon">'+
-     '<label style="margin-top:8px;">Designation</label><input type="text" id="woOffD" onchange="woCfgSet(\'woDesig\',this.value.trim())" value="'+esc(C.desig)+'">'+
-     '<label style="margin-top:8px;">Note (ঐচ্ছিক — Print এ ছকের নিচে)</label><input type="text" value="'+esc(w.note||'')+'" oninput="WO_ED.w.note=this.value"></div></div>'+
-   '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;padding:10px 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;margin-top:6px;">'+
-     '<div class="field" style="margin:0;"><label>Print কোথায়</label><select id="woLhMode" onchange="woCfgSet(\'woLhMode\',this.value);woEdRender()">'+
-       [['image','Software এর Letter Head (ছবি)'],['blank','ছাপা Letter Head কাগজে'],['none','Letter Head ছাড়া (সাধারণ কাগজ)']].map(function(o){ return '<option value="'+o[0]+'"'+(C.mode===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
-     (C.mode==='blank'?('<div class="field" style="margin:0;width:150px;"><label>উপরে ফাঁকা (mm)</label><input type="text" value="'+C.top+'" onchange="woCfgSet(\'woLhTop\',n(this.value))"></div>'+
-       '<div class="field" style="margin:0;width:150px;"><label>নিচে ফাঁকা (mm)</label><input type="text" value="'+C.bot+'" onchange="woCfgSet(\'woLhBot\',n(this.value))"></div>'):'')+
-     '<span class="muted" style="font-size:12px;flex:1;min-width:200px;">'+(C.mode==='image'?'Settings এ দেওয়া Letter Head এর উপর Print — নিচের ডিজাইনের উপরে সই':(C.mode==='blank'?'আগে থেকে ছাপা Letter Head কাগজ Printer এ দিন — উপরে-নিচে এতটুকু ফাঁকা থাকবে':'কোম্পানির নাম-ঠিকানা সহ সাধারণ কাগজে'))+'</span></div>'+
+   '<div class="field"><label>Note (ঐচ্ছিক — Print এ ছকের নিচে)</label><input type="text" value="'+esc(w.note||'')+'" oninput="WO_ED.w.note=this.value"></div></div>'+
+   woSetHTML()+
    '</div><div class="modal-foot"><button class="btn" onclick="woListRender()">&#8592; তালিকা</button><span style="flex:1"></span>'+
    '<button class="btn btn-ghost" onclick="woSave(\'print\')">Save + &#128424; Print</button><button class="btn btn-ghost" onclick="woSave(\'pdf\')">Save + PDF</button><button class="btn btn-primary" onclick="woSave()">Save</button></div></div>';
 }
@@ -12120,8 +12142,10 @@ function woPrintHTML(w){
   /* সই — সবসময় পাতার নিচে (q-endblk) */
   const sg=function(title,inner,nm,dg){ return '<div style="flex:1;text-align:center;font-size:11px;"><div style="height:46px;display:flex;align-items:flex-end;justify-content:center;">'+(inner||'')+'</div>'+
     '<div style="border-top:1px solid #000;margin:0 10px;padding-top:3px;font-weight:bold;">'+title+'</div>'+(nm?'<div>'+esc(nm)+'</div>':'')+(dg?'<div style="font-size:10px;">'+esc(dg)+'</div>':'')+'</div>'; };
-  h+='<div class="q-endblk" style="page-break-inside:avoid;"><div style="display:flex;gap:26px;margin-top:14px;">'+
-     sg('Purchasing Officer',psOn()?psImgFlow():'',C.officer,C.desig)+sg('Authorized Signature','','','')+sg('Received By (Supplier)','','','Signature, Seal & Date')+'</div></div>';
+  /* v19.91 — দুটো সই হলে দুই প্রান্তে, একটা হলে ডানে */
+  const SG=woSigs().filter(function(x){ return x.on; });
+  h+='<div class="q-endblk" style="page-break-inside:avoid;">'+(SG.length?'<div style="display:flex;gap:26px;margin-top:14px;">'+
+     SG.map(function(x){ return sg(esc(x.t||''),(x.img&&psOn())?psImgFlow():'',x.n,x.d); }).join('')+'</div>':'')+'</div>';
   h+='</div>'; return h;
 }
 function woPrintSet(id){
@@ -21693,6 +21717,10 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.91', d:'2026-11-23', t:'Work Order: সই বদলানো · Printer এ Letter Head কাগজ দিয়ে Print স্পষ্ট করে', li:[
+  '<b>সই:</b> Work Order এর তালিকা আর বানানোর পাতায় “Print সেটিং” — প্রতিটা সই এর শিরোনাম বদলানো যায় (যেমন Approved By), টিক দিয়ে কোনটা থাকবে ঠিক করা যায়, নাম আর পদবি ঐচ্ছিক, Settings এ আপলোড করা সই কোনটায় বসবে বাছা যায়, “+ আরেকটা সই” (৫টা পর্যন্ত)',
+  '<b>Print কোথায় — তিনটা বড় বাছাই একসাথে চোখের সামনে:</b> Software এর Letter Head · Printer এ Letter Head কাগজ (আগে থেকে ছাপা কাগজ, উপরে-নিচে ফাঁকা mm) · Letter Head ছাড়া। আগে এটা বানানোর পাতার নিচে ছোট ঘরে ছিল, তাই চোখে পড়ছিল না',
+  'সব Work Order এ একই সেটিং, Cloud Sync হয়']},
  {v:'19.90', d:'2026-11-23', t:'বড় ছকে শিরোনাম জমে থাকে (Freeze) · Demand এর সব কলাম এক পর্দায় · Demand থেকে Work Order', li:[
   '<b>শিরোনাম Freeze:</b> যেকোনো লম্বা ছকে (Demand Sheet, RM / PM তালিকা, Order এর সব ট্যাব, Reports, Costing এর লাইন…) নিচে নামলেও কলামের নাম উপরে জমে থাকে; TOTAL সারিও নিচে দেখা যায়',
   '<b>পাশে চওড়া ছকে প্রথম কলাম জমে থাকে:</b> # আর পণ্য / Material এর নাম বাঁ দিকে স্থির থাকে, ডানে সরালেও কোন সারি কোন পণ্য বোঝা যায়। পাশে সরানোর দণ্ড ছকের নিচে পর্দার মধ্যেই থাকে — আর পুরো পাতার নিচে নামতে হয় না',
@@ -24676,6 +24704,10 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.91', d:'2026-11-23', t:'Work order: editable signatures · printing on letter head paper made obvious', li:[
+  '<b>Signatures:</b> a “Print settings” box in the work order list and editor — rename each signature title (e.g. Approved By), tick which ones to print, optional name and designation, choose which one carries the uploaded signature, “+ Add signature” (up to 5)',
+  '<b>Where to print — three large choices side by side:</b> software letter head · letter head paper in the printer (pre-printed paper, top / bottom space in mm) · no letter head. It used to be a small box at the bottom of the editor and was easy to miss',
+  'One setting for all work orders, synced to the cloud']},
  {v:'19.90', d:'2026-11-23', t:'Frozen headings on large tables · all demand columns on one screen · work orders from demand', li:[
   '<b>Frozen headings:</b> on any long table (demand sheet, RM / PM lists, all order tabs, reports, costing lines…) the column headings stay on top while scrolling down, and the TOTAL row stays visible at the bottom',
   '<b>First column frozen on wide tables:</b> # and the product / material name stay on the left while scrolling right. The horizontal scrollbar sits inside the screen under the table — no need to scroll to the bottom of the page first',
