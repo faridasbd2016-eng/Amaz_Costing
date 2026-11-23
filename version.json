@@ -1,1 +1,1 @@
-{"version": "19.86", "date": "2026-11-23", "notes": "পণ্যভিত্তিক RM / PM Print: নিচে আসল “To Buy — by Purchaser” ছক", "notes_en": "Product-wise RM / PM print: original To Buy by Purchaser table"}
+{"version": "19.87", "date": "2026-11-23", "notes": "Order Requirement: Gas, NO2 আলাদা কলামে · Factory Accounts সারি · Utility Master এ নতুন ঘর", "notes_en": "Order requirement: Gas and NO2 columns · Factory Accounts row · new utility master fields"}

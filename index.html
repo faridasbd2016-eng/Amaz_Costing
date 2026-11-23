@@ -2039,6 +2039,18 @@ body.money-hide .mh-cell{color:transparent !important;text-shadow:0 0 7px rgba(0
       <div class="field"><label>Default Basis</label><input type="text" id="mcBasis" placeholder="যেমন: 405">
         <div class="hint">যেটা সব পণ্যে এক থাকে (যেমন সিলিন্ডারের ক্ষমতা)। মিনিট/ঘণ্টা পণ্যভেদে আলাদা — খালি রাখুন</div></div>
     </div>
+    <div class="field-row cols-2">
+      <div class="field"><label>Order সারাংশে আলাদা কলাম</label><select id="mcOrdShow">
+        <option value="auto">নিজে থেকে (Gas / NO2 হলে হ্যাঁ)</option>
+        <option value="yes">হ্যাঁ — আলাদা কলামে দেখাও</option>
+        <option value="no">না</option></select>
+        <div class="hint">হ্যাঁ হলে Order Requirement এর “পণ্যভিত্তিক RM / PM” আর “To Buy — by Purchaser” ছকে এর নামে আলাদা কলাম আসে</div></div>
+      <div class="field"><label>এর টাকা কে দেয়</label><select id="mcPayer">
+        <option value="facacc">Factory Accounts</option>
+        <option value="fac">Factory Purchase</option>
+        <option value="ho">Head Office Purchase</option></select>
+        <div class="hint">“To Buy — by Purchaser” ছকে কোন সারিতে যোগ হবে</div></div>
+    </div>
     <div class="field"><label>Note</label><input type="text" id="mcNote" placeholder="ঐচ্ছিক"></div>
   </div>
   <div class="modal-foot"><button class="btn" onclick="closeModal('mcModal')">বাতিল</button>
@@ -5807,6 +5819,7 @@ function openMCModal(id){
   setV('mcCons', m?(m.cons==null?'':m.cons):''); setV('mcRate', m?(m.rate==null?'':m.rate):'');
   setV('mcMode', m?(m.mode||''):''); setV('mcBasis', m?(m.basis==null?'':m.basis):'');
   setV('mcNote', m?(m.note||''):'');
+  setV('mcOrdShow', m?(m.ordShow||'auto'):'auto'); setV('mcPayer', m?(m.payer||'facacc'):'facacc');
   mcTypeWords();
   openModal('mcModal');
 }
@@ -5887,10 +5900,10 @@ function saveMachine(){
       m.rateHistory=m.rateHistory.slice(0,12);
     }
     m.name=name; m.type=gv('mcTypeSel'); m.cons=gv('mcCons'); m.rate=rate;
-    m.mode=gv('mcMode'); m.basis=gv('mcBasis'); m.note=gv('mcNote').trim(); m.updatedAt=nowISO();
+    m.mode=gv('mcMode'); m.basis=gv('mcBasis'); m.note=gv('mcNote').trim(); m.ordShow=gv('mcOrdShow')||'auto'; m.payer=gv('mcPayer')||'facacc'; m.updatedAt=nowISO();
   } else {
     DB.machines.push({id:uid('mc'), name:name, type:gv('mcTypeSel'), cons:gv('mcCons'), rate:rate,
-      mode:gv('mcMode'), basis:gv('mcBasis'), note:gv('mcNote').trim(), rateHistory:[], updatedAt:nowISO()});
+      mode:gv('mcMode'), basis:gv('mcBasis'), note:gv('mcNote').trim(), ordShow:gv('mcOrdShow')||'auto', payer:gv('mcPayer')||'facacc', rateHistory:[], updatedAt:nowISO()});
   }
   saveDB(); closeModal('mcModal'); render();
   toast(id?'Machine হালনাগাদ হলো':'Machine যোগ হলো');
@@ -11166,6 +11179,34 @@ function ordPickList(ct){
   return ordSectionProducts(ct).concat((DB.mixes||[]).filter(function(m){ return (m.ctype||'export')===ct; })
     .map(function(m){ return {id:'mix:'+m.id, name:m.name+' (Mix)', code:m.code||'', isMix:true}; }));
 }
+/* ===== v19.87 — Order এ Utility (Gas, NO2 …) আলাদা কলামে =====
+   Machine / Utility Master এ “Order সারাংশে আলাদা কলাম”: নিজে থেকে (নামে Gas/গ্যাস বা ধরন Gas → Gas,
+   NO2/N2/Nitrogen → NO2) · হ্যাঁ · না। টাকা কে দেয়: Factory Accounts (ডিফল্ট) / Factory / Head Office। */
+function utilAutoKind(nm,type){ nm=String(nm||'');
+  if(/\bno\s*2\b|\bn\s*2\b|nitrogen|নাইট্রোজেন/i.test(nm)) return 'no2';
+  if(type==='gas' || /gas|গ্যাস/i.test(nm)) return 'gas';
+  return ''; }
+function utilColOf(l){       /* একটা Costing লাইন কোন কলামে যাবে — {key,l,payer} বা null */
+  const mc=mcById(l.machineId);
+  if(mc){ const sh=mc.ordShow||'auto'; if(sh==='no') return null;
+    const k=utilAutoKind(mc.name,mc.type); if(sh==='auto' && !k) return null;
+    return {key:'m:'+mc.id, l:String(mc.name||'').trim()||(k==='no2'?'NO2':'Gas'), payer:mc.payer||'facacc', ord:(k==='gas'?0:(k==='no2'?1:2))}; }
+  const k=utilAutoKind(l.name,''); if(!k) return null;
+  /* Master এ যুক্ত নয় — একই ধরনের (Gas / NO2) Master থাকলে তার কলামেই, তার নিয়মে; নাহলে নাম ধরে */
+  const m2=(DB.machines||[]).find(function(m){ return (m.ordShow||'auto')!=='no' && utilAutoKind(m.name,m.type)===k; });
+  if(m2) return {key:'m:'+m2.id, l:String(m2.name||'').trim()||(k==='no2'?'NO2':'Gas'), payer:m2.payer||'facacc', ord:(k==='gas'?0:1)};
+  if((DB.machines||[]).some(function(m){ return m.ordShow==='no' && utilAutoKind(m.name,m.type)===k; })) return null;
+  return {key:'k:'+k, l:(k==='no2'?'NO2':'Gas'), payer:'facacc', ord:(k==='gas'?0:1)};
+}
+function utilSplitCtn(p, r){
+  const o={}; r=r||calc(p); if(!(n(r.powerCtn)>0)) return o;
+  (p.powerLines||[]).forEach(function(l,i){ const c=utilColOf(l), d=(r.pw||[])[i]; if(c && d && n(d.ctn)) o[c.key]=(o[c.key]||0)+n(d.ctn); });
+  return o; }
+function utilColMeta(key){
+  if(key.indexOf('m:')===0){ const mc=mcById(key.slice(2)); if(mc){ const k=utilAutoKind(mc.name,mc.type); return {key:key,l:String(mc.name||'').trim()||'Utility',payer:mc.payer||'facacc',ord:(k==='gas'?0:(k==='no2'?1:2))}; } return {key:key,l:'Utility',payer:'facacc',ord:3}; }
+  const k=key.slice(2); return {key:key,l:(k==='no2'?'NO2':'Gas'),payer:'facacc',ord:(k==='gas'?0:1)};
+}
+const UTIL_PAYER_L={facacc:'Factory Accounts', fac:'Factory Purchase', ho:'Head Office Purchase'};
 function ordLineData(o, l, idx){
   if(ordIsLocked(o)){
     const s=(o.snap.lines||[])[idx];
@@ -11177,6 +11218,7 @@ function ordLineData(o, l, idx){
   const r=calc(p);
   return {
     prodId:p.id, name:p.name, code:p.code||'', ctype:r.ctype, uLab:r.uLab, uKey:r.uKey,
+    utilCtn:utilSplitCtn(p,r),          /* v19.87 */
     stdOut:r.stdOut, batchDay:r.batchDay,
     cbmCtn:r.cbmPerCtn, kgCtn:kgCtnOf(r),
     rmAmtCtn:r.rmAmtCtn, pkAmtCtn:r.pkAmtCtn, laborCtn:r.laborCtn+r.otherLaborCtn,
@@ -11318,11 +11360,16 @@ function orderCalc0(){
   const rmMap={}, pkMap={}, rows=[];
   let totCtn=0, totCbm=0, totKg=0, invUsd=0, totBase=0, totSale=0;
   let totRmVal=0, totPkVal=0, totMfg=0, totInd=0, totSoh=0;
+  const util={};                                       /* v19.87 — key → {key,l,payer,ord,val} */
   (o.lines||[]).forEach(function(l,idx){
     const b=ordLineData(o,l,idx);
     if(!b){ rows.push({idx:idx, missing:true, ctn:n(l.ctn)}); return; }
     const ctn=n(l.ctn);
     let rmVal=0, pkVal=0;
+    let uc=b.utilCtn;                                   /* Lock করা পুরনো Order এ না থাকলে এখনকার Costing থেকে */
+    if(!uc){ const pp=DB.products.find(function(x){return x.id===l.prodId;}); uc=pp?utilSplitCtn(pp):{}; }
+    const ut={}; Object.keys(uc||{}).forEach(function(k){ const v=n(uc[k])*ctn; if(!v) return; ut[k]=v;
+      const u=util[k]=util[k]||Object.assign(utilColMeta(k),{val:0}); u.val+=v; });
     const sp={rmF:0,rmH:0,rmN:0,pkF:0,pkH:0,pkN:0};      /* v19.82 — কে কিনবে অনুযায়ী ভাগ */
     const spAdd=function(t,id,v){ const by=buyByOf(id); sp[t+(by==='fac'?'F':(by==='ho'?'H':'N'))]+=v; };
     b.rm.forEach(function(x){
@@ -11342,7 +11389,7 @@ function orderCalc0(){
     totRmVal+=rmVal; totPkVal+=pkVal; totMfg+=ctn*b.mfgCtn; totInd+=ctn*b.indirectCtn; totSoh+=ctn*n(b.sohCtn);
     rows.push({idx:idx, b:b, p:{name:b.name,code:b.code}, ctn:ctn,
       batches: b.stdOut>0?ctn/b.stdOut:0, days:(b.stdOut>0&&b.batchDay>0)?ctn/b.stdOut/b.batchDay:0,
-      matVal:rmVal+pkVal, rmVal:rmVal, pkVal:pkVal, sp:sp, base:ctn*b.baseCtn, sale:ctn*b.sellBdt, cbm:ctn*b.cbmCtn});
+      matVal:rmVal+pkVal, rmVal:rmVal, pkVal:pkVal, sp:sp, ut:ut, base:ctn*b.baseCtn, sale:ctn*b.sellBdt, cbm:ctn*b.cbmCtn});
   });
   /* Forwarding ও Freight — এই অর্ডারের আসল কার্টন/CBM দিয়ে নতুন করে */
   let ccLines=[], pool=0, fwdPerCbm=0, freightTotal=0, freightPerCbm=0, freightPerCtn=0, fMode='perCtn';
@@ -11396,6 +11443,7 @@ function orderCalc0(){
     totRmNeedVal:sum(rmL,'needVal'), totPkNeedVal:sum(pkL,'needVal'),
     totCtn:totCtn, totCbm:totCbm, totKg:totKg, invUsd:invUsd,
     totRmVal:totRmVal, totPkVal:totPkVal, totMfg:totMfg, totInd:totInd, totSoh:totSoh,
+    util:util, utilCols:Object.keys(util).map(function(k){ return util[k]; }).filter(function(u){ return u.val>0.005; }).sort(function(a,b){ return (a.ord-b.ord)||String(a.l).localeCompare(String(b.l)); }),
     ccLines:ccLines, pool:pool, fwdPerCbm:fwdPerCbm,
     fMode:fMode, freightTotal:freightTotal, freightPerCbm:freightPerCbm, freightPerCtn:freightPerCtn,
     totFwd:totFwd, totFreight:totFreight, totBase:totBase, totCost:totCost, totSale:totSale,
@@ -12545,13 +12593,17 @@ function buyMatrix(d){
     return (list||[]).reduce(function(a,x){
       return a + (((x.buyBy||'')===key) ? n(x.needVal) : 0); },0); };
   const tr=((d.plan||{}).transport)||{};
+  const UC=d.utilCols||[];
   const mk=function(k,l){
-    const rm=cell(d.rm,k), pk=cell(d.pk,k), t=n(tr[k||'none']);
+    const rm=(k==='facacc')?0:cell(d.rm,k), pk=(k==='facacc')?0:cell(d.pk,k), t=n(tr[k||'none']);
     const paid=n((((d.plan||{}).paid)||{})[k||'none']);
     const prev=n((((d.plan||{}).prevExcess)||{})[k||'none']);
-    return {k:k, key:(k||'none'), l:l, rm:rm, pk:pk, tr:t, mat:rm+pk, tot:rm+pk+t, paid:paid, prev:prev, bal:(rm+pk+t)-prev-paid};
+    const ut={}; let us=0; UC.forEach(function(u){ if(u.payer===k){ ut[u.key]=u.val; us+=u.val; } });   /* v19.87 */
+    const tot=rm+pk+t+us;
+    return {k:k, key:(k||'none'), l:l, rm:rm, pk:pk, tr:t, ut:ut, us:us, mat:rm+pk, tot:tot, paid:paid, prev:prev, bal:tot-prev-paid};
   };
-  return BUY_BY.map(function(b){ return mk(b.v,b.l); })
+  const fa=UC.some(function(u){ return u.payer==='facacc'; })?[mk('facacc','Factory Accounts')]:[];
+  return BUY_BY.map(function(b){ return mk(b.v,b.l); }).concat(fa)
     .concat([mk('','নির্ধারিত নয়')]);
 }
 /* Transport হাতে বসানো — প্রতিটি Order এর নিজের */
@@ -12605,10 +12657,11 @@ function buyRefresh(){
   setTxt('bm_frm','৳'+money(fRm,0)); setTxt('bm_fpm','৳'+money(fPm,0));
   setTxt('bm_ftr','৳'+money(fTr,0)); setTxt('bm_ftot','৳'+money(fTot,0));
   const hint=document.getElementById('bm_hint');
-  if(hint) hint.innerHTML = fTr>0.5
-    ? ('Material ৳'+money(fRm+fPm,0)+' + Transport ৳'+money(fTr,0)+' = <b>৳'+money(fTot,0)+'</b>')
-    : '';
+  if(hint) hint.innerHTML = buyHintTxt(fRm+fPm, M.reduce(function(a,r){return a+n(r.us);},0), fTr, d.utilCols||[]);
 }
+function buyHintTxt(mat, us, tr, UC){
+  if(!(tr>0.5) && !(us>0.5)) return '';
+  return 'Material ৳'+money(mat,0)+(us>0.5?' + '+esc((UC||[]).map(function(u){return u.l;}).join(' / ')||'Utility')+' ৳'+money(us,0):'')+(tr>0.5?' + Transport ৳'+money(tr,0):'')+' = <b>৳'+money(mat+us+tr,0)+'</b>'; }
 function buyPanelHTML(d){
   const T=function(l,f){ return (l||[]).reduce(function(a,x){ return a+n(x[f]); },0); };
   const rV=T(d.rm,'value'), rS=T(d.rm,'stockVal'), rN=T(d.rm,'needVal');
@@ -12637,10 +12690,12 @@ function buyPanelHTML(d){
   /* ---- ছক ২: কে কিনবে × RM / PM / Transport ---- */
   const lock2=ordIsLocked(d.plan);
   const M=buyMatrix(d).filter(function(r){ return r.tot>0.5 || r.k; });
+  const UC=d.utilCols||[];
   const buyRow=function(r){
     return '<tr><td style="padding:9px 14px;'+(r.k?'':'opacity:.75;')+'">'+esc(r.l)+'</td>'+
       '<td'+A+'>৳'+money(r.rm,0)+'</td>'+
       '<td'+A+'>৳'+money(r.pk,0)+'</td>'+
+      UC.map(function(u){ const v=n((r.ut||{})[u.key]); return '<td'+A+'>'+(v>0.5?'৳'+money(v,0):'<span class="muted">—</span>')+'</td>'; }).join('')+
       '<td class="num" style="padding:6px 10px;"><input class="rate-inline" id="bm_tr_'+r.key+'"'+
         ' value="'+(r.tr?money(r.tr,0):'')+'" placeholder="0" onfocus="this.select()" '+(lock2?'disabled ':'')+
         'onchange="ordSetTransport(\''+r.key+'\',this.value)" style="text-align:right;"></td>'+
@@ -12656,9 +12711,11 @@ function buyPanelHTML(d){
   const mTr=M.reduce(function(a,r){return a+r.tr;},0);
   const mPd=M.reduce(function(a,r){return a+r.paid;},0);
   const mPv=M.reduce(function(a,r){return a+r.prev;},0);
+  const mUs=M.reduce(function(a,r){return a+n(r.us);},0);
   const buyTbl=
     '<div class="table-wrap"><table>'+
     '<thead><tr><th>কে কিনবে</th><th class="num">RM ৳</th><th class="num">PM ৳</th>'+
+    UC.map(function(u){ return '<th class="num">'+esc(u.l)+' ৳</th>'; }).join('')+
     '<th class="num" style="min-width:104px;">Transport ৳ &#9998;</th>'+
     '<th class="num">মোট ৳</th>'+
     '<th class="num" style="min-width:120px;">দেওয়া টাকা ৳ &#9998;</th><th class="num" style="min-width:130px;" title="আগের Order এ বেশি দেওয়া — মূল টাকা থেকে বাদ যাবে">আগের বেশি দেওয়া ৳ &#9998;</th><th class="num" style="min-width:120px;">বাকি / বেশি</th></tr></thead><tbody>'+
@@ -12667,14 +12724,14 @@ function buyPanelHTML(d){
     '<td style="padding:9px 14px;"><b>মোট</b></td>'+
     '<td'+A+' id="bm_frm">৳'+money(mRm,0)+'</td>'+
     '<td'+A+' id="bm_fpm">৳'+money(mPk,0)+'</td>'+
+    UC.map(function(u){ return '<td'+A+'>৳'+money(u.val,0)+'</td>'; }).join('')+
     '<td'+A+' id="bm_ftr">৳'+money(mTr,0)+'</td>'+
-    '<td'+A+' id="bm_ftot" style="padding:9px 14px;'+HOT+'">৳'+money(mRm+mPk+mTr,0)+'</td>'+
+    '<td'+A+' id="bm_ftot" style="padding:9px 14px;'+HOT+'">৳'+money(mRm+mPk+mUs+mTr,0)+'</td>'+
     '<td'+A+' id="bm_fpd">৳'+money(mPd,0)+'</td>'+
     '<td'+A+' id="bm_fpv">৳'+money(mPv,0)+'</td>'+
-    '<td'+A+' id="bm_fbal">'+balHTML(mRm+mPk+mTr-mPv-mPd)+'</td></tr>'+
+    '<td'+A+' id="bm_fbal">'+balHTML(mRm+mPk+mUs+mTr-mPv-mPd)+'</td></tr>'+
     '</tbody></table></div>'+
-    '<div id="bm_hint" class="muted" style="padding:8px 16px 0;font-size:12px;">'+
-    (mTr>0.5?('Material ৳'+money(mRm+mPk,0)+' + Transport ৳'+money(mTr,0)+' = <b>৳'+money(mRm+mPk+mTr,0)+'</b>'):'')+
+    '<div id="bm_hint" class="muted" style="padding:8px 16px 0;font-size:12px;">'+buyHintTxt(mRm+mPk,mUs,mTr,UC)+
     '</div>';
 
   const noneTot=M.filter(function(r){return !r.k;}).reduce(function(a,r){return a+r.tot;},0);
@@ -12963,13 +13020,14 @@ function orMatSplitData(d){
   const R=(d.rows||[]).filter(function(x){ return !x.missing && x.ctn>0; });
   const T={rmF:0,rmH:0,rmN:0,pkF:0,pkH:0,pkN:0,rm:0,pk:0};
   R.forEach(function(x){ const p=x.sp||{}; ['rmF','rmH','rmN','pkF','pkH','pkN'].forEach(function(k){ T[k]+=n(p[k]); }); T.rm+=n(x.rmVal); T.pk+=n(x.pkVal); });
-  return {rows:R, T:T, hasN:(T.rmN>0.005||T.pkN>0.005)};
+  const UC=d.utilCols||[]; T.ut={}; UC.forEach(function(u){ T.ut[u.key]=u.val; });
+  return {rows:R, T:T, hasN:(T.rmN>0.005||T.pkN>0.005), UC:UC};
 }
 /* v19.85 — মোট Qty: সব পণ্যের পরিমাণ একসাথে এক অঙ্কে (একক সব একই হলে পাশে লেখা থাকে) */
 function orMsQtyTot(D){ let t=0; const u={}; D.rows.forEach(function(x){ t+=n(x.ctn); u[x.b.uLab||'']=1; });
   const k=Object.keys(u); return [money(t,0)+(k.length===1&&k[0]?' '+esc(k[0]):'')]; }
 function orMatSplitHTML(d){
-  const D=orMatSplitData(d), T=D.T, N=D.hasN;
+  const D=orMatSplitData(d), T=D.T, N=D.hasN, UC=D.UC;
   if(typeof appmOn==='function' && appmOn()) return orMatSplitCards(D);
   const c=function(v,b){ return '<td class="num"'+(b?' style="font-weight:700;"':'')+'>'+(Math.abs(v)<0.005?'<span class="muted">-</span>':money(v,0))+'</td>'; };
   const grp='style="text-align:center;border-bottom:1px solid var(--border);"';
@@ -12979,17 +13037,17 @@ function orMatSplitHTML(d){
     '<button class="btn btn-sm btn-ghost" style="margin-left:10px;" onclick="printOrderMatSplit()">&#128424; Print</button>'+'<button class="btn btn-sm btn-accent" style="margin-left:6px;" onclick="pdfOrderMatSplit()">PDF</button>'+'</div>'+
     '<style>.mvt th,.mvt td{padding:8px 9px !important;} .mvt thead th{white-space:normal !important;line-height:1.25;} .mvt td.num{white-space:nowrap;}</style><div class="table-wrap"><table class="mvt" style="font-size:12.5px;">'+
     '<thead><tr><th rowspan="2">#</th><th rowspan="2">Product</th><th rowspan="2" class="num">Qty</th>'+
-      '<th colspan="'+(N?4:3)+'" '+grp+'>RM (Raw Material) ৳</th><th colspan="'+(N?4:3)+'" '+grp+'>PM (Packing Material) ৳</th><th colspan="2" '+grp+'>RM + PM মোট ৳</th><th rowspan="2" class="num">মোট Material ৳</th></tr>'+
+      '<th colspan="'+(N?4:3)+'" '+grp+'>RM (Raw Material) ৳</th><th colspan="'+(N?4:3)+'" '+grp+'>PM (Packing Material) ৳</th><th colspan="2" '+grp+'>RM + PM মোট ৳</th>'+(UC.length?'<th colspan="'+UC.length+'" '+grp+'>Utility ৳</th>':'')+'<th rowspan="2" class="num">মোট Material ৳</th></tr>'+
     '<tr><th class="num">Factory</th><th class="num">Head Office</th>'+(N?'<th class="num" title="RM / PM তালিকায় “কে কিনবে” বসানো নেই">নির্ধারিত নয়</th>':'')+'<th class="num">Total RM</th>'+
-      '<th class="num">Factory</th><th class="num">Head Office</th>'+(N?'<th class="num" title="RM / PM তালিকায় “কে কিনবে” বসানো নেই">নির্ধারিত নয়</th>':'')+'<th class="num">Total PM</th><th class="num">Factory Total</th><th class="num">Head Office Total</th></tr></thead><tbody>'+
+      '<th class="num">Factory</th><th class="num">Head Office</th>'+(N?'<th class="num" title="RM / PM তালিকায় “কে কিনবে” বসানো নেই">নির্ধারিত নয়</th>':'')+'<th class="num">Total PM</th><th class="num">Factory Total</th><th class="num">Head Office Total</th>'+UC.map(function(u){ return '<th class="num">'+esc(u.l)+'</th>'; }).join('')+'</tr></thead><tbody>'+
     D.rows.map(function(x,i){ const p=x.sp||{};
       return '<tr><td class="muted">'+(i+1)+'</td><td style="white-space:nowrap;"><b>'+esc(x.b.name)+'</b>'+(x.b.code?' <span class="muted" style="font-size:11px;">'+esc(x.b.code)+'</span>':'')+'</td>'+
         '<td class="num">'+money(x.ctn,0)+' <span class="muted" style="font-size:11px;">'+esc(x.b.uLab||'')+'</span></td>'+
-        c(p.rmF)+c(p.rmH)+(N?c(p.rmN):'')+c(x.rmVal,true)+c(p.pkF)+c(p.pkH)+(N?c(p.pkN):'')+c(x.pkVal,true)+c(n(p.rmF)+n(p.pkF),true)+c(n(p.rmH)+n(p.pkH),true)+
+        c(p.rmF)+c(p.rmH)+(N?c(p.rmN):'')+c(x.rmVal,true)+c(p.pkF)+c(p.pkH)+(N?c(p.pkN):'')+c(x.pkVal,true)+c(n(p.rmF)+n(p.pkF),true)+c(n(p.rmH)+n(p.pkH),true)+UC.map(function(u){ return c(n((x.ut||{})[u.key])); }).join('')+
         '<td class="num" style="font-weight:700;color:var(--accent,#c9a227);">'+money(x.rmVal+x.pkVal,0)+'</td></tr>'; }).join('')+
     '</tbody><tfoot><tr style="font-weight:700;background:var(--panel-2);border-top:2px solid var(--border);">'+
       '<td colspan="2" style="padding:9px 12px;">TOTAL</td><td class="num" style="font-weight:700;white-space:nowrap;">'+orMsQtyTot(D).join('<br>')+'</td>'+
-      c(T.rmF,true)+c(T.rmH,true)+(N?c(T.rmN,true):'')+c(T.rm,true)+c(T.pkF,true)+c(T.pkH,true)+(N?c(T.pkN,true):'')+c(T.pk,true)+c(T.rmF+T.pkF,true)+c(T.rmH+T.pkH,true)+
+      c(T.rmF,true)+c(T.rmH,true)+(N?c(T.rmN,true):'')+c(T.rm,true)+c(T.pkF,true)+c(T.pkH,true)+(N?c(T.pkN,true):'')+c(T.pk,true)+c(T.rmF+T.pkF,true)+c(T.rmH+T.pkH,true)+UC.map(function(u){ return c(u.val,true); }).join('')+
       '<td class="num" style="color:var(--accent,#c9a227);">'+money(T.rm+T.pk,0)+'</td></tr>'+
 
     '</tfoot></table></div>'+
@@ -13008,10 +13066,11 @@ function orMatSplitCards(D){
     '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:8px;"><b style="font-size:15px;">'+title+'</b><span class="muted" style="font-size:12.5px;white-space:nowrap;">'+sub+'</span></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+blk('RM',p.rmF,p.rmH,p.rmN,rm)+blk('PM',p.pkF,p.pkH,p.pkN,pk)+'</div>'+
     '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;"><span>Factory মোট <b>'+m(n(p.rmF)+n(p.pkF))+'</b></span><span>Head Office মোট <b>'+m(n(p.rmH)+n(p.pkH))+'</b></span></div>'+
+    ((D.UC||[]).some(function(u){ return n((p.ut||{})[u.key])>0.005; })?'<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:13px;">'+D.UC.map(function(u){ return '<span>'+esc(u.l)+' <b>'+m(n((p.ut||{})[u.key]))+'</b></span>'; }).join('')+'</div>':'')+
     '<div style="display:flex;justify-content:space-between;margin-top:6px;font-weight:800;"><span>মোট Material</span><span style="color:var(--accent,#c9a227);">'+m(rm+pk)+'</span></div></div>'; };
   return '<div class="panel" data-ortab="mv" style="margin-bottom:16px;"><div class="panel-head"><h3>পণ্যভিত্তিক RM / PM</h3><span style="flex:1"></span>'+
     '<button class="btn btn-sm btn-ghost" onclick="printOrderMatSplit()">&#128424; Print</button>'+'<button class="btn btn-sm btn-accent" style="margin-left:6px;" onclick="pdfOrderMatSplit()">PDF</button>'+'</div><div class="panel-body">'+
-    D.rows.map(function(x){ return card(esc(x.b.name), money(x.ctn,0)+' '+esc(x.b.uLab||''), x.sp||{}, x.rmVal, x.pkVal); }).join('')+
+    D.rows.map(function(x){ return card(esc(x.b.name), money(x.ctn,0)+' '+esc(x.b.uLab||''), Object.assign({ut:x.ut},x.sp||{}), x.rmVal, x.pkVal); }).join('')+
     card('TOTAL', orMsQtyTot(D).join(' · '), T, T.rm, T.pk, true)+
     (N?'<p class="hint" style="margin:4px 0 0;">কিছু Material এ “কে কিনবে” বসানো নেই — সেগুলো “নির্ধারিত নয়”।</p>':'')+
     '</div></div>';
@@ -13024,7 +13083,7 @@ function printOrderMatSplit(){
   safePrint();
 }
 function orderMatSplitPrintHTML(d,pageBreak){
-  const D=orderMatSplitDataSafe(d), T=D.T, N=D.hasN, o=d.plan;
+  const D=orderMatSplitDataSafe(d), T=D.T, N=D.hasN, UC=D.UC, o=d.plan;
   /* v19.83 — পণ্যের নাম এক লাইনে; টাকার কলাম শুধু অঙ্কের মাপে (width:1% + nowrap), বাকি জায়গা নামের */
   const S="font-family:'Times New Roman',serif;", B='border:1px solid #000;padding:2px 4px;';
   const R=function(v,b){ return '<td style="'+B+'width:1%;text-align:right;white-space:nowrap;'+(b?'font-weight:bold;':'')+'">'+(Math.abs(v)<0.005?'-':money(v,0))+'</td>'; };
@@ -13040,14 +13099,14 @@ function orderMatSplitPrintHTML(d,pageBreak){
       '<td style="'+B+'"><b>Date:</b> '+esc(showDate(o.date)||fmtDate(o.createdAt))+'</td></tr></table>'+
     '<table class="mvs" style="width:100%;border-collapse:collapse;table-layout:auto;'+S+'font-size:9.5px;"><thead>'+
     '<tr>'+H('SL','width:1%;" rowspan="2')+H('Product','text-align:left;" rowspan="2')+H('Qty','width:1%;" rowspan="2')+
-      H('Raw Material (BDT)','" colspan="'+(N?4:3))+H('Packing Material (BDT)','" colspan="'+(N?4:3))+H('Purchase By — Total (RM + PM)','" colspan="2')+H('Total<br>Material','width:1%;" rowspan="2')+'</tr>'+
-    '<tr>'+H('Factory','width:1%;')+H('Head<br>Office','width:1%;')+(N?H('Un-<br>assigned','width:1%;'):'')+H('Total<br>RM','width:1%;')+H('Factory','width:1%;')+H('Head<br>Office','width:1%;')+(N?H('Un-<br>assigned','width:1%;'):'')+H('Total<br>PM','width:1%;')+H('Factory<br>Total','width:1%;')+H('Head Office<br>Total','width:1%;')+'</tr></thead><tbody>'+
+      H('Raw Material (BDT)','" colspan="'+(N?4:3))+H('Packing Material (BDT)','" colspan="'+(N?4:3))+H('Purchase By — Total (RM + PM)','" colspan="2')+(UC.length?H('Utility (BDT)','" colspan="'+UC.length):'')+H('Total<br>Material','width:1%;" rowspan="2')+'</tr>'+
+    '<tr>'+H('Factory','width:1%;')+H('Head<br>Office','width:1%;')+(N?H('Un-<br>assigned','width:1%;'):'')+H('Total<br>RM','width:1%;')+H('Factory','width:1%;')+H('Head<br>Office','width:1%;')+(N?H('Un-<br>assigned','width:1%;'):'')+H('Total<br>PM','width:1%;')+H('Factory<br>Total','width:1%;')+H('Head Office<br>Total','width:1%;')+UC.map(function(u){ return H(esc(u.l),'width:1%;'); }).join('')+'</tr></thead><tbody>'+
     D.rows.map(function(x,i){ const p=x.sp||{};
       return '<tr><td style="'+B+'width:1%;text-align:center;">'+(i+1)+'</td><td style="'+B+'white-space:nowrap;">'+esc(x.b.name)+(x.b.code?' ('+esc(x.b.code)+')':'')+'</td>'+
         '<td style="'+B+'text-align:right;white-space:nowrap;">'+money(x.ctn,0)+' '+esc(x.b.uLab||'')+'</td>'+
-        R(p.rmF)+R(p.rmH)+(N?R(p.rmN):'')+R(x.rmVal,true)+R(p.pkF)+R(p.pkH)+(N?R(p.pkN):'')+R(x.pkVal,true)+R(n(p.rmF)+n(p.pkF),true)+R(n(p.rmH)+n(p.pkH),true)+R(x.rmVal+x.pkVal,true)+'</tr>'; }).join('')+
+        R(p.rmF)+R(p.rmH)+(N?R(p.rmN):'')+R(x.rmVal,true)+R(p.pkF)+R(p.pkH)+(N?R(p.pkN):'')+R(x.pkVal,true)+R(n(p.rmF)+n(p.pkF),true)+R(n(p.rmH)+n(p.pkH),true)+UC.map(function(u){ return R(n((x.ut||{})[u.key])); }).join('')+R(x.rmVal+x.pkVal,true)+'</tr>'; }).join('')+
     '</tbody><tfoot><tr style="background:#f3f3f3;"><td colspan="2" style="'+B+'font-weight:bold;">TOTAL</td>'+'<td style="'+B+'width:1%;text-align:right;white-space:nowrap;font-weight:bold;">'+orMsQtyTot(D).join('<br>')+'</td>'+
-      R(T.rmF,true)+R(T.rmH,true)+(N?R(T.rmN,true):'')+R(T.rm,true)+R(T.pkF,true)+R(T.pkH,true)+(N?R(T.pkN,true):'')+R(T.pk,true)+R(T.rmF+T.pkF,true)+R(T.rmH+T.pkH,true)+R(T.rm+T.pk,true)+'</tr></tfoot></table>'+
+      R(T.rmF,true)+R(T.rmH,true)+(N?R(T.rmN,true):'')+R(T.rm,true)+R(T.pkF,true)+R(T.pkH,true)+(N?R(T.pkN,true):'')+R(T.pk,true)+R(T.rmF+T.pkF,true)+R(T.rmH+T.pkH,true)+UC.map(function(u){ return R(u.val,true); }).join('')+R(T.rm+T.pk,true)+'</tr></tfoot></table>'+
     orderBuyByHTML(d)+
 
     '</div>';
@@ -13255,15 +13314,20 @@ function orderBuyByHTML(d){
       const mTr=M.reduce(function(a,r){return a+r.tr;},0);
       const mPv=M.reduce(function(a,r){return a+r.prev;},0);
       const mPd=M.reduce(function(a,r){return a+r.paid;},0);
+      const UC=d.utilCols||[], mUs=M.reduce(function(a,r){return a+n(r.us);},0), mT=mRm+mPk+mUs+mTr;   /* v19.87 */
+      const uTd=function(v,bold){ return '<td style="'+cl+B+'text-align:right;'+(bold?'font-weight:bold;':'')+'">'+(v>0.5?money(v,0):'-')+'</td>'; };
+      const rwU=function(l,r,bold){ const base=rw6(l,r.rm,r.pk,r.tr,r.tot,r.prev,r.paid,r.bal,bold); if(!UC.length) return base;
+        const cut=base.split('</td>'); /* লেবেল, RM, PM এর পরে Utility */
+        return cut.slice(0,3).join('</td>')+'</td>'+UC.map(function(u){ return uTd(n((r.ut||{})[u.key])); }).join('')+cut.slice(3).join('</td>'); };
       h+='<div style="font-weight:bold;margin:12px 0 4px;border-bottom:1.5px solid #000;">'+
         'To Buy — by Purchaser</div>'+
         '<table style="'+W.replace('width:70%','width:100%')+'">'+
-        hd('Purchased By','RM ৳','PM ৳','Transport ৳','Total ৳','Paid ৳','Prev. Excess ৳','Balance')+
-        M.map(function(r){ return rw6(esc(r.k?r.l:'Not assigned'), r.rm, r.pk, r.tr, r.tot, r.prev, r.paid, r.bal); }).join('')+
-        rw6('Total', mRm, mPk, mTr, mRm+mPk+mTr, mPv, mPd, mRm+mPk+mTr-mPv-mPd, true)+
+        hd.apply(null,['Purchased By','RM ৳','PM ৳'].concat(UC.map(function(u){ return esc(u.l)+' ৳'; })).concat(['Transport ৳','Total ৳','Paid ৳','Prev. Excess ৳','Balance']))+
+        M.map(function(r){ return rwU(esc(r.k?r.l:'Not assigned'), r); }).join('')+
+        rwU('Total', {rm:mRm,pk:mPk,tr:mTr,tot:mT,prev:mPv,paid:mPd,bal:mT-mPv-mPd,ut:(function(){ const o={}; UC.forEach(function(u){ o[u.key]=u.val; }); return o; })()}, true)+
         '</table>'+
-        (mTr>0.5?('<div style="font-size:10px;margin-top:3px;">Material ৳ '+money(mRm+mPk,0)+
-          ' + Transport ৳ '+money(mTr,0)+' = ৳ '+money(mRm+mPk+mTr,0)+'</div>'):'');
+        ((mTr>0.5||mUs>0.5)?('<div style="font-size:10px;margin-top:3px;">Material ৳ '+money(mRm+mPk,0)+
+          (mUs>0.5?' + '+esc(UC.map(function(u){return u.l;}).join(' / '))+' ৳ '+money(mUs,0):'')+(mTr>0.5?' + Transport ৳ '+money(mTr,0):'')+' = ৳ '+money(mT,0)+'</div>'):'');
   return h;
 }
 function orderReqHTML(d, pageBreak){
@@ -21255,6 +21319,12 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.87', d:'2026-11-23', t:'Order Requirement: Gas, NO2 (আর যেকোনো Utility) আলাদা কলামে · Factory Accounts সারি', li:[
+  '<b>পণ্যভিত্তিক RM / PM:</b> নতুন “Utility” কলাম — প্রতিটা পণ্যে এই Order এ Gas কত ৳, NO2 কত ৳; TOTAL সারিতে মোট। Costing এর Machine / Utility লাইনের প্রতি Ctn খরচ × Order Qty',
+  '<b>To Buy — by Purchaser:</b> নতুন সারি <b>Factory Accounts</b> আর নতুন কলাম Gas, NO2 — Total, Paid, Prev. Excess, Balance সব এতে ধরা; নিচে Material + Gas / NO2 + Transport = মোট। স্ক্রিনের “ক্রয় সারাংশ”, Print আর PDF তিন জায়গাতেই',
+  '<b>Machine / Utility Master এ দুটো নতুন ঘর:</b> “Order সারাংশে আলাদা কলাম” (নিজে থেকে — Gas / NO2 হলে হ্যাঁ · হ্যাঁ · না) আর “এর টাকা কে দেয়” (Factory Accounts / Factory Purchase / Head Office Purchase)। পরে Diesel, বিদ্যুৎ বা অন্য কিছু আলাদা দেখাতে চাইলে শুধু “হ্যাঁ” দিলেই কলাম আসে',
+  'Gas / NO2 চেনা: Master এ ধরন Gas বা নামে Gas / গ্যাস → Gas; নামে NO2 / N2 / Nitrogen → NO2। Master এ যুক্ত না থাকা লাইনও একই ধরনের Master এর কলামে যোগ হয়',
+  'কোনো Order এ এমন খরচ না থাকলে ছক আগের মতোই — Material Requirement Print এক অক্ষরও বদলায় না']},
  {v:'19.86', d:'2026-11-23', t:'পণ্যভিত্তিক RM / PM Print: নিচে আসল “To Buy — by Purchaser” ছক', li:[
   'পণ্যভিত্তিক RM / PM এর Print / PDF এর নিচের ছোট সারাংশ ছকের জায়গায় এখন Material Requirement Print এর আসল ছক — Purchased By · RM · PM · Transport · Total · Paid · Prev. Excess · Balance (Due / Excess), নিচে Material + Transport এর যোগ',
   'দুই Print এ একই ছক একই হিসাবে (একটা ফাংশন থেকে) — একটায় বদলালে অন্যটাতেও; Material Requirement Print আগের মতোই, এক অক্ষরও বদলায়নি']},
@@ -24216,6 +24286,12 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.87', d:'2026-11-23', t:'Order requirement: Gas, NO2 (and any utility) in their own columns · Factory Accounts row', li:[
+  '<b>Product-wise RM / PM:</b> new “Utility” columns — how much Gas and NO2 each product costs in this order, with totals. It uses the per-carton cost of the costing’s Machine / Utility lines × order quantity',
+  '<b>To Buy — by Purchaser:</b> new <b>Factory Accounts</b> row and Gas, NO2 columns — included in Total, Paid, Prev. Excess and Balance, with Material + Gas / NO2 + Transport = total below. On the screen “Purchase summary”, print and PDF',
+  '<b>Two new fields in the Machine / Utility master:</b> “Separate column in order summary” (automatic — yes for Gas / NO2 · yes · no) and “Who pays” (Factory Accounts / Factory Purchase / Head Office Purchase). To show diesel, electricity or anything else later, just set “yes”',
+  'Gas / NO2 detection: type Gas or name Gas / গ্যাস → Gas; name NO2 / N2 / Nitrogen → NO2. Lines not linked to the master join the column of a master of the same kind',
+  'Orders without such costs look exactly as before — the material requirement print is unchanged']},
  {v:'19.86', d:'2026-11-23', t:'Product-wise RM / PM print: the original “To Buy — by Purchaser” table at the bottom', li:[
   'The small summary under the product-wise RM / PM print / PDF is replaced by the original table from the material requirement print — Purchased By · RM · PM · Transport · Total · Paid · Prev. Excess · Balance (Due / Excess), with the Material + Transport line below',
   'Both prints now build the table from the same code, so they always match; the material requirement print is unchanged']},
