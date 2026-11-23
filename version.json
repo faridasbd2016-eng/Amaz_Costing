@@ -1,1 +1,1 @@
-{"version": "19.92", "date": "2026-11-23", "notes": "Excel এর মতো কিবোর্ড সব ছকে · সব তালিকায় ⚙ · Pc → Pcs", "notes_en": "Excel-style keyboard in tables · ⚙ list managers · Pc → Pcs"}
+{"version": "19.93", "date": "2026-11-23", "notes": "Work Order এ Qty বদলালে ঝাঁকুনি ঠিক · বড় ছক আবার আঁকলে নড়া বন্ধ", "notes_en": "Work order Qty jolt fixed · no flicker on table redraw"}

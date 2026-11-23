@@ -11957,7 +11957,9 @@ function twfLayout(t, wide, base){
         col+=cs; }); }); };
   apply(t.tHead.rows); [].forEach.call(t.tBodies,function(b){ apply(b.rows); }); if(t.tFoot) apply(t.tFoot.rows);
 }
-function twfQueue(){ clearTimeout(TWF_T); TWF_T=setTimeout(function(){ try{ twfScan(); }catch(e){ console.error(e); } },140); }
+/* v19.93 — পরের ছবি আঁকার আগেই (requestAnimationFrame) — আগে ১৪০ms পরে হতো, তাই ছক নতুন করে আঁকলে এক ঝলক নড়ে উঠত */
+var TWF_RAF=0;
+function twfQueue(){ if(TWF_RAF) return; TWF_RAF=requestAnimationFrame(function(){ TWF_RAF=0; try{ twfScan(); }catch(e){ console.error(e); } }); }
 (function(){ try{
   const mo=new MutationObserver(function(ms){ for(let i=0;i<ms.length;i++){ const t=ms[i].target; if(t && t.closest && t.closest('#printArea')) continue; twfQueue(); return; } });
   const go=function(){ mo.observe(document.body,{childList:true,subtree:true}); twfQueue(); };
@@ -12057,6 +12059,8 @@ function woEdit(id){
   woEdRender();
 }
 function woEdRender(){
+  const _sc=[].map.call(document.querySelectorAll('#woModal .modal-body, #woModal .table-wrap'),function(x){ return [x.scrollTop,x.scrollLeft]; });
+  setTimeout(function(){ [].forEach.call(document.querySelectorAll('#woModal .modal-body, #woModal .table-wrap'),function(x,i){ if(_sc[i]){ x.scrollTop=_sc[i][0]; x.scrollLeft=_sc[i][1]; } }); },0);
   let ov=document.getElementById('woModal'); if(!ov){ ov=document.createElement('div'); ov.className='modal-overlay'; ov.id='woModal'; document.body.appendChild(ov); openModal('woModal'); } const E=WO_ED, w=E.w, C=woCfg(), cols=woCols(w.type);
   const sups=(DB.suppliers||[]).map(function(x){ return '<option value="'+esc(x.name)+'"></option>'; }).join('');
   const f=function(lbl,k,typ,ph){ return '<div class="field"><label>'+lbl+'</label><input type="'+(typ||'text')+'" value="'+esc(w[k]||'')+'" placeholder="'+esc(ph||'')+'" oninput="WO_ED.w.'+k+'=this.value"'+(k==='sup'?' list="woSupDL" onchange="woSupPick(this.value)"':'')+'></div>'; };
@@ -12074,8 +12078,8 @@ function woEdRender(){
          cols.map(function(x){ return '<td>'+esc(r[x.k]==null?'':r[x.k])+'</td>'; }).join('')+'<td class="muted" style="font-size:12px;">'+esc(r.sup||'—')+'</td>'+
          '<td class="num"><input class="rate-inline" style="width:80px;text-align:right;" value="'+(n(v.qty)?money(v.qty,0):'')+'" '+(on?'':'disabled ')+'onchange="woRowSet('+i+',\'qty\',this.value)"> <span class="muted" style="font-size:11px;">'+esc(r.unit||'')+'</span></td>'+
          '<td class="num"><input class="rate-inline" style="width:76px;text-align:right;" value="'+(n(v.rate)?money(v.rate,2):'')+'" '+(on?'':'disabled ')+'onchange="woRowSet('+i+',\'rate\',this.value)"></td>'+
-         '<td class="num"><b>'+(on?money(n(v.qty)*n(v.rate),2):'')+'</b></td></tr>'; }).join('')+
-   '</tbody><tfoot><tr style="font-weight:700;background:var(--panel-2);"><td colspan="'+(cols.length+3)+'" style="padding:9px 12px;text-align:right;">Total ('+Object.keys(E.pick).length+' item)</td><td class="num">'+money(T.q,0)+'</td><td></td><td class="num">৳'+money(T.a,2)+'</td></tr></tfoot></table></div>'+
+         '<td class="num"><b id="woAmt'+i+'">'+(on?money(n(v.qty)*n(v.rate),2):'')+'</b></td></tr>'; }).join('')+
+   '</tbody><tfoot><tr style="font-weight:700;background:var(--panel-2);"><td colspan="'+(cols.length+3)+'" style="padding:9px 12px;text-align:right;">Total ('+Object.keys(E.pick).length+' item)</td><td class="num" id="woTq">'+money(T.q,0)+'</td><td></td><td class="num" id="woTa">৳'+money(T.a,2)+'</td></tr></tfoot></table></div>'+
    '<div class="field-row cols-2" style="margin-top:12px;"><div class="field"><label>Terms &amp; Conditions (প্রতি লাইনে একটা — সব Work Order এ একই, পরে বদলানো যায়)</label><textarea rows="6" id="woTermsTA" onchange="woTermsSet(this.value)">'+esc(C.terms.join('\n'))+'</textarea>'+
      '<div class="hint">{FAC} লিখলে Demand এর Factory ঠিকানা বসে</div></div>'+
    '<div class="field"><label>Note (ঐচ্ছিক — Print এ ছকের নিচে)</label><input type="text" value="'+esc(w.note||'')+'" oninput="WO_ED.w.note=this.value"></div></div>'+
@@ -12090,7 +12094,14 @@ function woSupPick(v){ const r=woSupRec(v), w=WO_ED.w; w.sup=v; if(r){ if(r.addr
   woEdRender(); }
 function woPick(i,on){ if(on) WO_ED.pick[i]=Object.assign({},WO_ED.src[i]); else delete WO_ED.pick[i]; woEdRender(); }
 function woPickAll(on){ WO_ED.pick={}; if(on) WO_ED.src.forEach(function(x,i){ WO_ED.pick[i]=Object.assign({},x); }); woEdRender(); }
-function woRowSet(i,k,v){ if(!WO_ED.pick[i]) return; WO_ED.pick[i][k]=n(v); woEdRender(); }
+/* v19.93 — Qty / Rate বদলালে পুরো পপআপ আবার আঁকা হতো (ঝাঁকুনি, Scroll উপরে চলে যেত) — এখন শুধু ওই সারির Amount আর Total বদলায় */
+function woRowSet(i,k,v){ const r=WO_ED&&WO_ED.pick[i]; if(!r) return; r[k]=n(v);
+  const a=document.getElementById('woAmt'+i); if(!a){ woEdRender(); return; }
+  a.textContent=money(n(r.qty)*n(r.rate),2);
+  let q=0,t=0; Object.keys(WO_ED.pick).forEach(function(j){ const x=WO_ED.pick[j]; q+=n(x.qty); t+=n(x.qty)*n(x.rate); });
+  const tq=document.getElementById('woTq'), ta=document.getElementById('woTa'); if(tq) tq.textContent=money(q,0); if(ta) ta.textContent='৳'+money(t,2);
+  try{ const inp=document.activeElement; if(inp && inp.getAttribute && (inp.getAttribute('onchange')||'').indexOf('woRowSet('+i+",'"+k+"'")===0){} }catch(e){}
+  [].forEach.call(document.querySelectorAll('#woModal input[onchange^="woRowSet('+i+',\''+k+'\'"]'),function(el){ if(document.activeElement!==el) el.value=k==='qty'?money(r[k],0):money(r[k],2); }); }
 function woSave(then){
   const E=WO_ED, w=E.w; if(!String(w.sup||'').trim()){ toast('Supplier এর নাম দিন',true); return; }
   const rows=Object.keys(E.pick).map(Number).sort(function(a,b){return a-b;}).map(function(i){ return E.pick[i]; });
@@ -21877,6 +21888,11 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.93', d:'2026-11-23', t:'Work Order এ Qty বদলালে ঝাঁকুনি ঠিক · বড় ছক আবার আঁকলে নড়া বন্ধ', li:[
+  '<b>ঝাঁকুনি ঠিক:</b> Work Order এ Qty বা Rate বদলালে পুরো পপআপ নতুন করে আঁকা হতো — শিরোনাম এক ঝলক সরে যেত আর ছক উপরে লাফ দিত। এখন শুধু ওই সারির Amount আর নিচের Total বদলায়; ছক এক বিন্দুও নড়ে না, কার্সর পরের ঘরে যায়',
+  'জমে থাকা শিরোনাম (Freeze) এখন ছক আঁকার সাথে সাথেই বসে (আগে ১৪০ms পরে বসত) — Demand, Order, তালিকা যেকোনো ছক নতুন করে আঁকলে আর নড়ে ওঠে না',
+  'Work Order এর ঘরে টিক দেওয়া / তোলার পরেও ছক যেখানে ছিল সেখানেই থাকে',
+  '<b>পুরো Software স্ক্যান:</b> কম্পিউটার আর মোবাইলে সব পাতার সব বোতাম ও পপআপ চাপিয়ে দেখা হয়েছে — কোনো error নেই']},
  {v:'19.92', d:'2026-11-23', t:'Excel এর মতো কিবোর্ড (↑ ↓ ← → Tab Enter) সব ছকে · Unit সহ সব তালিকায় ⚙ যোগ / বদল / মুছা · Pc → Pcs', li:[
   '<b>কিবোর্ড সব জায়গায়:</b> Work Order, Demand Sheet, Order Requirement, ক্রয় সারাংশ, RM / PM তালিকা, Costing এর লাইন — যেকোনো ছকের ঘরে ↓ / Enter = নিচের ঘর, ↑ / Shift+Enter = উপরের, → / ← = পাশের ঘর, Tab / Shift+Tab = পরের / আগের ঘর (সারির শেষে পরের সারিতে)। Enter চাপলে লেখা সেভ হয়; ঘরে ঢুকলে লেখা বাছা থাকে, টাইপ করলেই নতুন মান। লেখার মাঝে থাকলে ← → লেখার ভেতরে সরে। ঘর সেভ হয়ে ছক নতুন করে আঁকা হলেও কার্সর ঠিক ঘরে থাকে',
   'পপআপ ফর্মে Enter = পরের ঘর · Dropdown এ ↑ ↓ আগের মতোই মান বদলায়',
@@ -24871,6 +24887,11 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.93', d:'2026-11-23', t:'Work order: no more jolt when changing Qty · large tables no longer flicker when redrawn', li:[
+  '<b>Jolt fixed:</b> changing Qty or Rate in a work order redrew the whole popup — the heading briefly moved and the table jumped to the top. Now only that row’s Amount and the Total change; the table does not move and the cursor goes to the next cell',
+  'Frozen headings are applied in the same frame as the table is drawn (previously 140 ms later) — demand, order and list tables no longer flicker when redrawn',
+  'Ticking / unticking items in a work order keeps the table where it was',
+  '<b>Full scan:</b> every button and popup on every page was clicked on desktop and mobile — no errors']},
  {v:'19.92', d:'2026-11-23', t:'Excel-style keyboard (↑ ↓ ← → Tab Enter) in every table · ⚙ add / edit / delete on all lists incl. Unit · Pc → Pcs', li:[
   '<b>Keyboard everywhere:</b> work orders, demand sheets, order requirement, purchase summary, RM / PM lists, costing lines — in any table cell ↓ / Enter = cell below, ↑ / Shift+Enter = above, → / ← = next cell, Tab / Shift+Tab = next / previous cell (wrapping to the next row). Enter saves the value; entering a cell selects its text so typing replaces it. Inside text, ← → move the caret. The cursor stays on the right cell even when the table redraws after saving',
   'In popup forms Enter goes to the next field · ↑ ↓ in dropdowns still change the value',
