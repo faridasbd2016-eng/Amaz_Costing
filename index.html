@@ -13090,6 +13090,7 @@ function orMatSplitData(d){
   const T={rmF:0,rmH:0,rmN:0,pkF:0,pkH:0,pkN:0,rm:0,pk:0};
   R.forEach(function(x){ const p=x.sp||{}; ['rmF','rmH','rmN','pkF','pkH','pkN'].forEach(function(k){ T[k]+=n(p[k]); }); T.rm+=n(x.rmVal); T.pk+=n(x.pkVal); });
   const UC=d.utilCols||[]; T.ut={}; UC.forEach(function(u){ T.ut[u.key]=n(u.est!=null?u.est:u.val); });
+  T.cbm=0; T.sale=0; R.forEach(function(x){ T.cbm+=n(x.cbm); T.sale+=n(x.sale); });     /* v19.89 */
   return {rows:R, T:T, hasN:(T.rmN>0.005||T.pkN>0.005), UC:UC};
 }
 /* v19.85 — মোট Qty: সব পণ্যের পরিমাণ একসাথে এক অঙ্কে (একক সব একই হলে পাশে লেখা থাকে) */
@@ -13105,19 +13106,20 @@ function orMatSplitHTML(d){
     '<span style="font-size:12.5px;">RM <b>৳'+money(T.rm,0)+'</b> &nbsp;·&nbsp; PM <b>৳'+money(T.pk,0)+'</b> &nbsp;·&nbsp; মোট <b style="color:var(--accent,#c9a227);">৳'+money(T.rm+T.pk,0)+'</b></span>'+
     '<button class="btn btn-sm btn-ghost" style="margin-left:10px;" onclick="printOrderMatSplit()">&#128424; Print</button>'+'<button class="btn btn-sm btn-accent" style="margin-left:6px;" onclick="pdfOrderMatSplit()">PDF</button>'+'</div>'+
     '<style>.mvt th,.mvt td{padding:8px 9px !important;} .mvt thead th{white-space:normal !important;line-height:1.25;} .mvt td.num{white-space:nowrap;}</style><div class="table-wrap"><table class="mvt" style="font-size:12.5px;">'+
-    '<thead><tr><th rowspan="2">#</th><th rowspan="2">Product</th><th rowspan="2" class="num">Qty</th>'+
-      '<th colspan="'+(N?4:3)+'" '+grp+'>RM (Raw Material) ৳</th><th colspan="'+(N?4:3)+'" '+grp+'>PM (Packing Material) ৳</th><th colspan="2" '+grp+'>RM + PM মোট ৳</th>'+(UC.length?'<th colspan="'+UC.length+'" '+grp+'>Utility ৳</th>':'')+'<th rowspan="2" class="num">মোট Material ৳</th></tr>'+
+    '<thead><tr><th rowspan="2">#</th><th rowspan="2">Product</th><th rowspan="2" class="num">Qty</th><th rowspan="2" class="num">CBM</th>'+
+      '<th colspan="'+(N?4:3)+'" '+grp+'>RM (Raw Material) ৳</th><th colspan="'+(N?4:3)+'" '+grp+'>PM (Packing Material) ৳</th><th colspan="2" '+grp+'>RM + PM মোট ৳</th>'+(UC.length?'<th colspan="'+UC.length+'" '+grp+'>Utility ৳</th>':'')+'<th rowspan="2" class="num">মোট Material ৳</th><th rowspan="2" class="num">Sales Value ৳</th></tr>'+
     '<tr><th class="num">Factory</th><th class="num">Head Office</th>'+(N?'<th class="num" title="RM / PM তালিকায় “কে কিনবে” বসানো নেই">নির্ধারিত নয়</th>':'')+'<th class="num">Total RM</th>'+
       '<th class="num">Factory</th><th class="num">Head Office</th>'+(N?'<th class="num" title="RM / PM তালিকায় “কে কিনবে” বসানো নেই">নির্ধারিত নয়</th>':'')+'<th class="num">Total PM</th><th class="num">Factory Total</th><th class="num">Head Office Total</th>'+UC.map(function(u){ return '<th class="num">'+esc(u.l)+'</th>'; }).join('')+'</tr></thead><tbody>'+
     D.rows.map(function(x,i){ const p=x.sp||{};
       return '<tr><td class="muted">'+(i+1)+'</td><td style="white-space:nowrap;"><b>'+esc(x.b.name)+'</b>'+(x.b.code?' <span class="muted" style="font-size:11px;">'+esc(x.b.code)+'</span>':'')+'</td>'+
         '<td class="num">'+money(x.ctn,0)+' <span class="muted" style="font-size:11px;">'+esc(x.b.uLab||'')+'</span></td>'+
+        '<td class="num">'+(n(x.cbm)>0.0005?money(x.cbm,2):'<span class="muted">-</span>')+'</td>'+
         c(p.rmF)+c(p.rmH)+(N?c(p.rmN):'')+c(x.rmVal,true)+c(p.pkF)+c(p.pkH)+(N?c(p.pkN):'')+c(x.pkVal,true)+c(n(p.rmF)+n(p.pkF),true)+c(n(p.rmH)+n(p.pkH),true)+UC.map(function(u){ return c(n((x.ut||{})[u.key])); }).join('')+
-        '<td class="num" style="font-weight:700;color:var(--accent,#c9a227);">'+money(x.rmVal+x.pkVal,0)+'</td></tr>'; }).join('')+
+        '<td class="num" style="font-weight:700;color:var(--accent,#c9a227);">'+money(x.rmVal+x.pkVal,0)+'</td>'+c(x.sale,true)+'</tr>'; }).join('')+
     '</tbody><tfoot><tr style="font-weight:700;background:var(--panel-2);border-top:2px solid var(--border);">'+
-      '<td colspan="2" style="padding:9px 12px;">TOTAL</td><td class="num" style="font-weight:700;white-space:nowrap;">'+orMsQtyTot(D).join('<br>')+'</td>'+
+      '<td colspan="2" style="padding:9px 12px;">TOTAL</td><td class="num" style="font-weight:700;white-space:nowrap;">'+orMsQtyTot(D).join('<br>')+'</td><td class="num" style="font-weight:700;">'+(T.cbm>0.0005?money(T.cbm,2):'-')+'</td>'+
       c(T.rmF,true)+c(T.rmH,true)+(N?c(T.rmN,true):'')+c(T.rm,true)+c(T.pkF,true)+c(T.pkH,true)+(N?c(T.pkN,true):'')+c(T.pk,true)+c(T.rmF+T.pkF,true)+c(T.rmH+T.pkH,true)+UC.map(function(u){ return c(T.ut[u.key],true); }).join('')+
-      '<td class="num" style="color:var(--accent,#c9a227);">'+money(T.rm+T.pk,0)+'</td></tr>'+
+      '<td class="num" style="color:var(--accent,#c9a227);">'+money(T.rm+T.pk,0)+'</td>'+c(T.sale,true)+'</tr>'+
 
     '</tfoot></table></div>'+
     (N?'<div class="panel-body" style="padding-top:8px;"><p class="hint" style="margin:0;">কিছু Material এ “কে কিনবে” (Factory / Head Office) বসানো নেই — সেগুলো “নির্ধারিত নয়” ঘরে। Raw / Packing Materials তালিকা থেকে বসিয়ে দিলে এখানে নিজেই ভাগ হয়ে যাবে।</p></div>':'')+
@@ -13136,10 +13138,11 @@ function orMatSplitCards(D){
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+blk('RM',p.rmF,p.rmH,p.rmN,rm)+blk('PM',p.pkF,p.pkH,p.pkN,pk)+'</div>'+
     '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;"><span>Factory মোট <b>'+m(n(p.rmF)+n(p.pkF))+'</b></span><span>Head Office মোট <b>'+m(n(p.rmH)+n(p.pkH))+'</b></span></div>'+
     ((D.UC||[]).some(function(u){ return n((p.ut||{})[u.key])>0.005; })?'<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:13px;">'+D.UC.map(function(u){ return '<span>'+esc(u.l)+' <b>'+m(n((p.ut||{})[u.key]))+'</b></span>'; }).join('')+'</div>':'')+
-    '<div style="display:flex;justify-content:space-between;margin-top:6px;font-weight:800;"><span>মোট Material</span><span style="color:var(--accent,#c9a227);">'+m(rm+pk)+'</span></div></div>'; };
+    '<div style="display:flex;justify-content:space-between;margin-top:6px;font-weight:800;"><span>মোট Material</span><span style="color:var(--accent,#c9a227);">'+m(rm+pk)+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:13px;"><span>CBM <b>'+(n(p.cbm)>0.0005?money(p.cbm,2):'-')+'</b></span><span>Sales Value <b>'+m(n(p.sale))+'</b></span></div></div>'; };
   return '<div class="panel" data-ortab="mv" style="margin-bottom:16px;"><div class="panel-head"><h3>পণ্যভিত্তিক RM / PM</h3><span style="flex:1"></span>'+
     '<button class="btn btn-sm btn-ghost" onclick="printOrderMatSplit()">&#128424; Print</button>'+'<button class="btn btn-sm btn-accent" style="margin-left:6px;" onclick="pdfOrderMatSplit()">PDF</button>'+'</div><div class="panel-body">'+
-    D.rows.map(function(x){ return card(esc(x.b.name), money(x.ctn,0)+' '+esc(x.b.uLab||''), Object.assign({ut:x.ut},x.sp||{}), x.rmVal, x.pkVal); }).join('')+
+    D.rows.map(function(x){ return card(esc(x.b.name), money(x.ctn,0)+' '+esc(x.b.uLab||''), Object.assign({ut:x.ut,cbm:x.cbm,sale:x.sale},x.sp||{}), x.rmVal, x.pkVal); }).join('')+
     card('TOTAL', orMsQtyTot(D).join(' · '), T, T.rm, T.pk, true)+
     (N?'<p class="hint" style="margin:4px 0 0;">কিছু Material এ “কে কিনবে” বসানো নেই — সেগুলো “নির্ধারিত নয়”।</p>':'')+
     '</div></div>';
@@ -13167,15 +13170,16 @@ function orderMatSplitPrintHTML(d,pageBreak){
       '<td style="'+B+'"><b>Order Ref:</b> '+esc(o.ref||'-')+'</td><td style="'+B+'"><b>Buyer:</b> '+esc(o.buyer||'-')+'</td>'+
       '<td style="'+B+'"><b>Date:</b> '+esc(showDate(o.date)||fmtDate(o.createdAt))+'</td></tr></table>'+
     '<table class="mvs" style="width:100%;border-collapse:collapse;table-layout:auto;'+S+'font-size:9.5px;"><thead>'+
-    '<tr>'+H('SL','width:1%;" rowspan="2')+H('Product','text-align:left;" rowspan="2')+H('Qty','width:1%;" rowspan="2')+
-      H('Raw Material (BDT)','" colspan="'+(N?4:3))+H('Packing Material (BDT)','" colspan="'+(N?4:3))+H('Purchase By — Total (RM + PM)','" colspan="2')+(UC.length?H('Utility (BDT)','" colspan="'+UC.length):'')+H('Total<br>Material','width:1%;" rowspan="2')+'</tr>'+
+    '<tr>'+H('SL','width:1%;" rowspan="2')+H('Product','text-align:left;" rowspan="2')+H('Qty','width:1%;" rowspan="2')+H('CBM','width:1%;" rowspan="2')+
+      H('Raw Material (BDT)','" colspan="'+(N?4:3))+H('Packing Material (BDT)','" colspan="'+(N?4:3))+H('Purchase By — Total (RM + PM)','" colspan="2')+(UC.length?H('Utility (BDT)','" colspan="'+UC.length):'')+H('Total<br>Material','width:1%;" rowspan="2')+H('Sales<br>Value','width:1%;" rowspan="2')+'</tr>'+
     '<tr>'+H('Factory','width:1%;')+H('Head<br>Office','width:1%;')+(N?H('Un-<br>assigned','width:1%;'):'')+H('Total<br>RM','width:1%;')+H('Factory','width:1%;')+H('Head<br>Office','width:1%;')+(N?H('Un-<br>assigned','width:1%;'):'')+H('Total<br>PM','width:1%;')+H('Factory<br>Total','width:1%;')+H('Head Office<br>Total','width:1%;')+UC.map(function(u){ return H(esc(u.l),'width:1%;'); }).join('')+'</tr></thead><tbody>'+
     D.rows.map(function(x,i){ const p=x.sp||{};
       return '<tr><td style="'+B+'width:1%;text-align:center;">'+(i+1)+'</td><td style="'+B+'white-space:nowrap;">'+esc(x.b.name)+(x.b.code?' ('+esc(x.b.code)+')':'')+'</td>'+
         '<td style="'+B+'text-align:right;white-space:nowrap;">'+money(x.ctn,0)+' '+esc(x.b.uLab||'')+'</td>'+
-        R(p.rmF)+R(p.rmH)+(N?R(p.rmN):'')+R(x.rmVal,true)+R(p.pkF)+R(p.pkH)+(N?R(p.pkN):'')+R(x.pkVal,true)+R(n(p.rmF)+n(p.pkF),true)+R(n(p.rmH)+n(p.pkH),true)+UC.map(function(u){ return R(n((x.ut||{})[u.key])); }).join('')+R(x.rmVal+x.pkVal,true)+'</tr>'; }).join('')+
-    '</tbody><tfoot><tr style="background:#f3f3f3;"><td colspan="2" style="'+B+'font-weight:bold;">TOTAL</td>'+'<td style="'+B+'width:1%;text-align:right;white-space:nowrap;font-weight:bold;">'+orMsQtyTot(D).join('<br>')+'</td>'+
-      R(T.rmF,true)+R(T.rmH,true)+(N?R(T.rmN,true):'')+R(T.rm,true)+R(T.pkF,true)+R(T.pkH,true)+(N?R(T.pkN,true):'')+R(T.pk,true)+R(T.rmF+T.pkF,true)+R(T.rmH+T.pkH,true)+UC.map(function(u){ return R(T.ut[u.key],true); }).join('')+R(T.rm+T.pk,true)+'</tr></tfoot></table>'+
+        '<td style="'+B+'width:1%;text-align:right;white-space:nowrap;">'+(n(x.cbm)>0.0005?money(x.cbm,2):'-')+'</td>'+
+        R(p.rmF)+R(p.rmH)+(N?R(p.rmN):'')+R(x.rmVal,true)+R(p.pkF)+R(p.pkH)+(N?R(p.pkN):'')+R(x.pkVal,true)+R(n(p.rmF)+n(p.pkF),true)+R(n(p.rmH)+n(p.pkH),true)+UC.map(function(u){ return R(n((x.ut||{})[u.key])); }).join('')+R(x.rmVal+x.pkVal,true)+R(x.sale,true)+'</tr>'; }).join('')+
+    '</tbody><tfoot><tr style="background:#f3f3f3;"><td colspan="2" style="'+B+'font-weight:bold;">TOTAL</td>'+'<td style="'+B+'width:1%;text-align:right;white-space:nowrap;font-weight:bold;">'+orMsQtyTot(D).join('<br>')+'</td>'+'<td style="'+B+'width:1%;text-align:right;white-space:nowrap;font-weight:bold;">'+(T.cbm>0.0005?money(T.cbm,2):'-')+'</td>'+
+      R(T.rmF,true)+R(T.rmH,true)+(N?R(T.rmN,true):'')+R(T.rm,true)+R(T.pkF,true)+R(T.pkH,true)+(N?R(T.pkN,true):'')+R(T.pk,true)+R(T.rmF+T.pkF,true)+R(T.rmH+T.pkH,true)+UC.map(function(u){ return R(T.ut[u.key],true); }).join('')+R(T.rm+T.pk,true)+R(T.sale,true)+'</tr></tfoot></table>'+
     orderBuyByHTML(d)+
 
     '</div>';
@@ -21398,6 +21402,9 @@ function hTbl(hd,rows){
 
 /* ---------- CHANGELOG (নতুনটা সবসময় সবার উপরে) ---------- */
 const CHANGELOG=[
+ {v:'19.89', d:'2026-11-23', t:'পণ্যভিত্তিক RM / PM: CBM আর Sales Value কলাম', li:[
+  'Qty এর পরে <b>CBM</b> (প্রতি পণ্যের মোট CBM) আর শেষে <b>Sales Value ৳</b> — TOTAL সারিতে মোট CBM ও মোট বিক্রয়মূল্য',
+  'স্ক্রিন, মোবাইলের কার্ড, Print আর PDF সব জায়গায় · ১৪টা পণ্য সহ পুরো ছক এখনো এক পাতায় (A4 Portrait)']},
  {v:'19.88', d:'2026-11-23', t:'ক্রয় সারাংশ: আগের বাকিও বসানো যায় · Excel এর মতো যোগ করে লেখা · Gas / NO2 আসল সিলিন্ডার ধরে', li:[
   '<b>আগের হিসাব:</b> “আগের বেশি দেওয়া” এর জায়গায় এখন “আগের হিসাব” — আগের Order এ বেশি দেওয়া থাকলে + (বাদ যায়), আগের বাকি থাকলে − দিয়ে লিখুন (মূল টাকার সাথে যোগ হয়)। ঘরের নিচে লেখা থাকে “বেশি দেওয়া — বাদ যাবে” / “আগের বাকি — যোগ হবে”; Print এ “Prev. Balance” কলামে Excess / Due',
   '<b>কিস্তির টাকা যোগ করে লেখা:</b> দেওয়া টাকা, Transport আর আগের হিসাব ঘরে =200000+300000+500000 লিখলে যোগফল দেখায়; ঘরে ঢুকলে বা দুইবার চাপলে সূত্রটা Excel এর মতো ফিরে আসে। সূত্র থাকা ঘরের কোণে ছোট রঙিন চিহ্ন; Print এ নিচে কিস্তিগুলো লেখা থাকে (Paid — Factory Purchase: 200,000 + 300,000 + 500,000 = 1,000,000)',
@@ -24371,6 +24378,9 @@ const HELP=[
 
 /* ---------- User Guide engine ---------- */
 const CHANGELOG_EN=[
+ {v:'19.89', d:'2026-11-23', t:'Product-wise RM / PM: CBM and sales value columns', li:[
+  '<b>CBM</b> (total CBM per product) after Qty and <b>Sales Value ৳</b> at the end — the TOTAL row shows total CBM and total sales value',
+  'On screen, mobile cards, print and PDF · with 14 products the whole table still fits on one page (A4 portrait)']},
  {v:'19.88', d:'2026-11-23', t:'Purchase summary: previous due as well · Excel-style sums · Gas / NO2 by actual cylinders', li:[
   '<b>Previous balance:</b> “Previously overpaid” is now “Previous balance” — enter + for an overpayment on an earlier order (deducted) or − for an earlier due (added to the amount). A note under the box says which; the print shows Excess / Due in the “Prev. Balance” column',
   '<b>Instalments as a sum:</b> type =200000+300000+500000 in Paid, Transport or Previous balance and the total shows; click into the box or double-click and the formula comes back, as in Excel. Boxes with a formula have a small coloured corner; the print lists the instalments below (Paid — Factory Purchase: 200,000 + 300,000 + 500,000 = 1,000,000)',
